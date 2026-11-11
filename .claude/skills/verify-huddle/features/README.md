@@ -16,6 +16,7 @@ Every user-facing feature, how to reach it on web, and what proves it works. Kee
 | Suggest a destination | `/trip/[id]` → `/trip/[id]/suggest` | [suggest-destination.md](suggest-destination.md) | 2026-11-11 (Zoya, DB + RLS) |
 | Vote on destinations | `/trip/[id]` → `/trip/[id]/places` | [vote.md](vote.md) | 2026-11-11 (Zoya, DB + RLS) |
 | Live updates | `/trip/[id]`, `/days`, `/places` | [live-updates.md](live-updates.md) | 2026-11-11 (Aarav watching Meera) |
+| Rename or delete a trip | `/trip/[id]` → `/trip/[id]/settings` | [trip-settings.md](trip-settings.md) | 2026-11-11 (Aarav, DB rows) |
 
 ## In the schema, not in the UI yet
 

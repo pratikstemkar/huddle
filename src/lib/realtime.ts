@@ -4,6 +4,7 @@ import { AppState, Platform } from 'react-native';
 import { supabase } from './supabase';
 
 const DEBOUNCE_MS = 250;
+let instances = 0;
 
 /**
  * Calls `onChange` shortly after anyone changes this trip's days, places, votes, members or the trip itself.
@@ -25,7 +26,9 @@ export function useTripLive(tripId: string | undefined, onChange: () => void) {
     };
 
     const byTrip = `trip_id=eq.${tripId}`;
-    const channel = supabase.channel(`trip:${tripId}`);
+    // Screens stack (trip page under settings), so each subscription needs its own channel name;
+    // supabase-js hands back the same, already-subscribed channel for a repeated name.
+    const channel = supabase.channel(`trip:${tripId}:${++instances}`);
     for (const table of ['availability', 'destinations', 'votes', 'trip_members']) {
       channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table, filter: byTrip }, fire);
     }
@@ -38,6 +41,10 @@ export function useTripLive(tripId: string | undefined, onChange: () => void) {
         if (!old.trip_id || old.trip_id === tripId) fire();
       });
     }
+    // A deleted trip only carries its id, so match on that.
+    channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'trips' }, (p) => {
+      if ((p.old as { id?: string }).id === tripId) fire();
+    });
     for (const table of ['votes', 'destinations']) {
       channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table }, fire);
     }

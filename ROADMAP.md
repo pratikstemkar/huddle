@@ -28,7 +28,7 @@ What the MVP needs, and where each piece stands. Update the status when work lan
 | 16 | Organiser locks the trip (dates + destination) | ⬜ | ✅ `trips.status`, `locked_*` | | |
 | 17 | Locked trip summary | ⬜ | ✅ | | |
 | 18 | Leave a trip | ⬜ | ✅ delete policy on `trip_members` | | |
-| 19 | Organiser renames or deletes a trip | ⬜ | ✅ | | |
+| 19 | Organiser renames or deletes a trip | ✅ | ✅ | ✅ ⋯ button → `(app)/trip/[id]/settings` | [trip-settings](.claude/skills/verify-huddle/features/trip-settings.md) |
 
 ## After the MVP
 

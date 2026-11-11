@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -31,6 +31,22 @@ function BackButton() {
       style={[styles.back, { backgroundColor: colors.card }]}>
       <Text variant="title" style={{ lineHeight: 30 }}>
         ‹
+      </Text>
+    </Pressable>
+  );
+}
+
+function SettingsButton({ tripId }: { tripId: string }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Trip settings"
+      onPress={() => router.push({ pathname: '/trip/[id]/settings', params: { id: tripId } })}
+      hitSlop={8}
+      style={[styles.back, { backgroundColor: colors.card }]}>
+      <Text variant="title" style={{ lineHeight: 30 }}>
+        ⋯
       </Text>
     </Pressable>
   );
@@ -256,6 +272,13 @@ export default function TripScreen() {
 
   useTripLive(id, refresh);
 
+  // If the trip disappears while you're looking at it (the organiser deleted it), go back to your trips.
+  const hadTrip = useRef(false);
+  useEffect(() => {
+    if (trip) hadTrip.current = true;
+    else if (hadTrip.current && !loading && !error) router.replace('/');
+  }, [trip, loading, error]);
+
   if (loading && !trip) {
     return (
       <Screen scroll={false} contentStyle={styles.center}>
@@ -282,6 +305,7 @@ export default function TripScreen() {
 
   const fill = tripColors[trip.color] ?? tripColors.sunset;
   const isLocked = trip.status === 'locked';
+  const isOrganiser = trip.members.some((m) => m.user_id === session?.user.id && m.role === 'organiser');
 
   return (
     <Screen>
@@ -290,10 +314,13 @@ export default function TripScreen() {
         style={[styles.hero, { backgroundColor: fill }]}>
         <View style={styles.heroTop}>
           <BackButton />
-          <View style={[styles.pill, { backgroundColor: colors.onColor }]}>
-            <Text variant="caption" style={{ color: fill, fontWeight: '600' }}>
-              {isLocked ? 'Locked in' : 'Planning'}
-            </Text>
+          <View style={styles.heroActions}>
+            <View style={[styles.pill, { backgroundColor: colors.onColor }]}>
+              <Text variant="caption" style={{ color: fill, fontWeight: '600' }}>
+                {isLocked ? 'Locked in' : 'Planning'}
+              </Text>
+            </View>
+            {isOrganiser ? <SettingsButton tripId={trip.id} /> : null}
           </View>
         </View>
         <Text variant="title" tone="onColor" numberOfLines={3}>
@@ -335,6 +362,7 @@ const styles = StyleSheet.create({
   hero: { borderRadius: radius.lg, padding: space.xl, paddingTop: space.lg, minHeight: 190, justifyContent: 'space-between', gap: space.lg },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   back: { width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: MIN_TOUCH / 2, alignItems: 'center', justifyContent: 'center' },
+  heroActions: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   pill: { borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.xs },
   section: { marginTop: space.xl, gap: space.sm },
   invite: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, flexWrap: 'wrap' },

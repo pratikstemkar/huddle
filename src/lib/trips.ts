@@ -146,3 +146,16 @@ export function useTrip(id: string | undefined, myId?: string) {
 
   return { trip, loading, error, refresh };
 }
+
+export async function renameTrip(id: string, name: string) {
+  const { error } = await supabase.from('trips').update({ name }).eq('id', id);
+  if (error) throw error;
+}
+
+/** Deletes the trip for everyone (days, places and votes cascade). Organisers only; RLS enforces it. */
+export async function deleteTrip(id: string) {
+  const { data, error } = await supabase.from('trips').delete().eq('id', id).select('id');
+  if (error) throw error;
+  // RLS hides rows you can't delete instead of erroring, so an empty result means nothing happened.
+  if (!data?.length) throw new Error('Not deleted');
+}
