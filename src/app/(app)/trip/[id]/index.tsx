@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
+import { useTripLive } from '@/lib/realtime';
 import { formatDay, formatRange } from '@/lib/dates';
 import { inviteMessage, useTrip, type TripDetail, type TripMember } from '@/lib/trips';
 import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
@@ -252,6 +253,8 @@ export default function TripScreen() {
       refresh();
     }, [refresh]),
   );
+
+  useTripLive(id, refresh);
 
   if (loading && !trip) {
     return (
