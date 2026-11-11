@@ -16,7 +16,7 @@ Open the app signed out; it lands on `/sign-in`. The chips are under "Developer 
 
 ## Driving it with the built-in browser
 
-1. `navigate` to `http://localhost:8091/` → URL becomes `/sign-in`.
+1. `navigate` to `http://localhost:<PORT>/` → URL becomes `/sign-in`.
 2. `find "Sign in as"` → exactly 4 buttons.
 3. Click `Sign in as Meera` → wait 2s → URL `/`, `get_page_text` contains `Hey Meera` and `Goa in March` (she's a seeded member).
 4. Proof of the guard: `navigate` to `/sign-in` while signed in → you end on `/`.
@@ -25,4 +25,4 @@ Open the app signed out; it lands on `/sign-in`. The chips are under "Developer 
 
 - Chips missing = `.env.local` lacks `EXPO_PUBLIC_DEV_AUTH=true`, or Expo wasn't restarted after editing it.
 - "Invalid login credentials" = seed not loaded (`auth.users` has no `@dev.test` rows) — doctor catches this; reseeding needs `npm run db:reset` (ask first).
-- Session lives in `localStorage` per origin, so 8091 and 8081 are independent.
+- Session lives in `localStorage` per origin, so each slot port and the user's 8081 are independent.

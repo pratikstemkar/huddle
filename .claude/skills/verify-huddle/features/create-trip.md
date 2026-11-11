@@ -19,13 +19,13 @@ Sign in → home → tap `New trip` (bottom button). On web the native `formShee
 1. `db.mjs trips aarav@dev.test --out <run>/before.json`
 2. On `/sign-in`: `find "Sign in as Aarav"` → click. URL becomes `/`.
 3. `find "New trip"` → click the `button` match. URL becomes `/new-trip`.
-4. `find "Trip name"` → click the `textbox` match → `type` `verify-<label>`.
+4. `find "Trip name"` → click the `textbox` match → `type` `<PREFIX><label>` (e.g. `verify-cd9004-lagoon`).
 5. `find "Lagoon"` (or another colour) → click the `radio`.
 6. `find "Create trip"` → click the `button` match → wait 2s.
-7. Expect URL `/` and `get_page_text` listing `verify-<label>` first. Screenshot.
+7. Expect URL `/` and `get_page_text` listing `<PREFIX><label>` first. Screenshot.
 8. `db.mjs trips aarav@dev.test --out <run>/after.json`: the new row has `color` you picked, `status: "planning"`, an 8-char `invite_code`, and `trip_members` = Aarav as `organiser` (from the `on_trip_created` trigger).
 9. RLS: `db.mjs trips kabir@dev.test` (or meera) must **not** include it.
-10. Cleanup: `db.mjs cleanup aarav@dev.test verify-`.
+10. Cleanup: `db.mjs cleanup aarav@dev.test "$PREFIX"`.
 
 Validation journey: step 3, then click `Create trip` with an empty name → `get_page_text` shows the error, URL stays `/new-trip`, and `after.json` has no new row.
 

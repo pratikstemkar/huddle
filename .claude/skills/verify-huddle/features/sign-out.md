@@ -15,7 +15,7 @@ Home (`/`) → the round avatar with your initial, top right.
 
 1. Signed in on `/`: `find "Sign out"` → click → wait 1s.
 2. URL becomes `/sign-in`, `find "Sign in as"` returns 4 buttons.
-3. `navigate` to `http://localhost:8091/` → still lands on `/sign-in` (session really gone, not just a redirect).
+3. `navigate` to `http://localhost:<PORT>/` → still lands on `/sign-in` (session really gone, not just a redirect).
 
 ## Gotchas
 

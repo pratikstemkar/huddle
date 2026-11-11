@@ -2,7 +2,8 @@
 // Verification helper: reads and cleans local Supabase state as a seeded dev user, through RLS like the app does.
 // Usage (from the repo root):
 //   node .claude/skills/verify-huddle/scripts/db.mjs trips <email> [--out <file>]
-//   node .claude/skills/verify-huddle/scripts/db.mjs cleanup <email> <name-prefix>
+//   node .claude/skills/verify-huddle/scripts/db.mjs cleanup <email> <PREFIX from slot.sh>
+// The cleanup prefix is per-checkout, so parallel worktrees sharing one local Supabase never delete each other's rows.
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
@@ -34,7 +35,7 @@ if (cmd === 'trips') {
   }
   console.log(json);
 } else if (cmd === 'cleanup') {
-  if (!arg || arg.length < 4) fail('Pass a name prefix of at least 4 chars, e.g. "verify-"');
+  if (!/^verify-[0-9a-f]{6}-$/.test(arg ?? '')) fail('Pass this checkout\'s PREFIX from slot.sh, e.g. "verify-1a2b3c-"');
   const { data, error } = await supabase.from('trips').delete().like('name', `${arg}%`).select('id, name');
   if (error) fail(error.message);
   console.log(`Deleted ${data.length} trip(s) named ${arg}*`, data.map((t) => t.name));

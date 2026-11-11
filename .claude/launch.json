@@ -14,7 +14,7 @@
       "port": 8081
     },
     {
-      "name": "web-verify",
+      "name": "web-verify-1",
       "runtimeExecutable": "npx",
       "runtimeArgs": [
         "expo",
@@ -24,6 +24,66 @@
         "8091"
       ],
       "port": 8091
+    },
+    {
+      "name": "web-verify-2",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8092"
+      ],
+      "port": 8092
+    },
+    {
+      "name": "web-verify-3",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8093"
+      ],
+      "port": 8093
+    },
+    {
+      "name": "web-verify-4",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8094"
+      ],
+      "port": 8094
+    },
+    {
+      "name": "web-verify-5",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8095"
+      ],
+      "port": 8095
+    },
+    {
+      "name": "web-verify-6",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8096"
+      ],
+      "port": 8096
     }
   ]
 }

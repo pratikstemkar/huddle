@@ -13,19 +13,21 @@ Feature map: [`features/README.md`](features/README.md). A proof covers every en
 
 1. **Supabase.** Usually already running. If doctor says the API is down: `npm run db:start` (first start applies `supabase/migrations/` and `supabase/seed.sql`). The Supabase CLI talks to Docker; in a sandboxed agent shell it fails with `permission denied ... docker.sock` — rerun outside the sandbox or ask the user to run it.
    - From an empty DB: `npm run db:start` is enough. `npm run db:reset` also rebuilds from seed but **wipes the user's local trips** — ask first.
-2. **Env.** `.env.local` must exist (copy `.env.example`) with `EXPO_PUBLIC_DEV_AUTH=true`. Expo reads it at start; restart Expo after changing it.
-3. **Web app — isolated instance.** The user often runs their own Expo on `:8081`; never drive or kill it. Start the verification instance on `:8091`:
-   `preview_start {name: "web-verify"}` (defined in `.claude/launch.json`). Keep the returned `serverId` and `tabId`.
-   Separate port = separate origin = separate `localStorage` session, so signing in here never signs the user out on 8081.
-4. **Ready = usable.** Metro only bundles on the first request, so the first page can be blank. `navigate` to `http://localhost:8091/` again, wait until `preview_logs` shows `Web Bundled`, then `find "Sign in as"` must return 4 buttons. Blank `get_page_text` after that = a crash: read `read_console_messages {onlyErrors: true}`.
+2. **Env + deps.** `.env.local` must exist with `EXPO_PUBLIC_DEV_AUTH=true`, and `node_modules` must be installed. A fresh git worktree has neither: run `npm install` and copy `.env.local` from the main checkout. Expo reads `.env.local` at start; restart Expo after changing it.
+3. **Pick this checkout's slot.** Several worktrees may verify at once against the one shared local Supabase. Run
+   `eval "$(.claude/skills/verify-huddle/scripts/slot.sh)"` → `CONFIG` (e.g. `web-verify-3`), `PORT` (8091–8096), `PREFIX` (e.g. `verify-cd9004-`).
+   `PREFIX` is a hash of this checkout's path, so it's stable across runs. `PORT` is the slot the path hashes to, skipping any port another checkout already holds. Shell state doesn't persist between Bash calls: re-run the `eval` in each call that needs the values, or note them once.
+4. **Web app — isolated instance.** The user often runs their own Expo on `:8081`; never drive or kill it. `preview_start {name: "<CONFIG>"}` (slots defined in `.claude/launch.json`). Keep the returned `serverId` and `tabId`.
+   Separate port = separate origin = separate `localStorage` session, so each worktree and the user's 8081 keep their own sign-ins.
+5. **Ready = usable.** Metro only bundles on the first request, so the first page can be blank. `navigate` to `http://localhost:<PORT>/` again, wait until `preview_logs` shows `Web Bundled`, then `find "Sign in as"` must return 4 buttons. Blank `get_page_text` after that = a crash: read `read_console_messages {onlyErrors: true}`.
 
 ## Doctor
 
 ```bash
-.claude/skills/verify-huddle/scripts/doctor.sh 8091
+.claude/skills/verify-huddle/scripts/doctor.sh
 ```
 
-Read-only. Checks `.env.local` + dev auth flag, Supabase API health, that seeded `aarav@dev.test` can sign in and read trips (proves migrations + seed + RLS), and that Expo answers on the port, plus who owns it. Run it first and whenever anything looks off. Exit 0 = worth driving.
+Read-only. Prints this checkout's slot, then checks `node_modules`, `.env.local` + dev auth flag, Supabase API health, that seeded `aarav@dev.test` can sign in and read trips (proves migrations + seed + RLS), and that Expo answers on this checkout's port (`slot.sh` already guarantees the port is free or held by this checkout). Run it first and whenever anything looks off. Exit 0 = worth driving.
 
 ## Drive
 
@@ -46,7 +48,7 @@ Batch predictable steps with `browser_batch` (click → wait 1–2s → `get_pag
 
 Seeded data (`supabase/seed.sql`): users Aarav (`1111…`), Meera (`2222…`), Kabir, Zoya, all with password `trip-dev-password`. Trip "Goa in March" (invite `goa2027`): Aarav organiser, Meera member; Kabir and Zoya are in no trips. The user's local DB may hold extra trips they made — never delete those.
 
-**Test data rule:** name every trip you create `verify-<something>` so cleanup can find it, and never edit or delete anything else.
+**Test data rule:** start every trip name you create with this checkout's `PREFIX` (e.g. `verify-cd9004-lagoon`) so only your cleanup finds it, and never edit or delete anything else. Other worktrees' `verify-…` rows may be in the list mid-run; ignore them.
 
 ## Evidence
 
@@ -62,15 +64,16 @@ Proof standards: drive the real UI path (no calling `createTrip` or Supabase dir
 
 ## Cleanup
 
-1. Delete the test rows: `node --env-file=.env.local .claude/skills/verify-huddle/scripts/db.mjs cleanup <email-that-created-them> verify-` (organiser-only delete via RLS; prints what it removed).
+1. Delete the test rows: `node --env-file=.env.local .claude/skills/verify-huddle/scripts/db.mjs cleanup <email-that-created-them> "$PREFIX"` (organiser-only delete via RLS; refuses any prefix that isn't a slot prefix; prints what it removed).
 2. Sign out in the tab (`Sign out` button) if you'll hand the tab back.
-3. `preview_stop {serverId}` for the `web-verify` server you started. Never `pkill node`/`expo`, never stop `:8081` or Supabase unless you started them this run.
+3. `preview_stop {serverId}` for the `web-verify-N` server you started. Never `pkill node`/`expo`, never stop `:8081` or Supabase unless you started them this run.
 4. Evidence stays: confirm `ls .verify-evidence/<run>/` still lists your files.
 
 ## Helpers
 
-- `scripts/doctor.sh [port]` — readiness check above. Executable.
+- `scripts/slot.sh` — prints `SLOT CONFIG PORT PREFIX` for this checkout; use with `eval`.
+- `scripts/doctor.sh` — readiness check above.
 - `scripts/db.mjs trips <dev-email> [--out file]` — trips visible to that user, with members, as JSON.
-- `scripts/db.mjs cleanup <dev-email> <prefix>` — deletes that user's trips whose name starts with `prefix` (min 4 chars).
+- `scripts/db.mjs cleanup <dev-email> <prefix>` — deletes that user's trips whose name starts with `prefix`; only accepts the `verify-<6 hex>-` form from `slot.sh`.
 
-Both need `node --env-file=.env.local` from the repo root; `db.mjs` only accepts `@dev.test` emails.
+All are executable. `db.mjs` needs `node --env-file=.env.local` from the repo root; `db.mjs` only accepts `@dev.test` emails.
