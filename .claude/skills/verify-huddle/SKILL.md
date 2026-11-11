@@ -54,7 +54,7 @@ Use accessibility handles via `find` / `read_page`, then click by `ref`. Never c
 
 Batch predictable steps with `browser_batch` (click → wait 1–2s → `get_page_text`). The URL in each result's tab context confirms navigation (`/sign-in` → `/` → `/new-trip` → `/`).
 
-Seeded data (`supabase/seed.sql`): users Aarav (`1111…`), Meera (`2222…`), Kabir, Zoya, all with password `trip-dev-password`. Trip "Goa in March" (invite `goa2027`): Aarav organiser, Meera member; Kabir and Zoya are in no trips. The user's local DB may hold extra trips they made — never delete those.
+Seeded data (`supabase/seed.sql`): users Aarav (`1111…`), Meera (`2222…`), Kabir, Zoya, all with password `trip-dev-password`. Trip "Goa in March" (invite `goa2027`): Aarav organiser, Meera member; Kabir and Zoya are in no trips. Trip "Pondy long weekend" (invite `pondy27`) is already locked: Aarav organiser, Meera member. The user's local DB may hold extra trips they made — never delete those.
 
 **Test data rule:** start every trip name you create with this checkout's `PREFIX` (e.g. `verify-cd9004-lagoon`) so only your cleanup finds it, and never edit or delete anything else. Other worktrees' `verify-…` rows may be in the list mid-run; ignore them.
 

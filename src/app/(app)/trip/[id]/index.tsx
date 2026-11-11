@@ -1,7 +1,8 @@
 import * as Clipboard from 'expo-clipboard';
+import { Image } from 'expo-image';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Linking, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Button } from '@/components/ui/button';
@@ -10,8 +11,9 @@ import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { useTripLive } from '@/lib/realtime';
-import { formatDay, formatRange } from '@/lib/dates';
-import { inviteMessage, useTrip, type TripDetail, type TripMember } from '@/lib/trips';
+import { formatRange, formatTripDates, nightsBetween } from '@/lib/dates';
+import { hostOf } from '@/lib/destinations';
+import { inviteMessage, planMessage, useTrip, type TripDetail, type TripMember } from '@/lib/trips';
 import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
@@ -31,6 +33,22 @@ function BackButton() {
       style={[styles.back, { backgroundColor: colors.card }]}>
       <Text variant="title" style={{ lineHeight: 30 }}>
         ‹
+      </Text>
+    </Pressable>
+  );
+}
+
+function SettingsButton({ tripId }: { tripId: string }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Trip settings"
+      onPress={() => router.push({ pathname: '/trip/[id]/settings', params: { id: tripId } })}
+      hitSlop={8}
+      style={[styles.back, { backgroundColor: colors.card }]}>
+      <Text variant="title" style={{ lineHeight: 30 }}>
+        ⋯
       </Text>
     </Pressable>
   );
@@ -89,6 +107,42 @@ function InviteCard({ trip }: { trip: TripDetail }) {
   );
 }
 
+function SharePlan({ trip }: { trip: TripDetail }) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1800);
+    return () => clearTimeout(t);
+  }, [copied]);
+
+  const place = trip.destinations.find((d) => d.id === trip.locked_destination_id)?.title ?? 'a place to be decided';
+  const dates = trip.locked_start && trip.locked_end ? formatTripDates(trip.locked_start, trip.locked_end) : '';
+  const message = planMessage(trip.name, dates, place);
+
+  const share = async () => {
+    // Browsers without the Web Share API can't open a share sheet; copy the message instead.
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && !navigator.share) {
+      try {
+        await Clipboard.setStringAsync(message);
+        setCopied(true);
+      } catch {}
+      return;
+    }
+    try {
+      await Share.share({ message });
+    } catch {}
+  };
+
+  return (
+    <View style={{ gap: space.xs }}>
+      <Button label="Share plan" onPress={share} />
+      <Text variant="caption" tone="muted" accessibilityLiveRegion="polite" style={{ textAlign: 'center' }}>
+        {copied ? 'Copied!' : ' '}
+      </Text>
+    </View>
+  );
+}
+
 function Section({ title, index, children }: { title: string; index: number; children: ReactNode }) {
   const reduced = useReducedMotion();
   return (
@@ -128,14 +182,14 @@ function MemberRow({ member, fill, isMe }: { member: TripMember; fill: string; i
 }
 
 function WhenCard({ trip }: { trip: TripDetail }) {
-  if (trip.status === 'locked' && trip.locked_start) {
-    const range =
-      trip.locked_end && trip.locked_end !== trip.locked_start
-        ? `${formatDay(trip.locked_start)} – ${formatDay(trip.locked_end)}`
-        : formatDay(trip.locked_start);
+  if (trip.status === 'locked' && trip.locked_start && trip.locked_end) {
+    const nights = nightsBetween(trip.locked_start, trip.locked_end);
     return (
-      <Card>
-        <Text variant="heading">{range}</Text>
+      <Card style={{ gap: 2 }}>
+        <Text variant="heading">{formatTripDates(trip.locked_start, trip.locked_end)}</Text>
+        <Text variant="caption" tone="muted">
+          {nights === 0 ? 'Day trip' : `${nights} ${nights === 1 ? 'night' : 'nights'}`}
+        </Text>
       </Card>
     );
   }
@@ -174,16 +228,46 @@ function WhenCard({ trip }: { trip: TripDetail }) {
 
 function WhereCard({ trip }: { trip: TripDetail }) {
   const { colors } = useTheme();
-  const locked = trip.status === 'locked' ? trip.destinations.find((d) => d.id === trip.locked_destination_id) : undefined;
-  if (locked) {
-    return (
-      <Card style={{ gap: space.xs }}>
-        <Text variant="heading">{locked.title}</Text>
-        {locked.note ? (
+  if (trip.status === 'locked') {
+    const locked = trip.destinations.find((d) => d.id === trip.locked_destination_id);
+    if (!locked) {
+      return (
+        <Card>
           <Text variant="body" tone="secondary">
-            {locked.note}
+            The chosen place is no longer available.
           </Text>
+        </Card>
+      );
+    }
+    return (
+      <Card style={{ gap: space.sm, padding: 0, overflow: 'hidden' }}>
+        {locked.image_url ? (
+          <Image
+            source={{ uri: locked.image_url }}
+            accessibilityLabel={`Photo of ${locked.title}`}
+            contentFit="cover"
+            style={[styles.placeImage, { backgroundColor: colors.cardMuted }]}
+          />
         ) : null}
+        <View style={{ gap: space.xs, padding: space.lg, paddingTop: locked.image_url ? space.xs : space.lg }}>
+          <Text variant="heading">{locked.title}</Text>
+          {locked.note ? (
+            <Text variant="body" tone="secondary">
+              {locked.note}
+            </Text>
+          ) : null}
+          {locked.url ? (
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={`Open link, ${hostOf(locked.url)}`}
+              onPress={() => Linking.openURL(locked.url!).catch(() => {})}
+              hitSlop={8}>
+              <Text variant="label" tone="accent">
+                {hostOf(locked.url)} ↗
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
       </Card>
     );
   }
@@ -256,6 +340,13 @@ export default function TripScreen() {
 
   useTripLive(id, refresh);
 
+  // If the trip disappears while you're looking at it (the organiser deleted it), go back to your trips.
+  const hadTrip = useRef(false);
+  useEffect(() => {
+    if (trip) hadTrip.current = true;
+    else if (hadTrip.current && !loading && !error) router.replace('/');
+  }, [trip, loading, error]);
+
   if (loading && !trip) {
     return (
       <Screen scroll={false} contentStyle={styles.center}>
@@ -282,6 +373,7 @@ export default function TripScreen() {
 
   const fill = tripColors[trip.color] ?? tripColors.sunset;
   const isLocked = trip.status === 'locked';
+  const isOrganiser = trip.members.some((m) => m.user_id === session?.user.id && m.role === 'organiser');
 
   return (
     <Screen>
@@ -290,10 +382,13 @@ export default function TripScreen() {
         style={[styles.hero, { backgroundColor: fill }]}>
         <View style={styles.heroTop}>
           <BackButton />
-          <View style={[styles.pill, { backgroundColor: colors.onColor }]}>
-            <Text variant="caption" style={{ color: fill, fontWeight: '600' }}>
-              {isLocked ? 'Locked in' : 'Planning'}
-            </Text>
+          <View style={styles.heroActions}>
+            <View style={[styles.pill, { backgroundColor: colors.onColor }]}>
+              <Text variant="caption" style={{ color: fill, fontWeight: '600' }}>
+                {isLocked ? 'Locked in' : 'Planning'}
+              </Text>
+            </View>
+            <SettingsButton tripId={trip.id} />
           </View>
         </View>
         <Text variant="title" tone="onColor" numberOfLines={3}>
@@ -307,9 +402,15 @@ export default function TripScreen() {
         </Text>
       ) : null}
 
-      <Section title="Invite code" index={0}>
-        <InviteCard trip={trip} />
-      </Section>
+      {isLocked ? (
+        <View style={{ marginTop: space.xl }}>
+          <SharePlan trip={trip} />
+        </View>
+      ) : (
+        <Section title="Invite code" index={0}>
+          <InviteCard trip={trip} />
+        </Section>
+      )}
 
       <Section title={isLocked ? 'Dates' : 'When'} index={1}>
         <WhenCard trip={trip} />
@@ -319,7 +420,18 @@ export default function TripScreen() {
         <WhereCard trip={trip} />
       </Section>
 
-      <Section title={`Who's going · ${trip.members.length}`} index={3}>
+      {isOrganiser && !isLocked ? (
+        <Section title="Ready to decide?" index={3}>
+          <Card style={{ gap: space.sm }}>
+            <Text variant="caption" tone="muted">
+              Pick the dates and the place. Everyone sees the final plan and voting stops.
+            </Text>
+            <Button label="Lock in the plan" color={fill} onPress={() => router.push({ pathname: '/trip/[id]/lock', params: { id: trip.id } })} />
+          </Card>
+        </Section>
+      ) : null}
+
+      <Section title={`Who's going · ${trip.members.length}`} index={4}>
         <Card style={{ paddingVertical: space.sm }}>
           {trip.members.map((m) => (
             <MemberRow key={m.user_id} member={m} fill={fill} isMe={m.user_id === session?.user.id} />
@@ -335,6 +447,7 @@ const styles = StyleSheet.create({
   hero: { borderRadius: radius.lg, padding: space.xl, paddingTop: space.lg, minHeight: 190, justifyContent: 'space-between', gap: space.lg },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   back: { width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: MIN_TOUCH / 2, alignItems: 'center', justifyContent: 'center' },
+  heroActions: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   pill: { borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.xs },
   section: { marginTop: space.xl, gap: space.sm },
   invite: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, flexWrap: 'wrap' },
@@ -344,5 +457,6 @@ const styles = StyleSheet.create({
   tag: { borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 2 },
   destination: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm, minHeight: MIN_TOUCH },
   whereActions: { flexDirection: 'row', gap: space.sm, paddingTop: space.sm },
+  placeImage: { width: '100%', height: 180 },
   votes: { minWidth: 28, height: 28, borderRadius: 14, paddingHorizontal: space.sm, alignItems: 'center', justifyContent: 'center' },
 });

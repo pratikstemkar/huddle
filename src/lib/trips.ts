@@ -14,6 +14,8 @@ export type Trip = {
   status: 'planning' | 'locked';
   invite_code: string;
   created_at: string;
+  locked_start: string | null;
+  locked_end: string | null;
 };
 
 // NOTE: direct Supabase calls for now. The offline-first local store replaces these in a later step.
@@ -42,6 +44,11 @@ export function inviteMessage(tripName: string, code: string) {
   return `Join "${tripName}" on Huddle! Use code ${code}, or open ${inviteLink(code)}`;
 }
 
+/** The text shared for a locked trip: name, dates and place. */
+export function planMessage(tripName: string, dates: string, place: string) {
+  return `${tripName} is locked in on Huddle! ${dates} · ${place}`;
+}
+
 export function useTrips() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +57,7 @@ export function useTrips() {
   const refresh = useCallback(async () => {
     const { data, error } = await supabase
       .from('trips')
-      .select('id, name, color, status, invite_code, created_at')
+      .select('id, name, color, status, invite_code, created_at, locked_start, locked_end')
       .order('created_at', { ascending: false });
     setError(error ? "Couldn't load your trips. Pull to retry." : null);
     if (data) setTrips(data as Trip[]);
@@ -70,8 +77,6 @@ export type TripMember = {
 
 export type TripDetail = Trip & {
   created_by: string;
-  locked_start: string | null;
-  locked_end: string | null;
   locked_destination_id: string | null;
   members: TripMember[];
   /** Ranked: most votes first. */
@@ -145,4 +150,30 @@ export function useTrip(id: string | undefined, myId?: string) {
   }, [id, myId]);
 
   return { trip, loading, error, refresh };
+}
+
+export async function renameTrip(id: string, name: string) {
+  const { error } = await supabase.from('trips').update({ name }).eq('id', id);
+  if (error) throw error;
+}
+
+/** Deletes the trip for everyone (days, places and votes cascade). Organisers only; RLS enforces it. */
+export async function deleteTrip(id: string) {
+  const { data, error } = await supabase.from('trips').delete().eq('id', id).select('id');
+  if (error) throw error;
+  // RLS hides rows you can't delete instead of erroring, so an empty result means nothing happened.
+  if (!data?.length) throw new Error('Not deleted');
+}
+
+/** Leaves a trip. The database also clears your free days and votes, and refuses if you're the last organiser. */
+export async function leaveTrip(tripId: string, userId: string) {
+  const { data, error } = await supabase.from('trip_members').delete().eq('trip_id', tripId).eq('user_id', userId).select('user_id');
+  if (error) throw error;
+  if (!data?.length) throw new Error('Not a member');
+}
+
+/** Locks the trip to these dates and this destination (organiser only; the database checks everything). */
+export async function lockTrip(tripId: string, start: string, end: string, destinationId: string) {
+  const { error } = await supabase.rpc('lock_trip', { t: tripId, start_day: start, end_day: end, destination: destinationId });
+  if (error) throw error;
 }

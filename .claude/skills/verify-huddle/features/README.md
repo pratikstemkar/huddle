@@ -16,9 +16,8 @@ Every user-facing feature, how to reach it on web, and what proves it works. Kee
 | Suggest a destination | `/trip/[id]` → `/trip/[id]/suggest` | [suggest-destination.md](suggest-destination.md) | 2026-11-11 (Zoya, DB + RLS) |
 | Vote on destinations | `/trip/[id]` → `/trip/[id]/places` | [vote.md](vote.md) | 2026-11-11 (Zoya, DB + RLS) |
 | Live updates | `/trip/[id]`, `/days`, `/places` | [live-updates.md](live-updates.md) | 2026-11-11 (Aarav watching Meera) |
+| Rename or delete a trip | `/trip/[id]` → `/trip/[id]/settings` | [trip-settings.md](trip-settings.md) | 2026-11-11 (Aarav, DB rows) |
+| Leave a trip | `/trip/[id]` → `/trip/[id]/settings` | [leave-trip.md](leave-trip.md) | 2026-11-11 (Kabir, guard, DB rows) |
+| Lock the trip | `/trip/[id]` → `/trip/[id]/lock` | [lock-trip.md](lock-trip.md) | 2026-11-11 (Aarav, RLS as Kabir) |
+| Locked trip summary | `/`, `/trip/[id]` | [locked-summary.md](locked-summary.md) | 2026-11-11 (Aarav, seeded Pondy trip) |
 
-## In the schema, not in the UI yet
-
-These exist in `supabase/migrations/` but no screen reaches them. Add a feature file when a route ships:
-
-- Locking a trip (`trips.status`, `locked_*`).

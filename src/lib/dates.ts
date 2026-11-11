@@ -80,3 +80,13 @@ export function formatRange(start: Day, end: Day) {
   const last = sameMonth ? String(e.getUTCDate()) : formatDay(end, { day: 'numeric', month: 'short' });
   return `${first}–${last}`;
 }
+
+/** Nights between the first and last day of a trip; a one-day trip has none. */
+export function nightsBetween(start: Day, end: Day) {
+  return Math.round((fromDay(end).getTime() - fromDay(start).getTime()) / 86_400_000);
+}
+
+/** "12 Mar – 14 Mar 2027", or one date for a single day. */
+export function formatTripDates(start: Day, end: Day) {
+  return end === start ? formatDay(start) : `${formatDay(start)} – ${formatDay(end)}`;
+}

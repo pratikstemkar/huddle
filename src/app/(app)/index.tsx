@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { displayName, useAuth } from '@/lib/auth';
+import { formatTripDates } from '@/lib/dates';
 import { useTrips, type Trip } from '@/lib/trips';
 import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
@@ -16,13 +17,14 @@ function TripCard({ trip, index }: { trip: Trip; index: number }) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const fill = tripColors[trip.color] ?? tripColors.sunset;
+  const dates = trip.status === 'locked' && trip.locked_start && trip.locked_end ? formatTripDates(trip.locked_start, trip.locked_end) : null;
   return (
     <Animated.View
       entering={reduced ? undefined : FadeInDown.delay(index * 70).springify().damping(16)}
       layout={reduced ? undefined : LinearTransition.springify()}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${trip.name}, ${trip.status === 'locked' ? 'locked in' : 'still planning'}`}
+        accessibilityLabel={`${trip.name}, ${trip.status === 'locked' ? 'locked in' : 'still planning'}${dates ? `, ${dates}` : ''}`}
         accessibilityHint="Opens the trip"
         onPress={() => router.push({ pathname: '/trip/[id]', params: { id: trip.id } })}
         style={({ pressed }) => [styles.trip, { backgroundColor: fill, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
@@ -31,9 +33,16 @@ function TripCard({ trip, index }: { trip: Trip; index: number }) {
             {trip.status === 'locked' ? 'Locked in' : 'Planning'}
           </Text>
         </View>
-        <Text variant="title" tone="onColor" numberOfLines={2}>
-          {trip.name}
-        </Text>
+        <View style={{ gap: 2 }}>
+          <Text variant="title" tone="onColor" numberOfLines={2}>
+            {trip.name}
+          </Text>
+          {dates ? (
+            <Text variant="caption" tone="onColor">
+              {dates}
+            </Text>
+          ) : null}
+        </View>
       </Pressable>
     </Animated.View>
   );
