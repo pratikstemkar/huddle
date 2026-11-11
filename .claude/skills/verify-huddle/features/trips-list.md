@@ -21,5 +21,5 @@ Sign in; home is `/`.
 
 ## Gotchas
 
-- Trip cards are buttons with labels like `Goa in March, still planning` but do nothing yet when pressed.
+- Trip cards are buttons with labels like `Goa in March, still planning`; pressing one opens the trip (see [trip-detail](trip-detail.md)).
 - The user's local DB may hold extra trips (e.g. ones they made by hand); assert against `db.mjs` output, not a hardcoded list.
