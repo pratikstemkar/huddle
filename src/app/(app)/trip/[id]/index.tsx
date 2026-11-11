@@ -305,7 +305,6 @@ export default function TripScreen() {
 
   const fill = tripColors[trip.color] ?? tripColors.sunset;
   const isLocked = trip.status === 'locked';
-  const isOrganiser = trip.members.some((m) => m.user_id === session?.user.id && m.role === 'organiser');
 
   return (
     <Screen>
@@ -320,7 +319,7 @@ export default function TripScreen() {
                 {isLocked ? 'Locked in' : 'Planning'}
               </Text>
             </View>
-            {isOrganiser ? <SettingsButton tripId={trip.id} /> : null}
+            <SettingsButton tripId={trip.id} />
           </View>
         </View>
         <Text variant="title" tone="onColor" numberOfLines={3}>

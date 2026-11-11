@@ -159,3 +159,10 @@ export async function deleteTrip(id: string) {
   // RLS hides rows you can't delete instead of erroring, so an empty result means nothing happened.
   if (!data?.length) throw new Error('Not deleted');
 }
+
+/** Leaves a trip. The database also clears your free days and votes, and refuses if you're the last organiser. */
+export async function leaveTrip(tripId: string, userId: string) {
+  const { data, error } = await supabase.from('trip_members').delete().eq('trip_id', tripId).eq('user_id', userId).select('user_id');
+  if (error) throw error;
+  if (!data?.length) throw new Error('Not a member');
+}

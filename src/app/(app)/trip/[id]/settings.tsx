@@ -8,7 +8,7 @@ import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { useTripLive } from '@/lib/realtime';
-import { deleteTrip, renameTrip, useTrip } from '@/lib/trips';
+import { deleteTrip, leaveTrip, renameTrip, useTrip } from '@/lib/trips';
 import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
@@ -24,6 +24,8 @@ export default function TripSettings() {
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -47,13 +49,59 @@ export default function TripSettings() {
 
   const isOrganiser = !!trip && trip.members.some((m) => m.user_id === session?.user.id && m.role === 'organiser');
 
-  if (!trip || !isOrganiser) {
+  if (!trip) {
     return (
       <Screen footer={<Button label="Close" onPress={close} />}>
         <Text variant="title">Trip settings</Text>
         <Text variant="body" tone="secondary" style={{ marginTop: space.md }}>
-          {trip ? 'Only the organiser can change this trip.' : "This trip doesn't exist, or you're not a member of it."}
+          This trip doesn&apos;t exist, or you&apos;re not a member of it.
         </Text>
+      </Screen>
+    );
+  }
+
+  const leave = async () => {
+    setLeaving(true);
+    try {
+      await leaveTrip(trip.id, session!.user.id);
+      router.dismissAll();
+      router.replace('/');
+    } catch {
+      setError("Couldn't leave the trip. Check your connection and try again.");
+      setConfirmLeave(false);
+    } finally {
+      setLeaving(false);
+    }
+  };
+
+  // Organisers can't leave (nobody would be left to run the trip); they delete it instead.
+  if (!isOrganiser) {
+    return (
+      <Screen footer={<Button label="Close" variant="secondary" onPress={close} />}>
+        <Text variant="title" style={{ marginBottom: space.xl }}>
+          Trip settings
+        </Text>
+        <View style={[styles.danger, { borderColor: colors.line, backgroundColor: colors.card }]}>
+          <Text variant="caption" tone="muted">
+            Leaving removes your free days and votes. You can rejoin later with the invite code.
+          </Text>
+          {error ? (
+            <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
+              {error}
+            </Text>
+          ) : null}
+          {confirmLeave ? (
+            <View style={{ gap: space.sm }}>
+              <Text variant="bodyStrong" tone="danger" accessibilityLiveRegion="polite">
+                Leave &quot;{trip.name}&quot;?
+              </Text>
+              <Button label="Yes, leave trip" loading={leaving} color={colors.danger} onPress={leave} />
+              <Button label="Stay" variant="ghost" onPress={() => setConfirmLeave(false)} />
+            </View>
+          ) : (
+            <Button label="Leave trip" variant="secondary" onPress={() => setConfirmLeave(true)} />
+          )}
+        </View>
       </Screen>
     );
   }
@@ -127,7 +175,7 @@ export default function TripSettings() {
       </Text>
       <View style={[styles.danger, { borderColor: colors.line, backgroundColor: colors.card }]}>
         <Text variant="caption" tone="muted">
-          Deleting removes the trip, days, places and votes for everyone. This can&apos;t be undone.
+          You run this trip, so you can&apos;t leave it. Deleting removes the trip, days, places and votes for everyone. This can&apos;t be undone.
         </Text>
         {confirmDelete ? (
           <View style={{ gap: space.sm }}>
