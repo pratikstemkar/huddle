@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
+import { useTripLive } from '@/lib/realtime';
 import { useDestinations } from '@/lib/destinations';
 import { useTrip } from '@/lib/trips';
 import { MIN_TOUCH, space, tripColors } from '@/theme/tokens';
@@ -32,6 +33,11 @@ export default function PlacesScreen() {
       refreshDestinations();
     }, [refreshTrip, refreshDestinations]),
   );
+
+  useTripLive(id, () => {
+    refreshTrip();
+    refreshDestinations();
+  });
 
   const names = useMemo(() => new Map((trip?.members ?? []).map((m) => [m.user_id, m.display_name])), [trip]);
 

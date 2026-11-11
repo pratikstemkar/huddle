@@ -13,7 +13,7 @@ Trip detail's **Where** card shows the top 3 with vote counts.
 
 ## Gotchas
 
-- Other people's votes show after refocus; live updates are roadmap 15.
+- Other people's votes show live (see live-updates.md).
 - Ranking order and the `Remove` rule for other people's suggestions need a second member; the seed adds 3 Goa places with votes after `db:reset`.
 
 Last proven: 2026-11-11 (Zoya vote + unvote, DB, RLS as Meera). Not covered: Remove, multi-user ranking, native haptics/alert.

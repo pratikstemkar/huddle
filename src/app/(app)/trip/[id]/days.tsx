@@ -10,6 +10,7 @@ import { Text } from '@/components/ui/text';
 import { bestRanges, useAvailability } from '@/lib/availability';
 import { formatDay, formatRange, today as getToday, windowEnd } from '@/lib/dates';
 import { useAuth } from '@/lib/auth';
+import { useTripLive } from '@/lib/realtime';
 import { useTrip } from '@/lib/trips';
 import { MIN_TOUCH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
@@ -39,6 +40,11 @@ export default function DaysScreen() {
       refreshAvailability();
     }, [refreshTrip, refreshAvailability]),
   );
+
+  useTripLive(id, () => {
+    refreshTrip();
+    refreshAvailability();
+  });
 
   const ranges = useMemo(() => bestRanges(av.counts, from), [av.counts, from]);
 
