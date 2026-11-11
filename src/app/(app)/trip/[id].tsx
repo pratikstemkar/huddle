@@ -1,6 +1,7 @@
+import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
-import { useTrip, type TripDetail, type TripMember } from '@/lib/trips';
+import { inviteMessage, useTrip, type TripDetail, type TripMember } from '@/lib/trips';
 import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
@@ -41,6 +42,59 @@ function BackButton() {
         ‹
       </Text>
     </Pressable>
+  );
+}
+
+function InviteCard({ trip }: { trip: TripDetail }) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1800);
+    return () => clearTimeout(t);
+  }, [copied]);
+
+  const copy = async () => {
+    try {
+      await Clipboard.setStringAsync(trip.invite_code);
+      setCopied(true);
+    } catch {}
+  };
+
+  const share = async () => {
+    const message = inviteMessage(trip.name, trip.invite_code);
+    // Browsers without the Web Share API can't open a share sheet; copy the message instead.
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && !navigator.share) {
+      try {
+        await Clipboard.setStringAsync(message);
+        setCopied(true);
+      } catch {}
+      return;
+    }
+    try {
+      await Share.share({ message });
+    } catch {}
+  };
+
+  return (
+    <Card style={{ gap: space.md }}>
+      <View style={styles.invite}>
+        <Text variant="heading" selectable accessibilityLabel={`Invite code ${trip.invite_code.split('').join(' ')}`} style={{ letterSpacing: 2 }}>
+          {trip.invite_code}
+        </Text>
+        <Text variant="caption" tone="muted" accessibilityLiveRegion="polite">
+          {copied ? 'Copied!' : 'Friends join with this code'}
+        </Text>
+      </View>
+      <View style={styles.inviteActions}>
+        <View style={{ flex: 1 }}>
+          <Button label="Copy code" variant="secondary" onPress={copy} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button label="Share invite" onPress={share} />
+        </View>
+      </View>
+    </Card>
   );
 }
 
@@ -226,14 +280,7 @@ export default function TripScreen() {
       ) : null}
 
       <Section title="Invite code" index={0}>
-        <Card style={styles.invite}>
-          <Text variant="heading" selectable accessibilityLabel={`Invite code ${trip.invite_code.split('').join(' ')}`} style={{ letterSpacing: 2 }}>
-            {trip.invite_code}
-          </Text>
-          <Text variant="caption" tone="muted">
-            Friends join with this code
-          </Text>
-        </Card>
+        <InviteCard trip={trip} />
       </Section>
 
       <Section title={isLocked ? 'Dates' : 'When'} index={1}>
@@ -263,6 +310,7 @@ const styles = StyleSheet.create({
   pill: { borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.xs },
   section: { marginTop: space.xl, gap: space.sm },
   invite: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, flexWrap: 'wrap' },
+  inviteActions: { flexDirection: 'row', gap: space.sm },
   member: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: MIN_TOUCH, paddingVertical: space.xs },
   initial: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   tag: { borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 2 },
