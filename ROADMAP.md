@@ -17,8 +17,8 @@ What the MVP needs, and where each piece stands. Update the status when work lan
 | 5 | Trips list (home) | ✅ | ✅ | ✅ `(app)/index` | [trips-list](.claude/skills/verify-huddle/features/trips-list.md) |
 | 6 | Create a trip (name + colour) | ✅ | ✅ | ✅ `(app)/new-trip` | [create-trip](.claude/skills/verify-huddle/features/create-trip.md) |
 | 7 | Open a trip (trip detail screen) | ✅ | ✅ | ✅ `(app)/trip/[id]` | [trip-detail](.claude/skills/verify-huddle/features/trip-detail.md) |
-| 8 | Share invite code / link | ⬜ | ✅ `trips.invite_code` | | |
-| 9 | Join a trip by invite code | ⬜ | ✅ `join_trip(code)` | | |
+| 8 | Share invite code / link | ✅ | ✅ `trips.invite_code` | ✅ copy + share on `(app)/trip/[id]` | [invite-share](.claude/skills/verify-huddle/features/invite-share.md) |
+| 9 | Join a trip by invite code | ✅ | ✅ `join_trip(code)` | ✅ `(app)/join` | [join-trip](.claude/skills/verify-huddle/features/join-trip.md) |
 | 10 | See trip members | 🟡 | ✅ `trip_members` | ✅ list on trip detail; no profile avatars yet | [trip-detail](.claude/skills/verify-huddle/features/trip-detail.md) |
 | 11 | Mark the days I'm free | ⬜ | ✅ `availability` | | |
 | 12 | See overlap: which days suit most people | ⬜ | ✅ | | |
@@ -38,7 +38,7 @@ Ideas to look at once the loop above works end to end. Nothing here is built.
 |---|---|
 | Edit my profile (name, avatar) | `profiles` update policy exists |
 | Push notifications | New votes, trip locked |
-| Deep link opens the join screen | `huddle://` scheme is set up for auth |
+| Deep link opens the join screen | `huddle://` scheme is set up for auth. `/join?code=` already pre-fills the code, but a signed-out visit loses it at sign-in |
 | Unlock / re-plan a trip | |
 | Remove a member (organiser) | Needs a new policy |
 | Production builds with EAS | iOS and Android store submission |
