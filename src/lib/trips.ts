@@ -2,6 +2,8 @@ import * as Linking from 'expo-linking';
 import { useCallback, useState } from 'react';
 
 import type { TripColor } from '@/theme/tokens';
+import { bestRanges, type BestRange } from './availability';
+import { today } from './dates';
 import { supabase } from './supabase';
 
 export type Trip = {
@@ -82,6 +84,8 @@ export type TripDetail = Trip & {
   destinations: TripDestination[];
   /** How many members have marked at least one free day. */
   availabilityCount: number;
+  /** The days that suit the most people, best first. */
+  bestDays: BestRange[];
 };
 
 type MemberRow = {
@@ -114,7 +118,7 @@ export function useTrip(id: string | undefined) {
       supabase.from('trip_members').select('user_id, role, profiles(display_name, avatar_url)').eq('trip_id', id).order('joined_at'),
       supabase.from('destinations').select('id, title, note, url').eq('trip_id', id).order('created_at'),
       supabase.from('votes').select('destination_id').eq('trip_id', id),
-      supabase.from('availability').select('user_id').eq('trip_id', id),
+      supabase.from('availability').select('user_id, day').eq('trip_id', id),
     ]);
 
     const failed = tripRes.error ?? membersRes.error ?? destRes.error ?? votesRes.error ?? availRes.error;
@@ -127,6 +131,8 @@ export function useTrip(id: string | undefined) {
       } else {
         const votes = new Map<string, number>();
         for (const v of votesRes.data ?? []) votes.set(v.destination_id, (votes.get(v.destination_id) ?? 0) + 1);
+        const counts = new Map<string, number>();
+        for (const a of availRes.data ?? []) counts.set(a.day, (counts.get(a.day) ?? 0) + 1);
         const members = ((membersRes.data ?? []) as unknown as MemberRow[]).map((m) => ({
           user_id: m.user_id,
           role: m.role,
@@ -135,10 +141,11 @@ export function useTrip(id: string | undefined) {
         }));
         members.sort((a, b) => Number(b.role === 'organiser') - Number(a.role === 'organiser'));
         setTrip({
-          ...(tripRes.data as Omit<TripDetail, 'members' | 'destinations' | 'availabilityCount'>),
+          ...(tripRes.data as Omit<TripDetail, 'members' | 'destinations' | 'availabilityCount' | 'bestDays'>),
           members,
           destinations: (destRes.data ?? []).map((d) => ({ ...d, voteCount: votes.get(d.id) ?? 0 })),
           availabilityCount: new Set((availRes.data ?? []).map((a) => a.user_id)).size,
+          bestDays: bestRanges(counts, today()),
         });
       }
     }

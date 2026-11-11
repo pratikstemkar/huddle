@@ -20,8 +20,8 @@ What the MVP needs, and where each piece stands. Update the status when work lan
 | 8 | Share invite code / link | ✅ | ✅ `trips.invite_code` | ✅ copy + share on `(app)/trip/[id]` | [invite-share](.claude/skills/verify-huddle/features/invite-share.md) |
 | 9 | Join a trip by invite code | ✅ | ✅ `join_trip(code)` | ✅ `(app)/join` | [join-trip](.claude/skills/verify-huddle/features/join-trip.md) |
 | 10 | See trip members | 🟡 | ✅ `trip_members` | ✅ list on trip detail; no profile avatars yet | [trip-detail](.claude/skills/verify-huddle/features/trip-detail.md) |
-| 11 | Mark the days I'm free | ⬜ | ✅ `availability` | | |
-| 12 | See overlap: which days suit most people | ⬜ | ✅ | | |
+| 11 | Mark the days I'm free | ✅ | ✅ `availability` | ✅ `(app)/trip/[id]/days` | [mark-days](.claude/skills/verify-huddle/features/mark-days.md) |
+| 12 | See overlap: which days suit most people | ✅ | ✅ | ✅ Everyone tab + best days on trip detail | [overlap](.claude/skills/verify-huddle/features/overlap.md) |
 | 13 | Suggest a destination (title, note, link, image) | ⬜ | ✅ `destinations` | | |
 | 14 | Vote on destinations | ⬜ | ✅ `votes` | | |
 | 15 | Live updates while others vote and mark days | ⬜ | ✅ realtime on availability, destinations, votes, trips | | |

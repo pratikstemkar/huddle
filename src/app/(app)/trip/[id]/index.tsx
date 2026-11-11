@@ -9,20 +9,10 @@ import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
+import { formatDay, formatRange } from '@/lib/dates';
 import { inviteMessage, useTrip, type TripDetail, type TripMember } from '@/lib/trips';
 import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
-
-/** Formats a Postgres `date` (YYYY-MM-DD) without shifting it into the local timezone. */
-function formatDay(day: string) {
-  const [y, m, d] = day.split('-').map(Number);
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
 
 function goBack() {
   if (router.canGoBack()) router.back();
@@ -149,14 +139,34 @@ function WhenCard({ trip }: { trip: TripDetail }) {
     );
   }
   const n = trip.availabilityCount;
+  const best = trip.bestDays;
   return (
-    <Card style={{ gap: space.xs }}>
-      <Text variant="bodyStrong">
+    <Card style={{ gap: space.sm }}>
+      {best.length > 0 ? (
+        <View style={{ gap: 2 }}>
+          <Text variant="caption" tone="muted">
+            Best days so far
+          </Text>
+          {best.map((r) => (
+            <Text key={r.start} variant="heading">
+              {formatRange(r.start, r.end)}
+              <Text variant="caption" tone="muted">
+                {'  '}
+                {r.free} of {trip.members.length} free
+              </Text>
+            </Text>
+          ))}
+        </View>
+      ) : null}
+      <Text variant={best.length > 0 ? 'caption' : 'bodyStrong'} tone={best.length > 0 ? 'muted' : 'primary'}>
         {n === 0 ? 'Nobody has marked their days yet' : `${n} of ${trip.members.length} ${n === 1 ? 'has' : 'have'} marked their free days`}
       </Text>
-      <Text variant="caption" tone="muted">
-        Marking days is coming soon.
-      </Text>
+      <Button
+        label="Mark my days"
+        variant="secondary"
+        onPress={() => router.push({ pathname: '/trip/[id]/days', params: { id: trip.id } })}
+        accessibilityHint="Opens the calendar to mark and compare free days"
+      />
     </Card>
   );
 }

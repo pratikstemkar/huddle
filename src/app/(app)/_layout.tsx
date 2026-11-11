@@ -7,7 +7,8 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="trip/[id]" />
+      <Stack.Screen name="trip/[id]/index" />
+      <Stack.Screen name="trip/[id]/days" />
       <Stack.Screen
         name="join"
         options={{

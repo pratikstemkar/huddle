@@ -29,3 +29,10 @@ values ('aaaaaaaa-0000-0000-0000-000000000001', 'Goa in March', 'sunset', '11111
 
 insert into public.trip_members (trip_id, user_id) values
   ('aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222');
+
+-- Availability for the Goa trip, relative to today so the calendar always has data.
+-- Aarav is free days 10-16 from now, Meera days 13-19: they overlap on 13-16.
+insert into public.availability (trip_id, user_id, day)
+select 'aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', current_date + n from generate_series(10, 16) n;
+insert into public.availability (trip_id, user_id, day)
+select 'aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', current_date + n from generate_series(13, 19) n;
