@@ -22,8 +22,8 @@ What the MVP needs, and where each piece stands. Update the status when work lan
 | 10 | See trip members | 🟡 | ✅ `trip_members` | ✅ list on trip detail; no profile avatars yet | [trip-detail](.claude/skills/verify-huddle/features/trip-detail.md) |
 | 11 | Mark the days I'm free | ✅ | ✅ `availability` | ✅ `(app)/trip/[id]/days` | [mark-days](.claude/skills/verify-huddle/features/mark-days.md) |
 | 12 | See overlap: which days suit most people | ✅ | ✅ | ✅ Everyone tab + best days on trip detail | [overlap](.claude/skills/verify-huddle/features/overlap.md) |
-| 13 | Suggest a destination (title, note, link, image) | ⬜ | ✅ `destinations` | | |
-| 14 | Vote on destinations | ⬜ | ✅ `votes` | | |
+| 13 | Suggest a destination (title, note, link, image) | ✅ | ✅ `destinations` + link/length checks | ✅ `(app)/trip/[id]/suggest` | [suggest-destination](.claude/skills/verify-huddle/features/suggest-destination.md) |
+| 14 | Vote on destinations | ✅ | ✅ `votes` | ✅ `(app)/trip/[id]/places` + top 3 on trip detail | [vote](.claude/skills/verify-huddle/features/vote.md) |
 | 15 | Live updates while others vote and mark days | ⬜ | ✅ realtime on availability, destinations, votes, trips | | |
 | 16 | Organiser locks the trip (dates + destination) | ⬜ | ✅ `trips.status`, `locked_*` | | |
 | 17 | Locked trip summary | ⬜ | ✅ | | |

@@ -5,7 +5,7 @@ Tapping a trip card opens `/trip/<id>`: a trip-coloured header (name, Planning /
 ## Sub-features
 
 - **When:** planning → "Nobody has marked their days yet" or "N of M have marked their free days" (distinct users in `availability`), the best days so far, and a `Mark my days` button ([mark-days](mark-days.md), [overlap](overlap.md)). Locked → `locked_start – locked_end`.
-- **Where:** planning → "No destinations yet", or each destination with its vote count. Locked → the locked destination's title and note.
+- **Where:** planning → "No destinations yet" + `Suggest a place`, or the top 3 destinations with vote counts + `Suggest a place` / `See all & vote`. Locked → the locked destination's title and note.
 - **Members:** organiser listed first, then by `joined_at`.
 - **Not found:** a missing id, a malformed id, or a trip you're not a member of (RLS returns no row) → "Trip not found" + `Back to your trips`.
 - **Load error:** "Couldn't load this trip…" + `Try again`.
@@ -31,7 +31,7 @@ Sign in → tap a trip card on home. Deep link `/trip/<uuid>` also works.
 
 ## Gotchas
 
-- Seed has availability on the Goa trip (after `db:reset`) but no destinations, votes or locked trips, so those branches only show their empty states until those features land. Proving them needs rows written through their future UIs.
+- Seed has availability on the Goa trip (after `db:reset`) 3 Goa destinations with votes, but no locked trips, so the locked branches only show once locking lands (roadmap 16).
 - The header animates in; screenshot after ~2s or it looks washed out.
 - Typed routes: if `tsc` rejects `/trip/[id]`, start Expo once so `.expo/types` regenerates.
 
