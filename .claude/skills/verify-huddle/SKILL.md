@@ -48,6 +48,9 @@ Use accessibility handles via `find` / `read_page`, then click by `ref`. Never c
 | `/join` | `Join trip` | button |
 | `/trip/[id]` | `Back to your trips` | button |
 | `/trip/[id]` | `Copy code` / `Share invite` | button |
+| `/trip/[id]` | `Mark my days` | button |
+| `/trip/[id]/days` | `My days` / `Everyone` | tab |
+| `/trip/[id]/days` | `<Weekday>, <Month> <day>` | button per day |
 
 Batch predictable steps with `browser_batch` (click → wait 1–2s → `get_page_text`). The URL in each result's tab context confirms navigation (`/sign-in` → `/` → `/new-trip` → `/`).
 
