@@ -1,3 +1,4 @@
+import * as Linking from 'expo-linking';
 import { useCallback, useState } from 'react';
 
 import type { TripColor } from '@/theme/tokens';
@@ -18,6 +19,24 @@ export async function createTrip(name: string, color: TripColor) {
   const { data, error } = await supabase.from('trips').insert({ name, color }).select().single();
   if (error) throw error;
   return data as Trip;
+}
+
+/** Joins a trip with its invite code and returns the trip id. Throws an Error with a user-friendly message. */
+export async function joinTrip(code: string): Promise<string> {
+  const { data, error } = await supabase.rpc('join_trip', { code });
+  if (error) {
+    if (/does not match/i.test(error.message)) throw new Error("That code doesn't match a trip. Check it and try again.");
+    throw new Error("Couldn't join the trip. Check your connection and try again.");
+  }
+  return data as string;
+}
+
+export function inviteLink(code: string) {
+  return Linking.createURL('join', { queryParams: { code } });
+}
+
+export function inviteMessage(tripName: string, code: string) {
+  return `Join "${tripName}" on Huddle! Use code ${code}, or open ${inviteLink(code)}`;
 }
 
 export function useTrips() {
