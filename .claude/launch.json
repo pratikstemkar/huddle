@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "web",
-      "runtimeExecutable": "npx",
+      "runtimeExecutable": "bunx",
       "runtimeArgs": [
         "expo",
         "start",
@@ -15,7 +15,7 @@
     },
     {
       "name": "web-verify-1",
-      "runtimeExecutable": "npx",
+      "runtimeExecutable": "bunx",
       "runtimeArgs": [
         "expo",
         "start",
@@ -27,7 +27,7 @@
     },
     {
       "name": "web-verify-2",
-      "runtimeExecutable": "npx",
+      "runtimeExecutable": "bunx",
       "runtimeArgs": [
         "expo",
         "start",
@@ -39,7 +39,7 @@
     },
     {
       "name": "web-verify-3",
-      "runtimeExecutable": "npx",
+      "runtimeExecutable": "bunx",
       "runtimeArgs": [
         "expo",
         "start",
@@ -51,7 +51,7 @@
     },
     {
       "name": "web-verify-4",
-      "runtimeExecutable": "npx",
+      "runtimeExecutable": "bunx",
       "runtimeArgs": [
         "expo",
         "start",
@@ -63,7 +63,7 @@
     },
     {
       "name": "web-verify-5",
-      "runtimeExecutable": "npx",
+      "runtimeExecutable": "bunx",
       "runtimeArgs": [
         "expo",
         "start",
@@ -75,7 +75,7 @@
     },
     {
       "name": "web-verify-6",
-      "runtimeExecutable": "npx",
+      "runtimeExecutable": "bunx",
       "runtimeArgs": [
         "expo",
         "start",

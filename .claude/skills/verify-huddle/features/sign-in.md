@@ -24,5 +24,5 @@ Open the app signed out; it lands on `/sign-in`. The chips are under "Developer 
 ## Gotchas
 
 - Chips missing = `.env.local` lacks `EXPO_PUBLIC_DEV_AUTH=true`, or Expo wasn't restarted after editing it.
-- "Invalid login credentials" = seed not loaded (`auth.users` has no `@dev.test` rows) — doctor catches this; reseeding needs `npm run db:reset` (ask first).
+- "Invalid login credentials" = seed not loaded (`auth.users` has no `@dev.test` rows) — doctor catches this; reseeding needs `bun run db:reset` (ask first).
 - Session lives in `localStorage` per origin, so each slot port and the user's 8081 are independent.

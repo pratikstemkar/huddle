@@ -12,16 +12,16 @@ What's built and what's next: [ROADMAP.md](ROADMAP.md).
    ```
 2. Start local Supabase (applies `supabase/migrations` and `supabase/seed.sql`):
    ```bash
-   npm run db:start
+   bun run db:start
    ```
-   Without Docker group access, use `sudo env "PATH=$PATH" npx supabase start` instead. Metro is set to ignore `supabase/`, so the root-owned files that sudo leaves there don't break the app.
+   Without Docker group access, use `sudo env "PATH=$PATH" bunx supabase start` instead. Metro is set to ignore `supabase/`, so the root-owned files that sudo leaves there don't break the app.
 3. Copy the env file and paste the **anon key** printed by step 2:
    ```bash
    cp .env.example .env.local
    ```
 4. Start the app:
    ```bash
-   npm run web
+   bun run web
    ```
 
 ## Signing in while testing
@@ -31,7 +31,7 @@ With `EXPO_PUBLIC_DEV_AUTH=true` the sign-in screen shows **Developer sign-in** 
 ## Real sign-in
 
 - **Google**: all platforms, through Supabase OAuth. Works in the browser and in Expo Go via an in-app browser redirect.
-- **Apple**: iPhone only, required for the App Store when Google is offered. Needs a development build (`npx expo run:ios` or `eas build --profile development`).
+- **Apple**: iPhone only, required for the App Store when Google is offered. Needs a development build (`bunx expo run:ios` or `eas build --profile development`).
 
 Enable both in your hosted Supabase project under Authentication → Providers, and add these redirect URLs: your web URL, `huddle://auth/callback`.
 
@@ -46,9 +46,9 @@ Enable both in your hosted Supabase project under Authentication → Providers, 
 ## Checks
 
 ```bash
-npm run typecheck
+bun run typecheck
 ```
 
 ```bash
-npx expo lint
+bunx expo lint
 ```

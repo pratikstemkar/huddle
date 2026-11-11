@@ -1,4 +1,4 @@
--- LOCAL DEVELOPMENT ONLY. Runs on `npx supabase db reset`; never run against production.
+-- LOCAL DEVELOPMENT ONLY. Runs on `bunx supabase db reset`; never run against production.
 -- Creates the four developer sign-in users shown on the sign-in screen.
 -- Password for all of them: trip-dev-password (matches EXPO_PUBLIC_DEV_PASSWORD in .env.example).
 

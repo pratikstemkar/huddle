@@ -11,9 +11,9 @@ Feature map: [`features/README.md`](features/README.md). A proof covers every en
 
 ## Launch
 
-1. **Supabase.** Usually already running. If doctor says the API is down: `npm run db:start` (first start applies `supabase/migrations/` and `supabase/seed.sql`). The Supabase CLI talks to Docker; in a sandboxed agent shell it fails with `permission denied ... docker.sock` — rerun outside the sandbox or ask the user to run it.
-   - From an empty DB: `npm run db:start` is enough. `npm run db:reset` also rebuilds from seed but **wipes the user's local trips** — ask first.
-2. **Env + deps.** `.env.local` must exist with `EXPO_PUBLIC_DEV_AUTH=true`, and `node_modules` must be installed. A fresh git worktree has neither: run `npm install` and copy `.env.local` from the main checkout. Expo reads `.env.local` at start; restart Expo after changing it.
+1. **Supabase.** Usually already running. If doctor says the API is down: `bun run db:start` (first start applies `supabase/migrations/` and `supabase/seed.sql`). The Supabase CLI talks to Docker; in a sandboxed agent shell it fails with `permission denied ... docker.sock` — rerun outside the sandbox or ask the user to run it.
+   - From an empty DB: `bun run db:start` is enough. `bun run db:reset` also rebuilds from seed but **wipes the user's local trips** — ask first.
+2. **Env + deps.** `.env.local` must exist with `EXPO_PUBLIC_DEV_AUTH=true`, and `node_modules` must be installed. A fresh git worktree has neither: run `bun install` and copy `.env.local` from the main checkout. Expo reads `.env.local` at start; restart Expo after changing it.
 3. **Pick this checkout's slot.** Several worktrees may verify at once against the one shared local Supabase. Run
    `eval "$(.claude/skills/verify-huddle/scripts/slot.sh)"` → `CONFIG` (e.g. `web-verify-3`), `PORT` (8091–8096), `PREFIX` (e.g. `verify-cd9004-`).
    `PREFIX` is a hash of this checkout's path, so it's stable across runs. `PORT` is the slot the path hashes to, skipping any port another checkout already holds. Shell state doesn't persist between Bash calls: re-run the `eval` in each call that needs the values, or note them once.
