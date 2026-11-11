@@ -17,11 +17,12 @@ bunx expo install <package> # ALWAYS use instead of bun add — resolves SDK-com
 bunx expo start              # start the dev server
 bun run lint                      # lint
 bun run typecheck             # typecheck
+bun run test                  # unit tests (Jest + jest-expo); CI runs these on every push and PR
 bunx expo-doctor             # diagnose dependency and config issues
 bunx expo install --fix      # fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+Run lint, typecheck and tests before declaring any task done.
 
 ## Navigation & Routing
 
@@ -44,6 +45,7 @@ Docs: https://docs.expo.dev/eas/index.md
 
 - `src/app/` — Expo Router routes only. `src/components/`, `src/lib/`, `src/theme/` hold everything else.
 - `supabase/` — migrations, `seed.sql`, config. Local DB: `bun run db:start | db:stop | db:reset`.
+- `__tests__/` — Jest tests, mirroring `src/` (never inside `src/app/`). `test-utils/` holds the fake Supabase client, the `expo-router` mock and fixtures; `jest.setup.ts` wires them in so no test touches a real database.
 - `ROADMAP.md` — MVP feature status. Update it when a feature's status changes.
 - `.claude/skills/verify-huddle` — drive the web app against local Supabase to prove a change works.
 
@@ -53,7 +55,7 @@ Docs: https://docs.expo.dev/eas/index.md
 
 1. **"Create this feature" (or similar):** do NOT start coding. First write a plan (scope, screens/routes, data/schema changes, files touched, how it will be verified) and get the user's OK.
 2. **After the plan is approved:** create a feature branch off an up-to-date `main` (`feat/<short-name>`, `fix/<short-name>`, `refactor/<short-name>`) and implement there. Commit in small, meaningful commits on that branch.
-3. **Before calling it done:** run `bun run lint` and `bun run typecheck`, and for user-facing changes verify with the `verify-huddle` skill.
+3. **Before calling it done:** run `bun run lint`, `bun run typecheck` and `bun run test`, and for user-facing changes verify with the `verify-huddle` skill.
 4. **"Push it":** push the branch and open a PR targeting `main` (`gh pr create`). Never push application code to `main` directly, and never merge the PR unless asked.
 5. If asked to change app code while on `main`, switch to a feature branch first.
 

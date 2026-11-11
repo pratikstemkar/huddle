@@ -44,3 +44,4 @@ example
 
 # verify-huddle evidence
 /.verify-evidence
+coverage/
