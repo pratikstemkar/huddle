@@ -9,6 +9,17 @@ export default function AppLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="trip/[id]/index" />
       <Stack.Screen name="trip/[id]/days" />
+      <Stack.Screen name="trip/[id]/places" />
+      <Stack.Screen
+        name="trip/[id]/suggest"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.9, 1],
+          sheetCornerRadius: 28,
+          sheetGrabberVisible: true,
+          contentStyle: { backgroundColor: colors.bg },
+        }}
+      />
       <Stack.Screen
         name="join"
         options={{

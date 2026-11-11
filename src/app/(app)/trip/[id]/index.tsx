@@ -186,19 +186,23 @@ function WhereCard({ trip }: { trip: TripDetail }) {
       </Card>
     );
   }
+  const suggest = () => router.push({ pathname: '/trip/[id]/suggest', params: { id: trip.id } });
   if (trip.destinations.length === 0) {
     return (
-      <Card style={{ gap: space.xs }}>
-        <Text variant="bodyStrong">No destinations yet</Text>
-        <Text variant="caption" tone="muted">
-          Suggesting and voting on places is coming soon.
-        </Text>
+      <Card style={{ gap: space.sm }}>
+        <View style={{ gap: 2 }}>
+          <Text variant="bodyStrong">No destinations yet</Text>
+          <Text variant="caption" tone="muted">
+            Suggest a place, then everyone votes.
+          </Text>
+        </View>
+        <Button label="Suggest a place" onPress={suggest} />
       </Card>
     );
   }
   return (
-    <Card style={{ paddingVertical: space.sm }}>
-      {trip.destinations.map((d, i) => (
+    <Card style={{ paddingVertical: space.sm, gap: space.xs }}>
+      {trip.destinations.slice(0, 3).map((d, i) => (
         <View
           key={d.id}
           style={[styles.destination, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line }]}
@@ -221,14 +225,25 @@ function WhereCard({ trip }: { trip: TripDetail }) {
           </View>
         </View>
       ))}
+      <View style={styles.whereActions}>
+        <View style={{ flex: 1 }}>
+          <Button label="Suggest a place" variant="secondary" onPress={suggest} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            label={trip.destinations.length > 3 ? `See all ${trip.destinations.length} & vote` : 'See all & vote'}
+            onPress={() => router.push({ pathname: '/trip/[id]/places', params: { id: trip.id } })}
+          />
+        </View>
+      </View>
     </Card>
   );
 }
 
 export default function TripScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { trip, loading, error, refresh } = useTrip(id);
   const { session } = useAuth();
+  const { trip, loading, error, refresh } = useTrip(id, session?.user.id);
   const { colors } = useTheme();
   const reduced = useReducedMotion();
 
@@ -325,5 +340,6 @@ const styles = StyleSheet.create({
   initial: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   tag: { borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 2 },
   destination: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm, minHeight: MIN_TOUCH },
+  whereActions: { flexDirection: 'row', gap: space.sm, paddingTop: space.sm },
   votes: { minWidth: 28, height: 28, borderRadius: 14, paddingHorizontal: space.sm, alignItems: 'center', justifyContent: 'center' },
 });

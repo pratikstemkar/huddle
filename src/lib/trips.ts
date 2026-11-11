@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import type { TripColor } from '@/theme/tokens';
 import { bestRanges, type BestRange } from './availability';
 import { today } from './dates';
+import { rankDestinations, type Destination } from './destinations';
 import { supabase } from './supabase';
 
 export type Trip = {
@@ -67,21 +68,14 @@ export type TripMember = {
   avatar_url: string | null;
 };
 
-export type TripDestination = {
-  id: string;
-  title: string;
-  note: string | null;
-  url: string | null;
-  voteCount: number;
-};
-
 export type TripDetail = Trip & {
   created_by: string;
   locked_start: string | null;
   locked_end: string | null;
   locked_destination_id: string | null;
   members: TripMember[];
-  destinations: TripDestination[];
+  /** Ranked: most votes first. */
+  destinations: Destination[];
   /** How many members have marked at least one free day. */
   availabilityCount: number;
   /** The days that suit the most people, best first. */
@@ -96,7 +90,7 @@ type MemberRow = {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function useTrip(id: string | undefined) {
+export function useTrip(id: string | undefined, myId?: string) {
   const [trip, setTrip] = useState<TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,8 +110,8 @@ export function useTrip(id: string | undefined) {
         .eq('id', id)
         .maybeSingle(),
       supabase.from('trip_members').select('user_id, role, profiles(display_name, avatar_url)').eq('trip_id', id).order('joined_at'),
-      supabase.from('destinations').select('id, title, note, url').eq('trip_id', id).order('created_at'),
-      supabase.from('votes').select('destination_id').eq('trip_id', id),
+      supabase.from('destinations').select('id, title, note, url, image_url, created_by, created_at').eq('trip_id', id),
+      supabase.from('votes').select('destination_id, user_id').eq('trip_id', id),
       supabase.from('availability').select('user_id, day').eq('trip_id', id),
     ]);
 
@@ -129,8 +123,6 @@ export function useTrip(id: string | undefined) {
         // Missing trip, or RLS hid it because you're not a member.
         setTrip(null);
       } else {
-        const votes = new Map<string, number>();
-        for (const v of votesRes.data ?? []) votes.set(v.destination_id, (votes.get(v.destination_id) ?? 0) + 1);
         const counts = new Map<string, number>();
         for (const a of availRes.data ?? []) counts.set(a.day, (counts.get(a.day) ?? 0) + 1);
         const members = ((membersRes.data ?? []) as unknown as MemberRow[]).map((m) => ({
@@ -143,14 +135,14 @@ export function useTrip(id: string | undefined) {
         setTrip({
           ...(tripRes.data as Omit<TripDetail, 'members' | 'destinations' | 'availabilityCount' | 'bestDays'>),
           members,
-          destinations: (destRes.data ?? []).map((d) => ({ ...d, voteCount: votes.get(d.id) ?? 0 })),
+          destinations: rankDestinations(destRes.data ?? [], votesRes.data ?? [], myId),
           availabilityCount: new Set((availRes.data ?? []).map((a) => a.user_id)).size,
           bestDays: bestRanges(counts, today()),
         });
       }
     }
     setLoading(false);
-  }, [id]);
+  }, [id, myId]);
 
   return { trip, loading, error, refresh };
 }

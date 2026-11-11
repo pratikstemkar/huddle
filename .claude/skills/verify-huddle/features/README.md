@@ -13,9 +13,11 @@ Every user-facing feature, how to reach it on web, and what proves it works. Kee
 | Join a trip by code | `/` → `/join` | [join-trip.md](join-trip.md) | 2026-11-11 (Kabir, DB + RLS) |
 | Mark my free days | `/trip/[id]` → `/trip/[id]/days` | [mark-days.md](mark-days.md) | 2026-11-11 (Kabir, DB rows) |
 | See overlap | `/trip/[id]/days` (Everyone), `/trip/[id]` | [overlap.md](overlap.md) | 2026-11-11 (Kabir + Zoya, RLS) |
+| Suggest a destination | `/trip/[id]` → `/trip/[id]/suggest` | [suggest-destination.md](suggest-destination.md) | 2026-11-11 (Zoya, DB + RLS) |
+| Vote on destinations | `/trip/[id]` → `/trip/[id]/places` | [vote.md](vote.md) | 2026-11-11 (Zoya, DB + RLS) |
 
 ## In the schema, not in the UI yet
 
 These exist in `supabase/migrations/` but no screen reaches them. Add a feature file when a route ships:
 
-- Destinations, votes, and locking a trip (tables + RLS + realtime).
+- Locking a trip (`trips.status`, `locked_*`).

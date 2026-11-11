@@ -36,3 +36,14 @@ insert into public.availability (trip_id, user_id, day)
 select 'aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', current_date + n from generate_series(10, 16) n;
 insert into public.availability (trip_id, user_id, day)
 select 'aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', current_date + n from generate_series(13, 19) n;
+
+-- Destination suggestions for the Goa trip, with a spread of votes so the ranking has something to show.
+insert into public.destinations (id, trip_id, title, note, url, created_by, created_at) values
+  ('dddddddd-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'Palolem Beach', 'Quiet cove, silent-disco nights and cheap beach huts.', 'https://en.wikipedia.org/wiki/Palolem', '11111111-1111-1111-1111-111111111111', now() - interval '3 hours'),
+  ('dddddddd-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001', 'Old Goa and Fontainhas', 'Churches, the Latin Quarter and good cafes.', null, '22222222-2222-2222-2222-222222222222', now() - interval '2 hours'),
+  ('dddddddd-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000001', 'Anjuna flea market', null, null, '11111111-1111-1111-1111-111111111111', now() - interval '1 hour');
+
+insert into public.votes (destination_id, trip_id, user_id) values
+  ('dddddddd-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111'),
+  ('dddddddd-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222'),
+  ('dddddddd-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222');
