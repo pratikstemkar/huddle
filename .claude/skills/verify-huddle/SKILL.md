@@ -43,6 +43,7 @@ Use accessibility handles via `find` / `read_page`, then click by `ref`. Never c
 | `/new-trip` | `Trip name` | textbox (max 60 chars) |
 | `/new-trip` | `Sunset` `Lagoon` `Mango` `Plum` `Bougainvillea` `Sky` | radio |
 | `/new-trip` | `Create trip` | button |
+| `/trip/[id]` | `Back to your trips` | button |
 
 Batch predictable steps with `browser_batch` (click → wait 1–2s → `get_page_text`). The URL in each result's tab context confirms navigation (`/sign-in` → `/` → `/new-trip` → `/`).
 

@@ -16,10 +16,10 @@ What the MVP needs, and where each piece stands. Update the status when work lan
 | 4 | Sign out | ✅ | | ✅ home | [sign-out](.claude/skills/verify-huddle/features/sign-out.md) |
 | 5 | Trips list (home) | ✅ | ✅ | ✅ `(app)/index` | [trips-list](.claude/skills/verify-huddle/features/trips-list.md) |
 | 6 | Create a trip (name + colour) | ✅ | ✅ | ✅ `(app)/new-trip` | [create-trip](.claude/skills/verify-huddle/features/create-trip.md) |
-| 7 | Open a trip (trip detail screen) | ⬜ | ✅ | Card has no `onPress` yet | |
+| 7 | Open a trip (trip detail screen) | ✅ | ✅ | ✅ `(app)/trip/[id]` | [trip-detail](.claude/skills/verify-huddle/features/trip-detail.md) |
 | 8 | Share invite code / link | ⬜ | ✅ `trips.invite_code` | | |
 | 9 | Join a trip by invite code | ⬜ | ✅ `join_trip(code)` | | |
-| 10 | See trip members | ⬜ | ✅ `trip_members` | | |
+| 10 | See trip members | 🟡 | ✅ `trip_members` | ✅ list on trip detail; no profile avatars yet | [trip-detail](.claude/skills/verify-huddle/features/trip-detail.md) |
 | 11 | Mark the days I'm free | ⬜ | ✅ `availability` | | |
 | 12 | See overlap: which days suit most people | ⬜ | ✅ | | |
 | 13 | Suggest a destination (title, note, link, image) | ⬜ | ✅ `destinations` | | |

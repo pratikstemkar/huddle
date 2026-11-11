@@ -7,6 +7,7 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="trip/[id]" />
       <Stack.Screen
         name="new-trip"
         options={{
