@@ -31,6 +31,16 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="trip/[id]/lock"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.9, 1],
+          sheetCornerRadius: 28,
+          sheetGrabberVisible: true,
+          contentStyle: { backgroundColor: colors.bg },
+        }}
+      />
+      <Stack.Screen
         name="join"
         options={{
           presentation: 'formSheet',

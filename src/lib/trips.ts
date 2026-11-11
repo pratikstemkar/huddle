@@ -166,3 +166,9 @@ export async function leaveTrip(tripId: string, userId: string) {
   if (error) throw error;
   if (!data?.length) throw new Error('Not a member');
 }
+
+/** Locks the trip to these dates and this destination (organiser only; the database checks everything). */
+export async function lockTrip(tripId: string, start: string, end: string, destinationId: string) {
+  const { error } = await supabase.rpc('lock_trip', { t: tripId, start_day: start, end_day: end, destination: destinationId });
+  if (error) throw error;
+}

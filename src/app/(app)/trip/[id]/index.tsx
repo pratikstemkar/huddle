@@ -305,6 +305,7 @@ export default function TripScreen() {
 
   const fill = tripColors[trip.color] ?? tripColors.sunset;
   const isLocked = trip.status === 'locked';
+  const isOrganiser = trip.members.some((m) => m.user_id === session?.user.id && m.role === 'organiser');
 
   return (
     <Screen>
@@ -345,7 +346,18 @@ export default function TripScreen() {
         <WhereCard trip={trip} />
       </Section>
 
-      <Section title={`Who's going · ${trip.members.length}`} index={3}>
+      {isOrganiser && !isLocked ? (
+        <Section title="Ready to decide?" index={3}>
+          <Card style={{ gap: space.sm }}>
+            <Text variant="caption" tone="muted">
+              Pick the dates and the place. Everyone sees the final plan and voting stops.
+            </Text>
+            <Button label="Lock in the plan" color={fill} onPress={() => router.push({ pathname: '/trip/[id]/lock', params: { id: trip.id } })} />
+          </Card>
+        </Section>
+      ) : null}
+
+      <Section title={`Who's going · ${trip.members.length}`} index={4}>
         <Card style={{ paddingVertical: space.sm }}>
           {trip.members.map((m) => (
             <MemberRow key={m.user_id} member={m} fill={fill} isMe={m.user_id === session?.user.id} />

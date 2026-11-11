@@ -25,7 +25,7 @@ What the MVP needs, and where each piece stands. Update the status when work lan
 | 13 | Suggest a destination (title, note, link, image) | ✅ | ✅ `destinations` + link/length checks | ✅ `(app)/trip/[id]/suggest` | [suggest-destination](.claude/skills/verify-huddle/features/suggest-destination.md) |
 | 14 | Vote on destinations | ✅ | ✅ `votes` | ✅ `(app)/trip/[id]/places` + top 3 on trip detail | [vote](.claude/skills/verify-huddle/features/vote.md) |
 | 15 | Live updates while others vote and mark days | ✅ | ✅ realtime on availability, destinations, votes, trips, trip_members | ✅ `useTripLive` on trip detail, days, places | [live-updates](.claude/skills/verify-huddle/features/live-updates.md) |
-| 16 | Organiser locks the trip (dates + destination) | ⬜ | ✅ `trips.status`, `locked_*` | | |
+| 16 | Organiser locks the trip (dates + destination) | ✅ | ✅ `lock_trip()` + locked trips refuse new days, places and votes | ✅ `(app)/trip/[id]/lock` | [lock-trip](.claude/skills/verify-huddle/features/lock-trip.md) |
 | 17 | Locked trip summary | ⬜ | ✅ | | |
 | 18 | Leave a trip | ✅ | ✅ delete policy + last-organiser guard, clears your days and votes | ✅ `Leave trip` in `(app)/trip/[id]/settings` | [leave-trip](.claude/skills/verify-huddle/features/leave-trip.md) |
 | 19 | Organiser renames or deletes a trip | ✅ | ✅ | ✅ ⋯ button → `(app)/trip/[id]/settings` | [trip-settings](.claude/skills/verify-huddle/features/trip-settings.md) |
