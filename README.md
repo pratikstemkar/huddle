@@ -2,6 +2,8 @@
 
 Huddle is where a group picks dates, votes on places, and locks in a trip together. Expo (SDK 58) app for iOS, Android and mobile web, backed by Supabase.
 
+What's built and what's next: [ROADMAP.md](ROADMAP.md).
+
 ## Run it locally
 
 1. Give your user Docker access (one time, then log out and back in):
