@@ -1,56 +1,52 @@
-# Welcome to your Expo app 👋
+# Huddle
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Huddle is where a group picks dates, votes on places, and locks in a trip together. Expo (SDK 58) app for iOS, Android and mobile web, backed by Supabase.
 
-## Get started
+## Run it locally
 
-1. Install dependencies
-
+1. Give your user Docker access (one time, then log out and back in):
    ```bash
-   npm install
+   sudo usermod -aG docker $USER
+   ```
+2. Start local Supabase (applies `supabase/migrations` and `supabase/seed.sql`):
+   ```bash
+   npm run db:start
+   ```
+   Without Docker group access, use `sudo env "PATH=$PATH" npx supabase start` instead. Metro is set to ignore `supabase/`, so the root-owned files that sudo leaves there don't break the app.
+3. Copy the env file and paste the **anon key** printed by step 2:
+   ```bash
+   cp .env.example .env.local
+   ```
+4. Start the app:
+   ```bash
+   npm run web
    ```
 
-2. Start the app
+## Signing in while testing
 
-   ```bash
-   npx expo start
-   ```
+With `EXPO_PUBLIC_DEV_AUTH=true` the sign-in screen shows **Developer sign-in** chips (Aarav, Meera, Kabir, Zoya). They are seeded users in your local Supabase only. Switch between them to test a group from one device. This path is compiled out of production builds (`__DEV__` is false there).
 
-In the output, you'll find options to open the app in a
+## Real sign-in
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **Google**: all platforms, through Supabase OAuth. Works in the browser and in Expo Go via an in-app browser redirect.
+- **Apple**: iPhone only, required for the App Store when Google is offered. Needs a development build (`npx expo run:ios` or `eas build --profile development`).
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Enable both in your hosted Supabase project under Authentication → Providers, and add these redirect URLs: your web URL, `huddle://auth/callback`.
 
-## Get a fresh project
+## Layout
 
-When you're ready, run:
+- `src/app` routes: `sign-in`, `(app)/index` (home), `(app)/new-trip` (sheet)
+- `src/theme` Sunset club tokens (light and dark), `useTheme`, `useReducedMotion`
+- `src/components/ui` Text, Button, Card, Screen
+- `src/lib` Supabase client, auth (Google, Apple, dev), trips
+- `supabase/` schema with row-level security, seed users
+
+## Checks
 
 ```bash
-npm run reset-project
+npm run typecheck
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx expo lint
+```
