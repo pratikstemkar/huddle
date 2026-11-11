@@ -14,6 +14,8 @@ export type Trip = {
   status: 'planning' | 'locked';
   invite_code: string;
   created_at: string;
+  locked_start: string | null;
+  locked_end: string | null;
 };
 
 // NOTE: direct Supabase calls for now. The offline-first local store replaces these in a later step.
@@ -42,6 +44,11 @@ export function inviteMessage(tripName: string, code: string) {
   return `Join "${tripName}" on Huddle! Use code ${code}, or open ${inviteLink(code)}`;
 }
 
+/** The text shared for a locked trip: name, dates and place. */
+export function planMessage(tripName: string, dates: string, place: string) {
+  return `${tripName} is locked in on Huddle! ${dates} · ${place}`;
+}
+
 export function useTrips() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +57,7 @@ export function useTrips() {
   const refresh = useCallback(async () => {
     const { data, error } = await supabase
       .from('trips')
-      .select('id, name, color, status, invite_code, created_at')
+      .select('id, name, color, status, invite_code, created_at, locked_start, locked_end')
       .order('created_at', { ascending: false });
     setError(error ? "Couldn't load your trips. Pull to retry." : null);
     if (data) setTrips(data as Trip[]);
@@ -70,8 +77,6 @@ export type TripMember = {
 
 export type TripDetail = Trip & {
   created_by: string;
-  locked_start: string | null;
-  locked_end: string | null;
   locked_destination_id: string | null;
   members: TripMember[];
   /** Ranked: most votes first. */

@@ -47,3 +47,23 @@ insert into public.votes (destination_id, trip_id, user_id) values
   ('dddddddd-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111'),
   ('dddddddd-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222'),
   ('dddddddd-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222');
+
+-- A locked trip, so the summary screen has something to show without locking one by hand.
+-- Created as planning first: the locked destination must exist before the trip can point at it.
+insert into public.trips (id, name, color, created_by, invite_code)
+values ('aaaaaaaa-0000-0000-0000-000000000002', 'Pondy long weekend', 'lagoon', '11111111-1111-1111-1111-111111111111', 'pondy27');
+
+insert into public.trip_members (trip_id, user_id) values
+  ('aaaaaaaa-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222');
+
+insert into public.destinations (id, trip_id, title, note, url, created_by) values
+  ('dddddddd-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000002', 'Pondicherry', 'Rock Beach walks, French Quarter cafes and a sunrise ride.', 'https://en.wikipedia.org/wiki/Pondicherry', '11111111-1111-1111-1111-111111111111');
+
+insert into public.votes (destination_id, trip_id, user_id) values
+  ('dddddddd-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111'),
+  ('dddddddd-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222');
+
+update public.trips
+   set status = 'locked', locked_start = current_date + 40, locked_end = current_date + 42,
+       locked_destination_id = 'dddddddd-0000-0000-0000-000000000004'
+ where id = 'aaaaaaaa-0000-0000-0000-000000000002';

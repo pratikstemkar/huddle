@@ -19,8 +19,5 @@ Every user-facing feature, how to reach it on web, and what proves it works. Kee
 | Rename or delete a trip | `/trip/[id]` → `/trip/[id]/settings` | [trip-settings.md](trip-settings.md) | 2026-11-11 (Aarav, DB rows) |
 | Leave a trip | `/trip/[id]` → `/trip/[id]/settings` | [leave-trip.md](leave-trip.md) | 2026-11-11 (Kabir, guard, DB rows) |
 | Lock the trip | `/trip/[id]` → `/trip/[id]/lock` | [lock-trip.md](lock-trip.md) | 2026-11-11 (Aarav, RLS as Kabir) |
-
-## In the schema, not in the UI yet
-
-These exist in `supabase/migrations/` but no screen reaches them. Add a feature file when a route ships:
+| Locked trip summary | `/`, `/trip/[id]` | [locked-summary.md](locked-summary.md) | 2026-11-11 (Aarav, seeded Pondy trip) |
 
