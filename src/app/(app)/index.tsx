@@ -23,6 +23,8 @@ function TripCard({ trip, index }: { trip: Trip; index: number }) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${trip.name}, ${trip.status === 'locked' ? 'locked in' : 'still planning'}`}
+        accessibilityHint="Opens the trip"
+        onPress={() => router.push({ pathname: '/trip/[id]', params: { id: trip.id } })}
         style={({ pressed }) => [styles.trip, { backgroundColor: fill, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
         <View style={[styles.pill, { backgroundColor: colors.onColor }]}>
           <Text variant="caption" style={{ color: fill, fontWeight: '600' }}>
