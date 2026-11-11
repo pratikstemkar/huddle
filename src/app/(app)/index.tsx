@@ -69,7 +69,12 @@ export default function Home() {
   );
 
   return (
-    <Screen footer={<Button label="New trip" onPress={() => router.push('/new-trip')} />}>
+    <Screen footer={
+        <View style={{ gap: space.sm }}>
+          <Button label="New trip" onPress={() => router.push('/new-trip')} />
+          <Button label="Join with a code" variant="secondary" onPress={() => router.push('/join')} />
+        </View>
+      }>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text variant="caption" tone="secondary">

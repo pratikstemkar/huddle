@@ -9,6 +9,16 @@ export default function AppLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="trip/[id]" />
       <Stack.Screen
+        name="join"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.5, 1],
+          sheetCornerRadius: 28,
+          sheetGrabberVisible: true,
+          contentStyle: { backgroundColor: colors.bg },
+        }}
+      />
+      <Stack.Screen
         name="new-trip"
         options={{
           presentation: 'formSheet',

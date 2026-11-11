@@ -38,12 +38,16 @@ Use accessibility handles via `find` / `read_page`, then click by `ref`. Never c
 | `/sign-in` | `Sign in as Aarav` / `Meera` / `Kabir` / `Zoya` | button (only when `__DEV__` + `EXPO_PUBLIC_DEV_AUTH=true`) |
 | `/sign-in` | `Continue with Google` | button — real OAuth, **do not drive** |
 | `/` (home) | `New trip` | button |
+| `/` | `Join with a code` | button |
 | `/` | `Sign out` | button (the avatar initial) |
 | `/` | `<trip name>, still planning` / `<trip name>, locked in` | button per trip card |
 | `/new-trip` | `Trip name` | textbox (max 60 chars) |
 | `/new-trip` | `Sunset` `Lagoon` `Mango` `Plum` `Bougainvillea` `Sky` | radio |
 | `/new-trip` | `Create trip` | button |
+| `/join` | `Invite code` | textbox |
+| `/join` | `Join trip` | button |
 | `/trip/[id]` | `Back to your trips` | button |
+| `/trip/[id]` | `Copy code` / `Share invite` | button |
 
 Batch predictable steps with `browser_batch` (click → wait 1–2s → `get_page_text`). The URL in each result's tab context confirms navigation (`/sign-in` → `/` → `/new-trip` → `/`).
 
