@@ -52,6 +52,9 @@ Use accessibility handles via `find` / `read_page`, then click by `ref`. Never c
 | `/trip/[id]` | `Back to your trips` | button |
 | `/trip/[id]` | `Copy code` / `Share invite` | button |
 | `/trip/[id]` | `Mark my days` | button |
+| `/trip/[id]` | `Trip settings` | button (⋯ in the hero) |
+| `/trip/[id]/settings` | `Unlock and re-plan` → `Yes, unlock` | button (organiser, locked trip) |
+| `/trip/[id]/settings` | `Remove <name>` → `Yes, remove <name>` | button (organiser, per member) |
 | `/trip/[id]/days` | `My days` / `Everyone` | tab |
 | `/trip/[id]/days` | `<Weekday>, <Month> <day>` | button per day |
 

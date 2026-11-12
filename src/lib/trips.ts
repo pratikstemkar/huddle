@@ -179,3 +179,16 @@ export async function lockTrip(tripId: string, start: string, end: string, desti
   const { error } = await supabase.rpc('lock_trip', { t: tripId, start_day: start, end_day: end, destination: destinationId });
   if (error) throw error;
 }
+
+/** Puts a locked trip back into planning; days, places and votes stay (organiser only). */
+export async function unlockTrip(tripId: string) {
+  const { error } = await supabase.rpc('unlock_trip', { t: tripId });
+  if (error) throw error;
+}
+
+/** Removes a member from the trip (organisers only, and never another organiser; RLS enforces it). */
+export async function removeMember(tripId: string, userId: string) {
+  const { data, error } = await supabase.from('trip_members').delete().eq('trip_id', tripId).eq('user_id', userId).select('user_id');
+  if (error) throw error;
+  if (!data?.length) throw new Error('Not removed');
+}

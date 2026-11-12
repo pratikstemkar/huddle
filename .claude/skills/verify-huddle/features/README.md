@@ -19,6 +19,8 @@ Every user-facing feature, how to reach it on web, and what proves it works. Kee
 | Live updates | `/trip/[id]`, `/days`, `/places` | [live-updates.md](live-updates.md) | 2026-11-11 (Aarav watching Meera) |
 | Rename or delete a trip | `/trip/[id]` → `/trip/[id]/settings` | [trip-settings.md](trip-settings.md) | 2026-11-11 (Aarav, DB rows) |
 | Leave a trip | `/trip/[id]` → `/trip/[id]/settings` | [leave-trip.md](leave-trip.md) | 2026-11-11 (Kabir, guard, DB rows) |
+| Unlock a trip | `/trip/[id]` → `/trip/[id]/settings` | [unlock-trip.md](unlock-trip.md) | 2026-11-12 (Aarav, DB row) |
+| Remove a member | `/trip/[id]` → `/trip/[id]/settings` | [remove-member.md](remove-member.md) | 2026-11-12 (Aarav removes Kabir, RLS) |
 | Lock the trip | `/trip/[id]` → `/trip/[id]/lock` | [lock-trip.md](lock-trip.md) | 2026-11-11 (Aarav, RLS as Kabir) |
 | Locked trip summary | `/`, `/trip/[id]` | [locked-summary.md](locked-summary.md) | 2026-11-11 (Aarav, seeded Pondy trip) |
 
