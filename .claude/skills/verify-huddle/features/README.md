@@ -7,7 +7,8 @@ Every user-facing feature, how to reach it on web, and what proves it works. Kee
 | Dev sign-in | `/sign-in` | [sign-in.md](sign-in.md) | 2026-11-11 (as Aarav) |
 | Trips list (home) | `/` | [trips-list.md](trips-list.md) | 2026-11-11 |
 | Create trip | `/` → `/new-trip` | [create-trip.md](create-trip.md) | 2026-11-11 (full journey + DB + RLS) |
-| Sign out | `/` | [sign-out.md](sign-out.md) | 2026-11-11 |
+| Sign out | `/` → `/profile` | [sign-out.md](sign-out.md) | 2026-11-12 (from profile sheet) |
+| Edit my profile | `/` → `/profile` | [edit-profile.md](edit-profile.md) | 2026-11-12 (Zoya, DB + RLS as Kabir) |
 | Trip detail | `/` → `/trip/[id]` | [trip-detail.md](trip-detail.md) | 2026-11-11 (Aarav, Meera, Kabir RLS) |
 | Share invite code / link | `/trip/[id]` | [invite-share.md](invite-share.md) | 2026-11-11 (Aarav) |
 | Join a trip by code | `/` → `/join` | [join-trip.md](join-trip.md) | 2026-11-11 (Kabir, DB + RLS) |

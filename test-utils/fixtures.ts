@@ -8,8 +8,8 @@ export const MEMBER = 'member-id';
 export const TRIP_ID = 'aaaaaaaa-0000-0000-0000-000000000001';
 
 export const members: TripMember[] = [
-  { user_id: ORGANISER, role: 'organiser', display_name: 'Aarav', avatar_url: null },
-  { user_id: MEMBER, role: 'member', display_name: 'Meera', avatar_url: null },
+  { user_id: ORGANISER, role: 'organiser', display_name: 'Aarav', avatar_url: null, avatar_color: null },
+  { user_id: MEMBER, role: 'member', display_name: 'Meera', avatar_url: null, avatar_color: 'plum' },
 ];
 
 export function destination(overrides: Partial<Destination> = {}): Destination {

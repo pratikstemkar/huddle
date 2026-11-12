@@ -3,12 +3,14 @@ import { useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { displayName, useAuth } from '@/lib/auth';
 import { formatTripDates } from '@/lib/dates';
+import { useMyProfile } from '@/lib/profile';
 import { useTrips, type Trip } from '@/lib/trips';
 import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
@@ -66,15 +68,17 @@ function EmptyState() {
 }
 
 export default function Home() {
-  const { session, signOut } = useAuth();
+  const { session } = useAuth();
   const { trips, loading, error, refresh } = useTrips();
   const { colors } = useTheme();
-  const name = displayName(session);
+  const { profile, refresh: refreshProfile } = useMyProfile(session?.user.id);
+  const name = profile?.display_name ?? displayName(session);
 
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh]),
+      refreshProfile();
+    }, [refresh, refreshProfile]),
   );
 
   return (
@@ -93,12 +97,11 @@ export default function Home() {
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Sign out"
-          onPress={signOut}
-          style={[styles.avatar, { backgroundColor: colors.celebrate }]}>
-          <Text variant="heading" tone="onColor">
-            {name.charAt(0).toUpperCase()}
-          </Text>
+          accessibilityLabel="Your profile"
+          accessibilityHint="Edit your name and avatar, or sign out"
+          onPress={() => router.push('/profile')}
+          style={styles.avatar}>
+          <Avatar name={name} url={profile?.avatar_url} color={profile?.avatar_color} fallbackColor={colors.celebrate} size={MIN_TOUCH} />
         </Pressable>
       </View>
 

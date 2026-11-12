@@ -51,6 +51,16 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="profile"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.75, 1],
+          sheetCornerRadius: 28,
+          sheetGrabberVisible: true,
+          contentStyle: { backgroundColor: colors.bg },
+        }}
+      />
+      <Stack.Screen
         name="new-trip"
         options={{
           presentation: 'formSheet',

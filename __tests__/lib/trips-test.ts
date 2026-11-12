@@ -210,8 +210,8 @@ describe('useTrip', () => {
       'trip_members',
       overrides.trip_members ?? {
         data: [
-          { user_id: 'm1', role: 'member', profiles: { display_name: 'Meera', avatar_url: null } },
-          { user_id: 'org', role: 'organiser', profiles: { display_name: 'Aarav', avatar_url: 'https://a.png' } },
+          { user_id: 'm1', role: 'member', profiles: { display_name: 'Meera', avatar_url: null, avatar_color: 'plum' } },
+          { user_id: 'org', role: 'organiser', profiles: { display_name: 'Aarav', avatar_url: 'https://a.png', avatar_color: null } },
           { user_id: 'm2', role: 'member', profiles: null },
         ],
       },
@@ -249,9 +249,9 @@ describe('useTrip', () => {
     expect(result.current.error).toBeNull();
     expect(t.name).toBe('Goa');
     expect(t.members).toEqual([
-      { user_id: 'org', role: 'organiser', display_name: 'Aarav', avatar_url: 'https://a.png' },
-      { user_id: 'm1', role: 'member', display_name: 'Meera', avatar_url: null },
-      { user_id: 'm2', role: 'member', display_name: 'Traveller', avatar_url: null },
+      { user_id: 'org', role: 'organiser', display_name: 'Aarav', avatar_url: 'https://a.png', avatar_color: null },
+      { user_id: 'm1', role: 'member', display_name: 'Meera', avatar_url: null, avatar_color: 'plum' },
+      { user_id: 'm2', role: 'member', display_name: 'Traveller', avatar_url: null, avatar_color: null },
     ]);
     expect(t.destinations.map((d) => [d.id, d.iVoted])).toEqual([
       ['d2', true],

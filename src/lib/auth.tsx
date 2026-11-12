@@ -65,7 +65,12 @@ async function signInWithApple() {
 
     // Apple only shares the name on the very first sign-in, so save it now.
     const name = [credential.fullName?.givenName, credential.fullName?.familyName].filter(Boolean).join(' ');
-    if (name) await supabase.auth.updateUser({ data: { full_name: name } });
+    // The profile row was created before we knew it, so update that too (it's what trip-mates see).
+    if (name) {
+      const { data } = await supabase.auth.updateUser({ data: { full_name: name } });
+      const id = data?.user?.id;
+      if (id) await supabase.from('profiles').update({ display_name: name.slice(0, 40) }).eq('id', id);
+    }
   } catch (e: any) {
     if (e?.code === 'ERR_REQUEST_CANCELED') return;
     throw e;

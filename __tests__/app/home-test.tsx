@@ -6,12 +6,14 @@ import type { Trip } from '@/lib/trips';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
 
-const mockSignOut = jest.fn();
 let mockSession: unknown = null;
 jest.mock('@/lib/auth', () => ({
   ...jest.requireActual('@/lib/auth'),
-  useAuth: () => ({ session: mockSession, signOut: mockSignOut }),
+  useAuth: () => ({ session: mockSession }),
 }));
+
+let mockProfile: { profile: unknown; loading: boolean; error: null; refresh: jest.Mock };
+jest.mock('@/lib/profile', () => ({ useMyProfile: () => mockProfile }));
 
 let mockTrips: { trips: Trip[]; loading: boolean; error: string | null; refresh: jest.Mock };
 jest.mock('@/lib/trips', () => ({ useTrips: () => mockTrips }));
@@ -35,14 +37,23 @@ describe('Home', () => {
   beforeEach(() => {
     mockSession = sessionFor('u1', 'Aarav Shah');
     mockTrips = { trips: [], loading: false, error: null, refresh: jest.fn() };
+    mockProfile = { profile: null, loading: false, error: null, refresh: jest.fn() };
   });
 
   it('greets me by first name and loads trips on focus', async () => {
     await render(<Home />);
     expect(screen.getByText('Hey Aarav')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Sign out' })).toBeTruthy();
-    expect(screen.getByText('A')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Your profile' })).toBeTruthy();
+    expect(screen.getByText('A', { includeHiddenElements: true })).toBeTruthy();
     expect(mockTrips.refresh).toHaveBeenCalled();
+    expect(mockProfile.refresh).toHaveBeenCalled();
+  });
+
+  it('uses the name from my profile once it loads', async () => {
+    mockProfile.profile = { id: 'u1', display_name: 'Ravi Kumar', avatar_url: null, avatar_color: 'sky' };
+    await render(<Home />);
+    expect(screen.getByText('Hey Ravi')).toBeTruthy();
+    expect(screen.getByText('R', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('shows the empty state when there are no trips', async () => {
@@ -77,14 +88,14 @@ describe('Home', () => {
     expect(screen.getByText("Couldn't load your trips. Pull to retry.")).toBeTruthy();
   });
 
-  it('opens new trip and join, and signs out', async () => {
+  it('opens new trip, join and my profile', async () => {
     await render(<Home />);
     await fireEvent.press(screen.getByRole('button', { name: 'New trip' }));
     expect(router.push).toHaveBeenCalledWith('/new-trip');
     await fireEvent.press(screen.getByRole('button', { name: 'Join with a code' }));
     expect(router.push).toHaveBeenCalledWith('/join');
-    await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
-    expect(mockSignOut).toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Your profile' }));
+    expect(router.push).toHaveBeenCalledWith('/profile');
   });
 
   it('falls back to Traveller without a session', async () => {
