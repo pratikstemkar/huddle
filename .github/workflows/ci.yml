@@ -1,8 +1,40 @@
 name: CI
 
+# Only run when code or build config changes. README, docs and other
+# markdown-only edits skip CI. (workflow_dispatch can still run it by hand.)
 on:
   push:
+    paths:
+      - 'src/**'
+      - '__tests__/**'
+      - 'test-utils/**'
+      - 'supabase/**'
+      - 'assets/**'
+      - 'app.json'
+      - 'package.json'
+      - 'bun.lock'
+      - 'tsconfig.json'
+      - 'metro.config.js'
+      - 'eslint.config.js'
+      - 'jest.setup.ts'
+      - 'expo-env.d.ts'
+      - '.github/workflows/**'
   pull_request:
+    paths:
+      - 'src/**'
+      - '__tests__/**'
+      - 'test-utils/**'
+      - 'supabase/**'
+      - 'assets/**'
+      - 'app.json'
+      - 'package.json'
+      - 'bun.lock'
+      - 'tsconfig.json'
+      - 'metro.config.js'
+      - 'eslint.config.js'
+      - 'jest.setup.ts'
+      - 'expo-env.d.ts'
+      - '.github/workflows/**'
   merge_group:
   workflow_dispatch:
 
