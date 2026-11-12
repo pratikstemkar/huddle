@@ -5,6 +5,7 @@ import {
   deleteTrip,
   inviteLink,
   inviteMessage,
+  invitePreview,
   joinTrip,
   leaveTrip,
   lockTrip,
@@ -13,11 +14,11 @@ import {
   useTrip,
   useTrips,
 } from '@/lib/trips';
+import { Platform } from 'react-native';
+
 import { queriesFor, queueResult, rpcCalls } from '../../test-utils/supabase-mock';
 
-jest.mock('expo-linking', () => ({
-  createURL: (path: string, opts: { queryParams: Record<string, string> }) => `huddle://${path}?code=${opts.queryParams.code}`,
-}));
+jest.mock('expo-linking', () => ({ createURL: (path: string) => `huddle://${path}` }));
 
 const TRIP_ID = 'aaaaaaaa-0000-0000-0000-000000000001';
 
@@ -56,13 +57,56 @@ describe('joinTrip', () => {
   });
 });
 
+describe('invitePreview', () => {
+  it('returns the trip a code points to', async () => {
+    queueResult('rpc:invite_preview', { data: [{ name: 'Goa in March', color: 'sunset', members: 2 }] });
+    await expect(invitePreview('goa2027')).resolves.toEqual({ name: 'Goa in March', color: 'sunset', members: 2 });
+    expect(rpcCalls).toContainEqual({ name: 'invite_preview', args: { code: 'goa2027' } });
+  });
+
+  it('returns null when the code matches nothing', async () => {
+    queueResult('rpc:invite_preview', { data: [] });
+    await expect(invitePreview('nope')).resolves.toBeNull();
+  });
+
+  it('throws on a server error', async () => {
+    queueResult('rpc:invite_preview', { error: { message: 'Failed to fetch' } });
+    await expect(invitePreview('goa2027')).rejects.toBeTruthy();
+  });
+});
+
 describe('invite and plan text', () => {
-  it('builds the join link', () => {
-    expect(inviteLink('goa2027')).toBe('huddle://join?code=goa2027');
+  const env = process.env.EXPO_PUBLIC_APP_URL;
+  afterEach(() => {
+    process.env.EXPO_PUBLIC_APP_URL = env;
+    Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true });
+  });
+
+  it('links to the hosted app when it is set, so friends without the app can open it', () => {
+    process.env.EXPO_PUBLIC_APP_URL = 'https://huddle.example.app/';
+    expect(inviteLink('goa2027')).toBe('https://huddle.example.app/invite/goa2027');
+  });
+
+  it('falls back to an app link in local native development', () => {
+    delete process.env.EXPO_PUBLIC_APP_URL;
+    expect(inviteLink('goa2027')).toBe('huddle://invite/goa2027');
+  });
+
+  it('uses the page origin on web', () => {
+    process.env.EXPO_PUBLIC_APP_URL = 'https://huddle.example.app';
+    Object.defineProperty(Platform, 'OS', { value: 'web', configurable: true });
+    const prev = (globalThis as { location?: unknown }).location;
+    Object.defineProperty(globalThis, 'location', { value: { origin: 'http://localhost:8091' }, configurable: true });
+    try {
+      expect(inviteLink('a b')).toBe('http://localhost:8091/invite/a%20b');
+    } finally {
+      Object.defineProperty(globalThis, 'location', { value: prev, configurable: true });
+    }
   });
 
   it('includes the trip name, code and link in the invite', () => {
-    expect(inviteMessage('Goa in March', 'goa2027')).toBe('Join "Goa in March" on Huddle! Use code goa2027, or open huddle://join?code=goa2027');
+    delete process.env.EXPO_PUBLIC_APP_URL;
+    expect(inviteMessage('Goa in March', 'goa2027')).toBe('Join "Goa in March" on Huddle! Use code goa2027, or open huddle://invite/goa2027');
   });
 
   it('describes a locked plan', () => {

@@ -8,7 +8,7 @@ import { MEMBER, ORGANISER, TRIP_ID, destination, sessionFor, trip, tripState } 
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
-jest.mock('expo-linking', () => ({ createURL: (path: string, o: { queryParams: { code: string } }) => `huddle://${path}?code=${o.queryParams.code}` }));
+jest.mock('expo-linking', () => ({ createURL: (path: string) => `huddle://${path}` }));
 
 let mockSession: unknown;
 jest.mock('@/lib/auth', () => ({ useAuth: () => ({ session: mockSession }) }));
@@ -21,7 +21,7 @@ const { useTripLive } = require('@/lib/realtime') as { useTripLive: jest.Mock };
 const TripScreen = require('@/app/(app)/trip/[id]/index').default as () => React.JSX.Element;
 const setString = Clipboard.setStringAsync as jest.Mock;
 
-const INVITE = 'Join "Goa in March" on Huddle! Use code goa2027, or open huddle://join?code=goa2027';
+const INVITE = 'Join "Goa in March" on Huddle! Use code goa2027, or open huddle://invite/goa2027';
 
 function withOS<T>(os: string, fn: () => Promise<T>) {
   const prev = Platform.OS;
