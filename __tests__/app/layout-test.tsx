@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
@@ -32,12 +33,36 @@ const routes = {
   '(app)/trip/[id]/settings': () => <Text>Settings screen</Text>,
   '(app)/trip/[id]/lock': () => <Text>Lock screen</Text>,
   'sign-in': () => <Text>Sign in screen</Text>,
+  'invite/[code]': () => <Text>Invite screen</Text>,
 };
 
 describe('Root layout', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     mockAuth = { session: null, loading: false };
     mockFontsLoaded = true;
+    await AsyncStorage.clear();
+  });
+
+  it('lets signed-out people open an invite link', async () => {
+    await renderRouter(routes, { initialUrl: '/invite/goa2027' });
+    expect(screen.getByText('Invite screen')).toBeTruthy();
+    expect(screen).toHavePathname('/invite/goa2027');
+  });
+
+  it('opens the join sheet with the saved invite once signed in', async () => {
+    await AsyncStorage.setItem('huddle.pendingInvite', 'goa2027');
+    mockAuth = { session: { user: { id: 'u1' } }, loading: false };
+    await renderRouter(routes, { initialUrl: '/' });
+    expect(await screen.findByText('Join screen')).toBeTruthy();
+    expect(screen).toHavePathnameWithParams('/join?code=goa2027');
+    expect(await AsyncStorage.getItem('huddle.pendingInvite')).toBeNull();
+  });
+
+  it('stays home after sign-in when there is no saved invite', async () => {
+    mockAuth = { session: { user: { id: 'u1' } }, loading: false };
+    await renderRouter(routes, { initialUrl: '/' });
+    expect(screen.getByText('Home screen')).toBeTruthy();
+    expect(screen).toHavePathname('/');
   });
 
   it('sends signed-out people to sign in', async () => {
