@@ -15,9 +15,14 @@ jest.mock('@/lib/trips', () => ({
   renameTrip: jest.fn(),
   deleteTrip: jest.fn(),
   leaveTrip: jest.fn(),
+  unlockTrip: jest.fn(),
+  removeMember: jest.fn(),
 }));
 
-const { renameTrip, deleteTrip, leaveTrip } = require('@/lib/trips') as Record<'renameTrip' | 'deleteTrip' | 'leaveTrip', jest.Mock>;
+const { renameTrip, deleteTrip, leaveTrip, unlockTrip, removeMember } = require('@/lib/trips') as Record<
+  'renameTrip' | 'deleteTrip' | 'leaveTrip' | 'unlockTrip' | 'removeMember',
+  jest.Mock
+>;
 const { useTripLive } = require('@/lib/realtime') as { useTripLive: jest.Mock };
 const TripSettings = require('@/app/(app)/trip/[id]/settings').default as () => React.JSX.Element;
 
@@ -124,13 +129,84 @@ describe('Trip settings', () => {
     });
   });
 
+  describe('unlocking (organiser)', () => {
+    it('only offers unlock when the trip is locked', async () => {
+      await render(<TripSettings />);
+      expect(screen.queryByRole('button', { name: 'Unlock and re-plan' })).toBeNull();
+    });
+
+    it('asks first, then unlocks and closes', async () => {
+      mockState = tripState(trip({ status: 'locked', locked_start: '2027-03-12', locked_end: '2027-03-14', locked_destination_id: 'd1' }));
+      unlockTrip.mockResolvedValue(undefined);
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Unlock and re-plan' }));
+      expect(screen.getByText('Unlock "Goa in March" and re-plan?')).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: 'Keep it locked' }));
+      expect(unlockTrip).not.toHaveBeenCalled();
+      await fireEvent.press(screen.getByRole('button', { name: 'Unlock and re-plan' }));
+      await fireEvent.press(screen.getByRole('button', { name: 'Yes, unlock' }));
+      expect(unlockTrip).toHaveBeenCalledWith(TRIP_ID);
+      expect(router.back).toHaveBeenCalled();
+    });
+
+    it('shows an error when unlocking fails', async () => {
+      mockState = tripState(trip({ status: 'locked' }));
+      unlockTrip.mockRejectedValue(new Error('offline'));
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Unlock and re-plan' }));
+      await fireEvent.press(screen.getByRole('button', { name: 'Yes, unlock' }));
+      expect(await screen.findByText("Couldn't unlock the trip. Check your connection and try again.")).toBeTruthy();
+      expect(router.back).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('removing members (organiser)', () => {
+    it('lists members but not organisers', async () => {
+      await render(<TripSettings />);
+      expect(screen.getByRole('button', { name: 'Remove Meera' })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Remove Aarav' })).toBeNull();
+    });
+
+    it('hides the section when there is nobody to remove', async () => {
+      mockState = tripState(trip({ members: [{ user_id: ORGANISER, role: 'organiser', display_name: 'Aarav', avatar_url: null }] }));
+      await render(<TripSettings />);
+      expect(screen.queryByText('Members')).toBeNull();
+    });
+
+    it('asks first, then removes and reloads', async () => {
+      removeMember.mockResolvedValue(undefined);
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Remove Meera' }));
+      expect(screen.getByText('Remove Meera from the trip?')).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+      expect(removeMember).not.toHaveBeenCalled();
+      mockState.refresh.mockClear();
+      await fireEvent.press(screen.getByRole('button', { name: 'Remove Meera' }));
+      await fireEvent.press(screen.getByRole('button', { name: 'Yes, remove Meera' }));
+      expect(removeMember).toHaveBeenCalledWith(TRIP_ID, MEMBER);
+      expect(mockState.refresh).toHaveBeenCalled();
+    });
+
+    it('shows an error when removing fails', async () => {
+      removeMember.mockRejectedValue(new Error('Not removed'));
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Remove Meera' }));
+      await fireEvent.press(screen.getByRole('button', { name: 'Yes, remove Meera' }));
+      expect(await screen.findByText("Couldn't remove that person. Check your connection and try again.")).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Remove Meera' })).toBeTruthy();
+    });
+  });
+
   describe('as a member', () => {
     beforeEach(() => {
       mockSession = sessionFor(MEMBER);
     });
 
-    it("can't rename or delete", async () => {
+    it("can't rename, delete, unlock or remove people", async () => {
+      mockState = tripState(trip({ status: 'locked' }));
       await render(<TripSettings />);
+      expect(screen.queryByRole('button', { name: 'Unlock and re-plan' })).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Remove/ })).toBeNull();
       expect(screen.queryByLabelText('Trip name')).toBeNull();
       expect(screen.queryByRole('button', { name: 'Delete trip' })).toBeNull();
     });

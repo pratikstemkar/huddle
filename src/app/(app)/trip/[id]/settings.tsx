@@ -8,7 +8,7 @@ import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { useTripLive } from '@/lib/realtime';
-import { deleteTrip, leaveTrip, renameTrip, useTrip } from '@/lib/trips';
+import { deleteTrip, leaveTrip, removeMember, renameTrip, unlockTrip, useTrip } from '@/lib/trips';
 import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
@@ -26,6 +26,11 @@ export default function TripSettings() {
   const [deleting, setDeleting] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [confirmUnlock, setConfirmUnlock] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  // The member waiting for a "remove?" confirmation, and the one being removed right now.
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -128,7 +133,7 @@ export default function TripSettings() {
     }
   };
 
-  const remove = async () => {
+  const destroy = async () => {
     setDeleting(true);
     try {
       await deleteTrip(trip.id);
@@ -141,6 +146,37 @@ export default function TripSettings() {
       setDeleting(false);
     }
   };
+
+  const unlock = async () => {
+    setUnlocking(true);
+    try {
+      await unlockTrip(trip.id);
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      close();
+    } catch {
+      setError("Couldn't unlock the trip. Check your connection and try again.");
+      setConfirmUnlock(false);
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
+  const remove = async (userId: string) => {
+    setRemoving(userId);
+    try {
+      await removeMember(trip.id, userId);
+      setConfirmRemove(null);
+      await refresh();
+    } catch {
+      setError("Couldn't remove that person. Check your connection and try again.");
+      setConfirmRemove(null);
+    } finally {
+      setRemoving(null);
+    }
+  };
+
+  // Organisers can remove members, but not themselves or other organisers.
+  const removable = trip.members.filter((m) => m.role === 'member');
 
   return (
     <Screen footer={<Button label="Save name" color={fill} loading={saving} onPress={save} />}>
@@ -170,6 +206,74 @@ export default function TripSettings() {
         </Text>
       ) : null}
 
+      {trip.status === 'locked' ? (
+        <>
+          <Text variant="label" style={[styles.label, { marginTop: space.xxl }]}>
+            Plan
+          </Text>
+          <View style={[styles.danger, { borderColor: colors.line, backgroundColor: colors.card }]}>
+            <Text variant="caption" tone="muted">
+              Locked in by mistake, or plans changed? Unlocking clears the dates and place so everyone can mark days and vote again. Days, places and votes are kept.
+            </Text>
+            {confirmUnlock ? (
+              <View style={{ gap: space.sm }}>
+                <Text variant="bodyStrong" accessibilityLiveRegion="polite">
+                  Unlock &quot;{trip.name}&quot; and re-plan?
+                </Text>
+                <Button label="Yes, unlock" loading={unlocking} color={fill} onPress={unlock} />
+                <Button label="Keep it locked" variant="ghost" onPress={() => setConfirmUnlock(false)} />
+              </View>
+            ) : (
+              <Button label="Unlock and re-plan" variant="secondary" onPress={() => setConfirmUnlock(true)} />
+            )}
+          </View>
+        </>
+      ) : null}
+
+      {removable.length ? (
+        <>
+          <Text variant="label" style={[styles.label, { marginTop: space.xxl }]}>
+            Members
+          </Text>
+          <View style={[styles.danger, { borderColor: colors.line, backgroundColor: colors.card }]}>
+            <Text variant="caption" tone="muted">
+              Removing someone clears their free days and votes. Places they suggested stay.
+            </Text>
+            {removable.map((m) =>
+              confirmRemove === m.user_id ? (
+                <View key={m.user_id} style={{ gap: space.sm }}>
+                  <Text variant="bodyStrong" tone="danger" accessibilityLiveRegion="polite">
+                    Remove {m.display_name} from the trip?
+                  </Text>
+                  <Button
+                    label={`Yes, remove ${m.display_name}`}
+                    loading={removing === m.user_id}
+                    color={colors.danger}
+                    onPress={() => remove(m.user_id)}
+                  />
+                  <Button label="Cancel" variant="ghost" onPress={() => setConfirmRemove(null)} />
+                </View>
+              ) : (
+                <View key={m.user_id} style={styles.memberRow}>
+                  <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
+                    {m.display_name}
+                  </Text>
+                  <Button
+                    label="Remove"
+                    accessibilityLabel={`Remove ${m.display_name}`}
+                    variant="ghost"
+                    onPress={() => {
+                      setConfirmRemove(m.user_id);
+                      if (error) setError(null);
+                    }}
+                  />
+                </View>
+              ),
+            )}
+          </View>
+        </>
+      ) : null}
+
       <Text variant="label" style={[styles.label, { marginTop: space.xxl }]}>
         Danger zone
       </Text>
@@ -182,7 +286,7 @@ export default function TripSettings() {
             <Text variant="bodyStrong" tone="danger" accessibilityLiveRegion="polite">
               Delete &quot;{trip.name}&quot; for everyone?
             </Text>
-            <Button label="Yes, delete forever" loading={deleting} color={colors.danger} onPress={remove} />
+            <Button label="Yes, delete forever" loading={deleting} color={colors.danger} onPress={destroy} />
             <Button label="Keep trip" variant="ghost" onPress={() => setConfirmDelete(false)} />
           </View>
         ) : (
@@ -197,5 +301,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   label: { marginBottom: space.sm },
   input: { minHeight: MIN_TOUCH + 4, borderRadius: radius.md, borderWidth: 1, paddingHorizontal: space.lg, fontSize: 17 },
+  memberRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   danger: { borderRadius: radius.lg, borderWidth: 1, padding: space.lg, gap: space.md },
 });
