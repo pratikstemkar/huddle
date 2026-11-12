@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-label="Huddle: plan trips with your friends, together">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF5A36"/>
+      <stop offset="0.55" stop-color="#FF9370"/>
+      <stop offset="1" stop-color="#FFC531"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2CC8C2"/>
+      <stop offset="1" stop-color="#0FA3A3"/>
+    </linearGradient>
+    <clipPath id="frame"><rect width="1200" height="420" rx="28"/></clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="1200" height="420" fill="url(#sky)"/>
+    <!-- sun -->
+    <circle cx="930" cy="300" r="150" fill="#FFF6EC" opacity="0.35"/>
+    <circle cx="930" cy="300" r="105" fill="#FFF6EC" opacity="0.55"/>
+    <!-- sea -->
+    <path d="M0 330 C150 305 300 355 450 330 S750 305 900 330 S1100 355 1200 330 V420 H0Z" fill="url(#sea)"/>
+    <path d="M0 365 C150 345 300 385 450 365 S750 345 900 365 S1100 385 1200 365 V420 H0Z" fill="#0FA3A3" opacity="0.7"/>
+    <!-- birds -->
+    <path d="M760 110 q12 -12 24 0 q12 -12 24 0" fill="none" stroke="#1B1420" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+    <path d="M830 80 q9 -9 18 0 q9 -9 18 0" fill="none" stroke="#1B1420" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+    <!-- huddle of friends (dots) -->
+    <g transform="translate(930 238)">
+      <circle cx="-64" cy="18" r="26" fill="#1B1420"/>
+      <circle cx="-22" cy="0" r="30" fill="#0FA3A3" stroke="#FFF6EC" stroke-width="5"/>
+      <circle cx="24" cy="2" r="30" fill="#FFC531" stroke="#FFF6EC" stroke-width="5"/>
+      <circle cx="66" cy="20" r="26" fill="#FF5A36" stroke="#FFF6EC" stroke-width="5"/>
+    </g>
+    <!-- text -->
+    <text x="80" y="185" font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="112" font-weight="800" fill="#FFF6EC" letter-spacing="-2">Huddle</text>
+    <text x="84" y="245" font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="34" font-weight="600" fill="#1B1420">Plan trips with your friends, together.</text>
+    <text x="84" y="290" font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="24" font-weight="500" fill="#1B1420" opacity="0.75">Pick the dates · Vote on the place · Lock it in</text>
+  </g>
+</svg>
