@@ -39,7 +39,10 @@ Use accessibility handles via `find` / `read_page`, then click by `ref`. Never c
 | `/sign-in` | `Continue with Google` | button — real OAuth, **do not drive** |
 | `/` (home) | `New trip` | button |
 | `/` | `Join with a code` | button |
-| `/` | `Sign out` | button (the avatar initial) |
+| `/` | `Your profile` | button (the avatar, top right) |
+| `/profile` | `Your name` | textbox (max 40 chars) |
+| `/profile` | `Sunset` … `Sky` | radio (avatar colour) |
+| `/profile` | `Save profile` / `Sign out` | button |
 | `/` | `<trip name>, still planning` / `<trip name>, locked in` | button per trip card |
 | `/new-trip` | `Trip name` | textbox (max 60 chars) |
 | `/new-trip` | `Sunset` `Lagoon` `Mango` `Plum` `Bougainvillea` `Sky` | radio |
@@ -73,7 +76,7 @@ Proof standards: drive the real UI path (no calling `createTrip` or Supabase dir
 ## Cleanup
 
 1. Delete the test rows: `node --env-file=.env.local .claude/skills/verify-huddle/scripts/db.mjs cleanup <email-that-created-them> "$PREFIX"` (organiser-only delete via RLS; refuses any prefix that isn't a slot prefix; prints what it removed).
-2. Sign out in the tab (`Sign out` button) if you'll hand the tab back.
+2. Sign out in the tab (`Your profile` → `Sign out`) if you'll hand the tab back.
 3. `preview_stop {serverId}` for the `web-verify-N` server you started. Never `pkill node`/`expo`, never stop `:8081` or Supabase unless you started them this run.
 4. Evidence stays: confirm `ls .verify-evidence/<run>/` still lists your files.
 

@@ -19,7 +19,7 @@ What the MVP needs, and where each piece stands. Update the status when work lan
 | 7 | Open a trip (trip detail screen) | ✅ | ✅ | ✅ `(app)/trip/[id]` | [trip-detail](.claude/skills/verify-huddle/features/trip-detail.md) |
 | 8 | Share invite code / link | ✅ | ✅ `trips.invite_code` | ✅ copy + share on `(app)/trip/[id]` | [invite-share](.claude/skills/verify-huddle/features/invite-share.md) |
 | 9 | Join a trip by invite code | ✅ | ✅ `join_trip(code)` | ✅ `(app)/join` | [join-trip](.claude/skills/verify-huddle/features/join-trip.md) |
-| 10 | See trip members | 🟡 | ✅ `trip_members` | ✅ list on trip detail; no profile avatars yet | [trip-detail](.claude/skills/verify-huddle/features/trip-detail.md) |
+| 10 | See trip members | ✅ | ✅ `trip_members` | ✅ list on trip detail with avatars (photo or initial on their colour) | [trip-detail](.claude/skills/verify-huddle/features/trip-detail.md) |
 | 11 | Mark the days I'm free | ✅ | ✅ `availability` | ✅ `(app)/trip/[id]/days` | [mark-days](.claude/skills/verify-huddle/features/mark-days.md) |
 | 12 | See overlap: which days suit most people | ✅ | ✅ | ✅ Everyone tab + best days on trip detail | [overlap](.claude/skills/verify-huddle/features/overlap.md) |
 | 13 | Suggest a destination (title, note, link, image) | ✅ | ✅ `destinations` + link/length checks | ✅ `(app)/trip/[id]/suggest` | [suggest-destination](.claude/skills/verify-huddle/features/suggest-destination.md) |
@@ -41,6 +41,6 @@ The planning loop above works end to end, but real friends can't use it yet. Wor
 | L3 | Google and Apple sign-in tested end to end | 🟡 | They are the only way real users can sign in; dev sign-in is dev-only | MVP rows 2 and 3: test Google against hosted Supabase, Apple in a development build |
 | L4 | Push notifications | ⬜ | Without nudges people mark days once and drift off, and the organiser goes back to chasing them in the group chat | Start with "trip locked" and "vote now"; new votes later |
 | L5 | Organiser can fix mistakes: unlock / re-plan, remove a member | ⬜ | A wrong lock or an unwanted member today can only be fixed by deleting the trip | Unlock needs a function that clears the `locked_*` fields; removing a member needs a new delete policy on `trip_members` |
-| L6 | Edit my profile (name, avatar) | ⬜ | The display name comes from Google/Apple or the email prefix and can't be changed; also gives members avatars (MVP row 10) | `profiles` update policy already exists; only the screen is missing |
+| L6 | Edit my profile (name, avatar) | ✅ | The display name comes from Google/Apple or the email prefix and can't be changed; also gives members avatars (MVP row 10) | `(app)/profile` (avatar on home): name + initials colour, sign out moved here; Apple's first-sign-in name now saved to the profile. Tested: [edit-profile](.claude/skills/verify-huddle/features/edit-profile.md) |
 
 **Smaller checks before launch:** behaviour when the network drops or a request fails; an empty trips list that points new users to "join" vs "create"; an optional date range on a trip so people don't scroll through 4 months; a privacy policy, plus an account-deletion option (required by the app stores, and by Apple when Apple sign-in is offered).
