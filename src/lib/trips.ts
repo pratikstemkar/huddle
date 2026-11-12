@@ -1,5 +1,6 @@
 import * as Linking from 'expo-linking';
 import { useCallback, useState } from 'react';
+import { Platform } from 'react-native';
 
 import type { TripColor } from '@/theme/tokens';
 import { bestRanges, type BestRange } from './availability';
@@ -36,8 +37,28 @@ export async function joinTrip(code: string): Promise<string> {
   return data as string;
 }
 
+/**
+ * An https link a friend can open with or without the app: the hosted web page, or the app via
+ * universal / app links. Falls back to a `huddle://` link only in native dev builds with no APP_URL.
+ */
 export function inviteLink(code: string) {
-  return Linking.createURL('join', { queryParams: { code } });
+  const path = `invite/${encodeURIComponent(code)}`;
+  const origin = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location?.origin : undefined;
+  if (origin) return `${origin}/${path}`;
+  // Where the hosted web app lives, e.g. `https://huddle.expo.app`. Unset in local native development.
+  const appUrl = process.env.EXPO_PUBLIC_APP_URL?.replace(/\/+$/, '');
+  if (appUrl) return `${appUrl}/${path}`;
+  return Linking.createURL(path);
+}
+
+export type InvitePreview = { name: string; color: TripColor; members: number };
+
+/** What a signed-out visitor may see about the trip behind an invite code; null if the code matches nothing. */
+export async function invitePreview(code: string): Promise<InvitePreview | null> {
+  const { data, error } = await supabase.rpc('invite_preview', { code });
+  if (error) throw error;
+  const row = (Array.isArray(data) ? data[0] : data) as InvitePreview | undefined;
+  return row ?? null;
 }
 
 export function inviteMessage(tripName: string, code: string) {

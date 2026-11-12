@@ -32,6 +32,6 @@ This writes a `trip_members` row on the **seed** trip, which the prefix cleanup 
 ## Gotchas
 
 - Opening `/join` directly (no history) used to throw "POP … not handled" with `router.dismiss()`; the screen uses `router.replace` for that reason.
-- A signed-out visit to `/join?code=…` is redirected to `/sign-in` and the code is lost (post-MVP deep-link item).
+- A signed-out visit to `/join?code=…` still goes to `/sign-in` and loses the code. Shared links use `/invite/<code>` instead, which keeps it (see [invite-link](invite-link.md)).
 
 Last proven: 2026-11-11 (Kabir join, Aarav + Meera see 3 members).

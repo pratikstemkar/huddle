@@ -38,6 +38,8 @@ function RootStack() {
         <Stack.Protected guard={!session}>
           <Stack.Screen name="sign-in" />
         </Stack.Protected>
+        {/* Invite links work signed in or out; signed out, the code is kept through sign-in. */}
+        <Stack.Screen name="invite/[code]" />
       </Stack>
     </ThemeProvider>
   );
