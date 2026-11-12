@@ -1,41 +1,15 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
+import { ColorSwatches } from '@/components/color-swatches';
 import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { createTrip } from '@/lib/trips';
-import { MIN_TOUCH, radius, space, springs, tripColors, type TripColor } from '@/theme/tokens';
+import { MIN_TOUCH, radius, space, tripColors, type TripColor } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
-
-const COLOR_NAMES: Record<TripColor, string> = {
-  sunset: 'Sunset',
-  lagoon: 'Lagoon',
-  mango: 'Mango',
-  plum: 'Plum',
-  bougainvillea: 'Bougainvillea',
-  sky: 'Sky',
-};
-
-function Swatch({ color, selected, onPress }: { color: TripColor; selected: boolean; onPress: () => void }) {
-  const { colors } = useTheme();
-  const ring = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(selected ? 1 : 0.82, springs.bouncy) }],
-  }));
-  return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityLabel={COLOR_NAMES[color]}
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={[styles.swatchHit, { borderColor: selected ? colors.text : 'transparent' }]}>
-      <Animated.View style={[styles.swatch, { backgroundColor: tripColors[color] }, ring]} />
-    </Pressable>
-  );
-}
 
 export default function NewTrip() {
   const { colors } = useTheme();
@@ -100,11 +74,7 @@ export default function NewTrip() {
       <Text variant="label" style={styles.label}>
         Trip colour
       </Text>
-      <View accessibilityRole="radiogroup" style={styles.swatches}>
-        {(Object.keys(tripColors) as TripColor[]).map((c) => (
-          <Swatch key={c} color={c} selected={c === color} onPress={() => setColor(c)} />
-        ))}
-      </View>
+      <ColorSwatches value={color} onChange={setColor} />
     </Screen>
   );
 }
@@ -113,7 +83,4 @@ const styles = StyleSheet.create({
   preview: { borderRadius: radius.lg, padding: space.xl, minHeight: 120, justifyContent: 'flex-end' },
   label: { marginTop: space.xl, marginBottom: space.sm },
   input: { minHeight: MIN_TOUCH + 4, borderRadius: radius.md, borderWidth: 1, paddingHorizontal: space.lg, fontSize: 17 },
-  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  swatchHit: { width: MIN_TOUCH + 4, height: MIN_TOUCH + 4, borderRadius: radius.pill, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  swatch: { width: 40, height: 40, borderRadius: 20 },
 });

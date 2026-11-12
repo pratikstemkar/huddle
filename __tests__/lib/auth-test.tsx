@@ -5,7 +5,7 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { Platform } from 'react-native';
 
-import { supabase, unsubscribeAuth } from '../../test-utils/supabase-mock';
+import { queriesFor, supabase, unsubscribeAuth } from '../../test-utils/supabase-mock';
 
 jest.mock('expo-web-browser', () => ({ maybeCompleteAuthSession: jest.fn(), openAuthSessionAsync: jest.fn() }));
 jest.mock('expo-auth-session', () => ({ makeRedirectUri: jest.fn(() => 'huddle://auth/callback') }));
@@ -167,11 +167,17 @@ describe('AuthProvider', () => {
 
     it('signs in with the identity token and saves the name', async () => {
       appleSignIn.mockResolvedValue({ identityToken: 'tok', fullName: { givenName: 'Zoya', familyName: 'K' } });
+      supabase.auth.updateUser.mockResolvedValue({ data: { user: { id: 'apple-id' } }, error: null });
       const { result } = await renderAuth();
       await withOS('ios', () => result.current.signInWithApple());
       expect(appleSignIn).toHaveBeenCalledWith({ requestedScopes: [0, 1] });
       expect(supabase.auth.signInWithIdToken).toHaveBeenCalledWith({ provider: 'apple', token: 'tok' });
       expect(supabase.auth.updateUser).toHaveBeenCalledWith({ data: { full_name: 'Zoya K' } });
+      // The profile row already exists by now, so the name goes there too.
+      expect(queriesFor('profiles')[0].ops).toEqual([
+        ['update', [{ display_name: 'Zoya K' }]],
+        ['eq', ['id', 'apple-id']],
+      ]);
     });
 
     it("doesn't overwrite the name when Apple doesn't share it", async () => {
@@ -179,6 +185,7 @@ describe('AuthProvider', () => {
       const { result } = await renderAuth();
       await withOS('ios', () => result.current.signInWithApple());
       expect(supabase.auth.updateUser).not.toHaveBeenCalled();
+      expect(queriesFor('profiles')).toEqual([]);
     });
 
     it('throws without a token', async () => {

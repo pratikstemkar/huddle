@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { ActivityIndicator, Linking, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
@@ -161,11 +162,7 @@ function MemberRow({ member, fill, isMe }: { member: TripMember; fill: string; i
   const { colors } = useTheme();
   return (
     <View style={styles.member} accessible accessibilityLabel={`${member.display_name}${isMe ? ', you' : ''}${member.role === 'organiser' ? ', organiser' : ''}`}>
-      <View style={[styles.initial, { backgroundColor: fill }]}>
-        <Text variant="label" tone="onColor">
-          {member.display_name.charAt(0).toUpperCase()}
-        </Text>
-      </View>
+      <Avatar name={member.display_name} url={member.avatar_url} color={member.avatar_color} fallbackColor={fill} size={36} />
       <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
         {member.display_name}
         {isMe ? <Text tone="muted"> (you)</Text> : null}
@@ -453,7 +450,6 @@ const styles = StyleSheet.create({
   invite: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, flexWrap: 'wrap' },
   inviteActions: { flexDirection: 'row', gap: space.sm },
   member: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: MIN_TOUCH, paddingVertical: space.xs },
-  initial: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   tag: { borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 2 },
   destination: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm, minHeight: MIN_TOUCH },
   whereActions: { flexDirection: 'row', gap: space.sm, paddingTop: space.sm },

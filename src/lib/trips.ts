@@ -73,6 +73,7 @@ export type TripMember = {
   role: 'organiser' | 'member';
   display_name: string;
   avatar_url: string | null;
+  avatar_color: TripColor | null;
 };
 
 export type TripDetail = Trip & {
@@ -90,7 +91,7 @@ export type TripDetail = Trip & {
 type MemberRow = {
   user_id: string;
   role: TripMember['role'];
-  profiles: { display_name: string; avatar_url: string | null } | null;
+  profiles: { display_name: string; avatar_url: string | null; avatar_color: TripColor | null } | null;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -114,7 +115,7 @@ export function useTrip(id: string | undefined, myId?: string) {
         .select('id, name, color, status, invite_code, created_at, created_by, locked_start, locked_end, locked_destination_id')
         .eq('id', id)
         .maybeSingle(),
-      supabase.from('trip_members').select('user_id, role, profiles(display_name, avatar_url)').eq('trip_id', id).order('joined_at'),
+      supabase.from('trip_members').select('user_id, role, profiles(display_name, avatar_url, avatar_color)').eq('trip_id', id).order('joined_at'),
       supabase.from('destinations').select('id, title, note, url, image_url, created_by, created_at').eq('trip_id', id),
       supabase.from('votes').select('destination_id, user_id').eq('trip_id', id),
       supabase.from('availability').select('user_id, day').eq('trip_id', id),
@@ -135,6 +136,7 @@ export function useTrip(id: string | undefined, myId?: string) {
           role: m.role,
           display_name: m.profiles?.display_name ?? 'Traveller',
           avatar_url: m.profiles?.avatar_url ?? null,
+          avatar_color: m.profiles?.avatar_color ?? null,
         }));
         members.sort((a, b) => Number(b.role === 'organiser') - Number(a.role === 'organiser'));
         setTrip({
