@@ -19,4 +19,4 @@ Message: `Join "<trip name>" on Huddle! Use code <code>, or open <link>`. The li
 - Reading the clipboard from the page is denied (`readText` permission); that's why step 2 intercepts the write.
 - The native share sheet (`Share.share`) is not covered on web; needs a dev build.
 
-Last proven: 2026-11-11 (Aarav, web).
+Last proven: 2026-11-12 (Kabir, web, /invite link).

@@ -10,7 +10,7 @@ Every user-facing feature, how to reach it on web, and what proves it works. Kee
 | Sign out | `/` | [sign-out.md](sign-out.md) | 2026-11-11 |
 | Trip detail | `/` → `/trip/[id]` | [trip-detail.md](trip-detail.md) | 2026-11-11 (Aarav, Meera, Kabir RLS) |
 | Share invite code / link | `/trip/[id]` | [invite-share.md](invite-share.md) | 2026-11-11 (Aarav) |
-| Invite link (signed out → sign in → join) | `/invite/[code]` → `/sign-in` → `/join` | [invite-link.md](invite-link.md) | not yet |
+| Invite link (signed out → sign in → join) | `/invite/[code]` → `/sign-in` → `/join` | [invite-link.md](invite-link.md) | 2026-11-12 (Kabir, DB + RLS) |
 | Join a trip by code | `/` → `/join` | [join-trip.md](join-trip.md) | 2026-11-11 (Kabir, DB + RLS) |
 | Mark my free days | `/trip/[id]` → `/trip/[id]/days` | [mark-days.md](mark-days.md) | 2026-11-11 (Kabir, DB rows) |
 | See overlap | `/trip/[id]/days` (Everyone), `/trip/[id]` | [overlap.md](overlap.md) | 2026-11-11 (Kabir + Zoya, RLS) |

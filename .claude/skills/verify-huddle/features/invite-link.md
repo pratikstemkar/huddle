@@ -31,4 +31,4 @@ Same as [join-trip](join-trip.md): delete Kabir's `trip_members` row on the seed
 
 Universal links (iOS) and app links (Android) need the hosted domain from L1, the real Apple Team ID / Android SHA256 in `public/.well-known/`, and a device build. Not provable on web.
 
-Last proven: not yet
+Last proven: 2026-11-12 (signed-out Kabir → sign in → join, DB + RLS as Aarav; share link; signed-in redirect)
