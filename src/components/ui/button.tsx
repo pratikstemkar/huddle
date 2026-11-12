@@ -19,11 +19,13 @@ export type ButtonProps = {
   color?: string;
   style?: ViewStyle;
   accessibilityHint?: string;
+  /** Defaults to the label; set it when several buttons share a label (e.g. "Remove"). */
+  accessibilityLabel?: string;
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function Button({ label, onPress, variant = 'primary', icon, loading, color, style, accessibilityHint }: ButtonProps) {
+export function Button({ label, onPress, variant = 'primary', icon, loading, color, style, accessibilityHint, accessibilityLabel }: ButtonProps) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const scale = useSharedValue(1);
@@ -39,7 +41,7 @@ export function Button({ label, onPress, variant = 'primary', icon, loading, col
   return (
     <AnimatedPressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ busy: !!loading }}
       onPressIn={() => press(0.96)}

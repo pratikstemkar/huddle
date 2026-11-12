@@ -9,7 +9,9 @@ import {
   leaveTrip,
   lockTrip,
   planMessage,
+  removeMember,
   renameTrip,
+  unlockTrip,
   useTrip,
   useTrips,
 } from '@/lib/trips';
@@ -139,6 +141,41 @@ describe('lockTrip', () => {
   it('throws the database error', async () => {
     queueResult('rpc:lock_trip', { error: { message: 'This trip is already locked' } });
     await expect(lockTrip(TRIP_ID, '2027-03-12', '2027-03-14', 'd1')).rejects.toEqual({ message: 'This trip is already locked' });
+  });
+});
+
+describe('unlockTrip', () => {
+  it('calls unlock_trip', async () => {
+    await unlockTrip(TRIP_ID);
+    expect(rpcCalls).toEqual([{ name: 'unlock_trip', args: { t: TRIP_ID } }]);
+  });
+
+  it('throws the database error', async () => {
+    queueResult('rpc:unlock_trip', { error: { message: 'This trip is not locked' } });
+    await expect(unlockTrip(TRIP_ID)).rejects.toEqual({ message: 'This trip is not locked' });
+  });
+});
+
+describe('removeMember', () => {
+  it("deletes that member's row", async () => {
+    queueResult('trip_members', { data: [{ user_id: 'them' }] });
+    await removeMember(TRIP_ID, 'them');
+    expect(queriesFor('trip_members')[0].ops).toEqual([
+      ['delete', []],
+      ['eq', ['trip_id', TRIP_ID]],
+      ['eq', ['user_id', 'them']],
+      ['select', ['user_id']],
+    ]);
+  });
+
+  it('throws when RLS removed nothing', async () => {
+    queueResult('trip_members', { data: [] });
+    await expect(removeMember(TRIP_ID, 'them')).rejects.toThrow('Not removed');
+  });
+
+  it('throws the database error', async () => {
+    queueResult('trip_members', { error: { message: 'offline' } });
+    await expect(removeMember(TRIP_ID, 'them')).rejects.toEqual({ message: 'offline' });
   });
 });
 
