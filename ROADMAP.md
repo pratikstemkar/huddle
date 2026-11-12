@@ -30,15 +30,17 @@ What the MVP needs, and where each piece stands. Update the status when work lan
 | 18 | Leave a trip | ✅ | ✅ delete policy + last-organiser guard, clears your days and votes | ✅ `Leave trip` in `(app)/trip/[id]/settings` | [leave-trip](.claude/skills/verify-huddle/features/leave-trip.md) |
 | 19 | Organiser renames or deletes a trip | ✅ | ✅ | ✅ ⋯ button → `(app)/trip/[id]/settings` | [trip-settings](.claude/skills/verify-huddle/features/trip-settings.md) |
 
-## After the MVP
+## Before launch
 
-Ideas to look at once the loop above works end to end. Nothing here is built.
+The planning loop above works end to end, but real friends can't use it yet. Work through these in order before handing Huddle to a real group. Hold off on bigger features (budgets, itinerary, chat, expenses) until this is done.
 
-| Feature | Notes |
-|---|---|
-| Edit my profile (name, avatar) | `profiles` update policy exists |
-| Push notifications | New votes, trip locked |
-| Deep link opens the join screen | `huddle://` scheme is set up for auth. `/join?code=` already pre-fills the code, but a signed-out visit loses it at sign-in |
-| Unlock / re-plan a trip | |
-| Remove a member (organiser) | Needs a new policy |
-| Production builds with EAS | iOS and Android store submission |
+| # | Feature | Status | Why it matters | Notes |
+|---|---|---|---|---|
+| L1 | Production builds with EAS + a hosted web build | ⬜ | Nobody outside a dev machine can install or open the app, and invites only work if the friend can get it | iOS and Android store submission via `bunx eas-cli`; a hosted web build gives invite links somewhere to land |
+| L2 | Invite links that work for new users | ⬜ | Invites are the whole growth loop | `inviteLink()` makes a `huddle://join?code=…` link a friend without the app can't open. Needs an https link (hosted web, universal/app links), and the code must survive sign-in: `/join?code=` pre-fills it today, but a signed-out visit loses it at sign-in |
+| L3 | Google and Apple sign-in tested end to end | 🟡 | They are the only way real users can sign in; dev sign-in is dev-only | MVP rows 2 and 3: test Google against hosted Supabase, Apple in a development build |
+| L4 | Push notifications | ⬜ | Without nudges people mark days once and drift off, and the organiser goes back to chasing them in the group chat | Start with "trip locked" and "vote now"; new votes later |
+| L5 | Organiser can fix mistakes: unlock / re-plan, remove a member | ⬜ | A wrong lock or an unwanted member today can only be fixed by deleting the trip | Unlock needs a function that clears the `locked_*` fields; removing a member needs a new delete policy on `trip_members` |
+| L6 | Edit my profile (name, avatar) | ⬜ | The display name comes from Google/Apple or the email prefix and can't be changed; also gives members avatars (MVP row 10) | `profiles` update policy already exists; only the screen is missing |
+
+**Smaller checks before launch:** behaviour when the network drops or a request fails; an empty trips list that points new users to "join" vs "create"; an optional date range on a trip so people don't scroll through 4 months; a privacy policy, plus an account-deletion option (required by the app stores, and by Apple when Apple sign-in is offered).
