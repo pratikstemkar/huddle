@@ -44,6 +44,7 @@ Use accessibility handles via `find` / `read_page`, then click by `ref`. Never c
 | `/new-trip` | `Trip name` | textbox (max 60 chars) |
 | `/new-trip` | `Sunset` `Lagoon` `Mango` `Plum` `Bougainvillea` `Sky` | radio |
 | `/new-trip` | `Create trip` | button |
+| `/invite/[code]` | `Sign in to join` / `Go to Huddle` | button (signed out) |
 | `/join` | `Invite code` | textbox |
 | `/join` | `Join trip` | button |
 | `/trip/[id]` | `Back to your trips` | button |
