@@ -1,0 +1,247 @@
+name: Android APK
+
+# Builds a sideloadable release APK on a GitHub runner. No EAS build, no credits.
+#
+# `android/` is gitignored (Continuous Native Generation), so every run
+# regenerates it with `expo prebuild` before Gradle sees it.
+#
+# The APK is signed with the debug key Expo's prebuild template ships. That is
+# fine for sideloading and needs no secrets, but it is not publishable to the
+# Play Store. Android app links for /invite are verified against the signing
+# key, so assetlinks.json must list this key's SHA-256 fingerprint.
+#
+# Needs repository variables (Settings -> Secrets and variables -> Actions ->
+# Variables): SUPABASE_URL, SUPABASE_ANON_KEY and APP_URL.
+
+on:
+  workflow_dispatch:
+    inputs:
+      architectures:
+        description: "ABIs to build"
+        required: false
+        default: arm64-v8a
+        type: choice
+        options:
+          - arm64-v8a
+          - arm64-v8a,armeabi-v7a
+          - armeabi-v7a,arm64-v8a,x86,x86_64
+  # Tagging a version builds it and attaches the APK to a GitHub Release.
+  # Deliberately no branch trigger: most commits do not need an APK.
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  EXPO_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+  EXPO_PUBLIC_APP_URL: ${{ vars.APP_URL }}
+  EXPO_NO_TELEMETRY: "1"
+  # arm64-v8a covers every phone sold in the last decade. Building all four
+  # ABIs roughly triples both the build time and the APK size.
+  RN_ARCHS: ${{ inputs.architectures || 'arm64-v8a' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # Every action is pinned to a commit SHA with its release in the trailing
+      # comment. A tag is a mutable pointer; this workflow publishes the file
+      # people install. .github/dependabot.yml moves the pins weekly and reads
+      # the comment, so keep it accurate if you change a pin by hand.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Restores the Gradle cache and writes a build report to the job summary.
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+
+      # package.json and app.json both carry the version. The APK is named from
+      # app.json, so drift ships a file claiming the wrong release. On a tag push
+      # this also compares the tag against the tree, which cannot be fixed after
+      # the fact. Pure Node, so it fails in seconds rather than after Gradle.
+      - name: Verify versions agree
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            node scripts/release.mjs check --expect "$GITHUB_REF_NAME"
+          else
+            node scripts/release.mjs check
+          fi
+
+      # Without these the app cannot reach Supabase at all, so unlike an
+      # optional URL this is a hard failure rather than a warning.
+      - name: Check build configuration
+        run: |
+          fail() { echo "::error title=$1::$2"; exit 1; }
+          [ -n "$EXPO_PUBLIC_SUPABASE_URL" ] || fail "No Supabase URL" "Set the SUPABASE_URL repository variable. Metro bakes it into the bundle."
+          [ -n "$EXPO_PUBLIC_SUPABASE_ANON_KEY" ] || fail "No Supabase key" "Set the SUPABASE_ANON_KEY repository variable (the publishable key). Metro bakes it into the bundle."
+          if [ -z "$EXPO_PUBLIC_APP_URL" ]; then
+            echo "::warning title=No app URL::APP_URL is empty, so invite links fall back to huddle:// and universal/app links are off."
+          fi
+          if grep -q REPLACE_WITH_EAS_PROJECT_ID app.json; then
+            echo "::warning title=EAS project not linked::app.json still has the placeholder project id, so this APK cannot receive over-the-air updates. Run 'bunx eas-cli init' and commit the ids."
+          fi
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # What this APK will and will not accept over the air. `runtimeVersion` is
+      # on the fingerprint policy, so this hash stands for every input that
+      # shapes the native app. Gradle embeds it below and the OTA workflow prints
+      # the same figure for what it published. Resolved before prebuild, which is
+      # where `eas update` also stands.
+      - name: Resolve runtime version
+        id: runtime
+        run: |
+          version=$(node node_modules/expo-updates/bin/cli.js runtimeversion:resolve --platform android \
+            | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).runtimeVersion")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Generate native project
+        run: bunx expo prebuild --platform android --no-install
+
+      # Expo's template writes `-Xmx2048m -XX:MaxMetaspaceSize=512m`, which is
+      # not enough once expo-updates puts KSP in the build graph: the daemon dies
+      # with `OutOfMemoryError: Metaspace`. Appended rather than set in the file
+      # because android/ is regenerated on every run; the last definition wins.
+      # Not expo-build-properties: that is a dependency, so it would move the
+      # fingerprint. This is a property of the build, not of the app.
+      - name: Raise Gradle memory limits
+        working-directory: android
+        run: |
+          {
+            echo ""
+            echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=2g"
+            echo "kotlin.daemon.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=1g"
+          } >> gradle.properties
+
+      # R8 minification and deflated native libraries, together roughly half the
+      # download. The RN template leaves minification off, and
+      # `expo.useLegacyPackaging=false` STOREs libraries uncompressed, which is
+      # right for Play Store install size and wrong for a file tapped in a mobile
+      # browser. The Hermes bundle stays stored: it is read on the launch path.
+      - name: Shrink the release build
+        working-directory: android
+        run: |
+          {
+            echo ""
+            echo "android.enableMinifyInReleaseBuilds=true"
+            echo "expo.useLegacyPackaging=true"
+          } >> gradle.properties
+
+      # Reanimated and react-native-worklets ship a proguard-rules.pro each and
+      # wire neither, so R8 would strip classes they reach by reflection. The
+      # failure is a runtime one: the build succeeds, the APK installs, and the
+      # first animated screen crashes. Open a build before tagging it.
+      - name: Keep classes reached by reflection
+        working-directory: android
+        run: |
+          {
+            echo ""
+            echo "-keep class com.swmansion.worklets.** { *; }"
+            echo "-keep class com.swmansion.reanimated.** { *; }"
+            echo "-keep class com.facebook.react.turbomodule.** { *; }"
+            echo "-keep class com.facebook.react.fabric.** { *; }"
+          } >> app/proguard-rules.pro
+
+      # The fingerprint the APK embeds, pinned to the one resolved above. Left to
+      # itself the build computes its own *during* Gradle, after Gradle has
+      # written build/ directories into node_modules that fingerprint hashes, so
+      # it differs from a clean checkout's and the app reports "up to date"
+      # forever. EXPO_UPDATES_FINGERPRINT_OVERRIDE is expo-updates' own hook.
+      - name: Build release APK
+        working-directory: android
+        env:
+          EXPO_UPDATES_FINGERPRINT_OVERRIDE: ${{ steps.runtime.outputs.version }}
+        run: ./gradlew :app:assembleRelease -PreactNativeArchitectures="$RN_ARCHS" --console=plain
+
+      # Reads back what landed in the APK rather than trusting the override.
+      - name: Verify embedded fingerprint
+        env:
+          EXPECTED: ${{ steps.runtime.outputs.version }}
+        run: |
+          embedded=$(unzip -p android/app/build/outputs/apk/release/app-release.apk assets/fingerprint)
+          echo "embedded: $embedded"
+          echo "expected: $EXPECTED"
+          if [ "$embedded" != "$EXPECTED" ]; then
+            echo "::error title=Fingerprint mismatch::The APK embeds '$embedded' but updates are published against '$EXPECTED'. This build would never accept an update."
+            exit 1
+          fi
+
+      - name: Stage APK
+        id: stage
+        env:
+          RUNTIME_VERSION: ${{ steps.runtime.outputs.version }}
+        run: |
+          src=android/app/build/outputs/apk/release/app-release.apk
+          version=$(node -p "require('./app.json').expo.version")
+          name="huddle-${version}-${GITHUB_RUN_NUMBER}-$(git rev-parse --short HEAD).apk"
+          mkdir -p dist && cp "$src" "dist/$name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "path=dist/$name" >> "$GITHUB_OUTPUT"
+          {
+            echo "### APK ready"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| File | \`$name\` |"
+            echo "| Size | $(du -h "dist/$name" | cut -f1) |"
+            echo "| ABIs | \`$RN_ARCHS\` |"
+            echo "| Supabase URL | \`$EXPO_PUBLIC_SUPABASE_URL\` |"
+            echo "| Runtime version | \`$RUNTIME_VERSION\` |"
+            echo ""
+            echo "This build accepts over-the-air updates published against that"
+            echo "runtime version and no other. See the OTA Update workflow."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The minification flags are appended to a gradle.properties that prebuild
+      # regenerates, so nothing fails if one stops taking effect: the APK just
+      # gets big again. This compares against scripts/perf/apk-baseline.json and
+      # names the two causes it recognises.
+      - name: Check APK size
+        run: node scripts/perf/apk-size.mjs "${{ steps.stage.outputs.path }}" --abis "$RN_ARCHS"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ steps.stage.outputs.name }}
+          path: ${{ steps.stage.outputs.path }}
+          if-no-files-found: error
+          retention-days: 30
+
+      # Artifacts are zipped and need a GitHub login, which is awkward on a
+      # phone. Tagged builds also publish the raw APK as a release asset.
+      # Release notes come from CHANGELOG.md; if the section is missing the
+      # fallback is --generate-notes rather than no release at all.
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="$RUNNER_TEMP/release-notes.md"
+          node scripts/release.mjs notes "${GITHUB_REF_NAME}" > "$notes" || true
+          notes_arg=--generate-notes
+          if [ -s "$notes" ]; then
+            notes_arg="--notes-file=$notes"
+          fi
+          gh release create "${GITHUB_REF_NAME}" "${{ steps.stage.outputs.path }}" "$notes_arg" || gh release upload "${GITHUB_REF_NAME}" "${{ steps.stage.outputs.path }}" --clobber

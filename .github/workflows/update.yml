@@ -1,0 +1,176 @@
+name: OTA Update
+
+# Publishes the JavaScript bundle to EAS Update, where installed builds pick it
+# up on their next launch.
+#
+# This ships to phones that already have the app. It builds nothing and cannot
+# replace anything native (a new Expo module, a permission, an SDK bump). Those
+# change the fingerprint behind app.json's `runtimeVersion` policy, and an
+# installed build only accepts updates whose fingerprint matches its own. When
+# updates "stop arriving", compare the runtime version printed here with the one
+# the APK workflow printed. If they differ, the fix is an APK, not an update.
+#
+# Needs one secret and the same variables as the APK workflow:
+#   EXPO_TOKEN  secret    from https://expo.dev/settings/access-tokens
+#   SUPABASE_URL, SUPABASE_ANON_KEY, APP_URL   variables, baked in by Metro.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "EAS branch to publish to. `production` is the one the app asks for."
+        required: false
+        default: production
+        type: string
+      message:
+        description: "Update message. Defaults to the commit subject."
+        required: false
+        type: string
+  # Cutting a release ships both halves: the APK workflow builds for new
+  # installs, this publishes to existing ones. Deliberately no branch trigger:
+  # an update reaches phones immediately with no review.
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  EXPO_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+  EXPO_PUBLIC_APP_URL: ${{ vars.APP_URL }}
+  EXPO_NO_TELEMETRY: "1"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # Pinned to a commit SHA: this job holds EXPO_TOKEN. See android.yml.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.0
+
+      # Everything that would make the publish meaningless, checked before the
+      # install and bundling. Each fails silently on someone's phone if wrong.
+      - name: Check configuration
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          fail() { echo "::error title=$1::$2"; exit 1; }
+
+          [ -n "$EXPO_TOKEN" ] || fail "No Expo token" \
+            "EXPO_TOKEN is not set. Create one at https://expo.dev/settings/access-tokens and add it under Settings -> Secrets and variables -> Actions."
+
+          project_id=$(node -p "require('./app.json').expo.extra?.eas?.projectId ?? ''")
+          case "$project_id" in
+            ''|REPLACE_WITH_EAS_PROJECT_ID)
+              fail "EAS project not linked" \
+                "app.json still carries the placeholder project id. Run 'bunx eas-cli init', commit the ids, then re-run." ;;
+          esac
+
+          # The id lives in app.json twice and only one is written by `eas init`.
+          # If they disagree the publish goes to one project while every phone
+          # asks another, which answers "no update" forever instead of erroring.
+          update_url=$(node -p "require('./app.json').expo.updates?.url ?? ''")
+          case "$update_url" in
+            *"$project_id") ;;
+            *) fail "Update URL does not match the project" \
+                 "updates.url is '$update_url' but the linked project is '$project_id'. They have to name the same id." ;;
+          esac
+
+          # A hard failure: an update published without these silently breaks
+          # the app on installs that work today.
+          [ -n "$EXPO_PUBLIC_SUPABASE_URL" ] || fail "No Supabase URL" "The SUPABASE_URL repository variable is empty."
+          [ -n "$EXPO_PUBLIC_SUPABASE_ANON_KEY" ] || fail "No Supabase key" "The SUPABASE_ANON_KEY repository variable is empty."
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # The same value the APK build embeds. Resolved here so it can be
+      # reported; `eas update` computes its own and the two agree because both
+      # run from a clean checkout of this commit.
+      - name: Resolve runtime version
+        id: runtime
+        run: |
+          version=$(node node_modules/expo-updates/bin/cli.js runtimeversion:resolve --platform android \
+            | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).runtimeVersion")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Publish update
+        id: publish
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          # Through the environment, never interpolated into the script: the
+          # message is free text typed into a dispatch form.
+          INPUT_BRANCH: ${{ inputs.branch || 'production' }}
+          INPUT_MESSAGE: ${{ inputs.message }}
+        run: |
+          message="$INPUT_MESSAGE"
+          [ -n "$message" ] || message=$(git log -1 --pretty=%s)
+
+          # `--environment` is mandatory under `--non-interactive`. It names the
+          # EAS environment, unrelated to the channel that shares its name.
+          bunx eas-cli update --branch "$INPUT_BRANCH" --message "$message" \
+            --environment production --non-interactive
+          echo "branch=$INPUT_BRANCH" >> "$GITHUB_OUTPUT"
+          {
+            echo "message<<UPDATE_MESSAGE_EOF"
+            echo "$message"
+            echo "UPDATE_MESSAGE_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # Best-effort bookkeeping: the rollback workflow's `republish` mode takes
+      # a group id and nothing else records one. A failure here must not mark a
+      # successful publish as failed.
+      - name: Record the update group
+        id: group
+        continue-on-error: true
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          BRANCH: ${{ steps.publish.outputs.branch }}
+        run: |
+          group=$(bunx eas-cli update:list --branch "$BRANCH" \
+            --limit 1 --json --non-interactive 2>/dev/null \
+            | node -p "
+                try {
+                  const d = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+                  const groups = d.currentPage ?? d;
+                  groups[0]?.group ?? groups[0]?.id ?? '';
+                } catch { '' }
+              " || echo '')
+          echo "id=$group" >> "$GITHUB_OUTPUT"
+
+      - name: Summarise
+        if: always() && steps.publish.outcome == 'success'
+        env:
+          BRANCH: ${{ steps.publish.outputs.branch }}
+          MESSAGE: ${{ steps.publish.outputs.message }}
+          RUNTIME_VERSION: ${{ steps.runtime.outputs.version }}
+          GROUP: ${{ steps.group.outputs.id }}
+        run: |
+          {
+            echo "### Update published"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Branch | \`$BRANCH\` |"
+            echo "| Message | $MESSAGE |"
+            echo "| Runtime version | \`$RUNTIME_VERSION\` |"
+            echo "| Update group | \`${GROUP:-not recorded}\` |"
+            echo ""
+            echo "Only builds whose runtime version matches will take this update."
+            echo "To take it back, run the **OTA Rollback** workflow *from this same"
+            echo "commit*. The update group above is what its \`republish\` mode takes."
+          } >> "$GITHUB_STEP_SUMMARY"
