@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { useUpdateCheck } from '@/lib/use-update-check';
 import { useTheme } from '@/theme/use-theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -46,6 +47,7 @@ function RootStack() {
 }
 
 export default function RootLayout() {
+  useUpdateCheck();
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>

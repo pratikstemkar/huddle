@@ -41,9 +41,25 @@
       ],
       "expo-apple-authentication"
     ],
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/172f9116-cb74-43af-95dc-0c92fd852cf2",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      },
+      "fallbackToCacheTimeout": 0
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "172f9116-cb74-43af-95dc-0c92fd852cf2"
+      }
+    },
+    "owner": "pratikstemkar"
   }
 }

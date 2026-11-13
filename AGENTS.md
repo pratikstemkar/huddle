@@ -61,6 +61,10 @@ Docs: https://docs.expo.dev/eas/index.md
 
 **Allowed directly on `main`** (small, non-app changes): `AGENTS.md`, `.claude/` config and skills, `ROADMAP.md`, README/docs. Commit and push these straight to `main` when asked. If a change mixes docs with app code, it goes through a branch + PR.
 
+## Releasing
+
+Tag `vX.Y.Z` to ship: `.github/workflows/android.yml` builds the APK on GitHub, `update.yml` publishes OTA, `rollback.yml` retracts. `bun run release:set <version|major|minor|patch>` bumps `package.json` + `app.json` and regenerates `CHANGELOG.md`; `bun run release:check` verifies they agree (CI runs it). Use conventional commit subjects (`feat:`, `fix:`, ...) — the changelog is built from them. Pin new GitHub Actions to a commit SHA with the version in a trailing comment. Details in CONTRIBUTING.md.
+
 ## Conventions
 
 - Mobile-first, cross-platform (iOS, Android, web); keep performance in mind.

@@ -1,0 +1,54 @@
+version: 2
+
+# Keeps the dependency graph and the workflows moving on a schedule. The OTA
+# workflows hold EXPO_TOKEN, and an update published with it reaches every
+# install on its next launch with no review, so dependencies that run during
+# `bun install` on those runners deserve to stay current.
+
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      # Conventional, because scripts/release.mjs parses commit subjects to build
+      # CHANGELOG.md. `chore` lands under Internal.
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    groups:
+      # The Expo SDK is one artefact wearing forty package names, version-locked
+      # against each other. Bumped separately they resolve and do not run.
+      expo-sdk:
+        patterns:
+          - expo
+          - expo-*
+          - "@expo/*"
+          - "@expo-google-fonts/*"
+          - react
+          - react-dom
+          - react-native
+          - react-native-*
+          - "@react-native/*"
+          - "@react-native-*/*"
+      # Minor and patch only, one weekly PR. Majors arrive alone and get read.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Every `uses:` is pinned to a commit SHA with its version in a trailing
+  # comment; Dependabot rewrites both together so the pins do not rot.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci(deps)
+    groups:
+      actions:
+        patterns:
+          - "*"

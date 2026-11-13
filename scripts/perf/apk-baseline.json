@@ -1,0 +1,16 @@
+{
+  "_readme": [
+    "What a release APK is allowed to weigh, read by scripts/perf/apk-size.mjs.",
+    "Keyed by ABI set, because an all-four-ABI build is roughly three times an",
+    "arm64-only one and comparing the two is noise rather than a regression.",
+    "",
+    "No baseline is recorded yet, so the size check only reports. After the first",
+    "build you have installed and opened, run",
+    "'node scripts/perf/apk-size.mjs <apk> --update' and commit this file.",
+    "",
+    "tolerancePercent is headroom for a feature release, not a target. Raise it",
+    "only with the reason in the commit message."
+  ],
+  "tolerancePercent": 5,
+  "builds": {}
+}

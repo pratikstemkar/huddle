@@ -1,0 +1,171 @@
+name: OTA Rollback
+
+# Retracts an update that is live on phones.
+#
+# expo-updates already handles an update that *crashes*: a build that fails to
+# launch falls back to what it had. This is for the other kind, one that
+# launches, renders, and is wrong.
+#
+#   embedded   Point the branch back at the bundle compiled into the APK, a
+#              known-good build because the APK workflow verifies its embedded
+#              fingerprint. The default, and the one to reach for at 2am.
+#   republish  Re-publish a specific earlier update group. Needs the group id,
+#              which the OTA Update workflow prints to its job summary.
+#
+# RUN THIS FROM THE SAME COMMIT THE LIVE APK WAS BUILT FROM.
+#
+# A rollback is addressed to a runtime version exactly like a publish is.
+# Dispatched against `main` when phones run a build from an older tag, the
+# fingerprints can disagree: the command succeeds and no phone ever hears about
+# it. Pick the release tag in the "Use workflow from" dropdown and compare the
+# runtime version printed here with the one the APK workflow printed. If they
+# differ, stop: the answer is a new APK.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "EAS branch to roll back. `production` is the one the app asks for."
+        required: false
+        default: production
+        type: string
+      mode:
+        description: "How to roll back."
+        required: true
+        default: embedded
+        type: choice
+        options:
+          - embedded
+          - republish
+      group:
+        description: "Update group id to republish. Only read when mode is `republish`."
+        required: false
+        type: string
+      message:
+        description: "Why. Recorded on the update and shown in the EAS dashboard."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+# Never cancel a rollback in flight: a half-issued retraction is worse than waiting.
+concurrency:
+  group: rollback-${{ inputs.branch || 'production' }}
+  cancel-in-progress: false
+
+env:
+  EXPO_NO_TELEMETRY: "1"
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # Pinned to a commit SHA: this job holds EXPO_TOKEN. See android.yml.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.0
+
+      - name: Check configuration
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_GROUP: ${{ inputs.group }}
+        run: |
+          fail() { echo "::error title=$1::$2"; exit 1; }
+          [ -n "$EXPO_TOKEN" ] || fail "No Expo token" \
+            "EXPO_TOKEN is not set. Create one at https://expo.dev/settings/access-tokens and add it under Settings -> Secrets and variables -> Actions."
+          if [ "$INPUT_MODE" = "republish" ] && [ -z "$INPUT_GROUP" ]; then
+            fail "No update group" \
+              "mode is 'republish' but no group id was given. The OTA Update workflow prints the group it published to its job summary."
+          fi
+          # Deliberately not checked: the Supabase variables. Neither mode bundles
+          # JavaScript, so requiring them would block a rollback for no reason.
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Printed before the rollback so the number to check against the APK is on
+      # screen even if the command below fails.
+      - name: Resolve runtime version
+        id: runtime
+        run: |
+          version=$(node node_modules/expo-updates/bin/cli.js runtimeversion:resolve --platform android \
+            | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).runtimeVersion")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Runtime version::$version. Only builds carrying this fingerprint will take the rollback."
+
+      - name: Roll back
+        id: rollback
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          # Through the environment, never interpolated into the script body:
+          # `message` is free text typed under pressure, and `$(...)` in it would
+          # run on the runner holding EXPO_TOKEN.
+          INPUT_BRANCH: ${{ inputs.branch || 'production' }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_GROUP: ${{ inputs.group }}
+          INPUT_MESSAGE: ${{ inputs.message }}
+          RUNTIME_VERSION: ${{ steps.runtime.outputs.version }}
+        run: |
+          message="$INPUT_MESSAGE"
+          [ -n "$message" ] || message="Rollback dispatched from ${GITHUB_REF_NAME} by ${GITHUB_ACTOR}"
+
+          if [ "$INPUT_MODE" = "republish" ]; then
+            bunx eas-cli update:republish --group "$INPUT_GROUP" \
+              --message "$message" --non-interactive
+          else
+            # `--runtime-version` is mandatory under --non-interactive.
+            bunx eas-cli update:roll-back-to-embedded --branch "$INPUT_BRANCH" \
+              --platform android --runtime-version "$RUNTIME_VERSION" \
+              --message "$message" --non-interactive
+          fi
+
+          echo "branch=$INPUT_BRANCH" >> "$GITHUB_OUTPUT"
+          {
+            echo "message<<ROLLBACK_MESSAGE_EOF"
+            echo "$message"
+            echo "ROLLBACK_MESSAGE_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Summarise
+        if: always() && steps.rollback.outcome == 'success'
+        env:
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_GROUP: ${{ inputs.group }}
+          BRANCH: ${{ steps.rollback.outputs.branch }}
+          MESSAGE: ${{ steps.rollback.outputs.message }}
+          RUNTIME_VERSION: ${{ steps.runtime.outputs.version }}
+        run: |
+          {
+            echo "### Rollback issued"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Mode | \`$INPUT_MODE\` |"
+            echo "| Message | $MESSAGE |"
+            echo "| Dispatched from | \`${GITHUB_REF_NAME}\` |"
+            if [ "$INPUT_MODE" = "republish" ]; then
+              echo "| Group | \`$INPUT_GROUP\` |"
+              echo ""
+              echo "Republished an existing update group. It keeps the runtime version"
+              echo "it was originally published against."
+            else
+              echo "| Branch | \`$BRANCH\` |"
+              echo "| Runtime version | \`$RUNTIME_VERSION\` |"
+              echo ""
+              echo "If the runtime version above is not the one the APK workflow printed"
+              echo "for the build people are running, this rollback reached nobody."
+              echo "Re-dispatch from that release's tag."
+            fi
+            echo ""
+            echo "Phones apply this on their **next cold start**, not immediately."
+          } >> "$GITHUB_STEP_SUMMARY"
