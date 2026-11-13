@@ -45,7 +45,7 @@
       "policy": "fingerprint"
     },
     "updates": {
-      "url": "https://u.expo.dev/REPLACE_WITH_EAS_PROJECT_ID",
+      "url": "https://u.expo.dev/172f9116-cb74-43af-95dc-0c92fd852cf2",
       "requestHeaders": {
         "expo-channel-name": "production"
       },
@@ -57,8 +57,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+        "projectId": "172f9116-cb74-43af-95dc-0c92fd852cf2"
       }
-    }
+    },
+    "owner": "pratikstemkar"
   }
 }
