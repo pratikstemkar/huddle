@@ -52,7 +52,7 @@ jobs:
 
     steps:
       # Pinned to a commit SHA: this job holds EXPO_TOKEN. See android.yml.
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5.0.0
 
       # Everything that would make the publish meaningless, checked before the
       # install and bundling. Each fails silently on someone's phone if wrong.
@@ -87,7 +87,7 @@ jobs:
           [ -n "$EXPO_PUBLIC_SUPABASE_URL" ] || fail "No Supabase URL" "The SUPABASE_URL repository variable is empty."
           [ -n "$EXPO_PUBLIC_SUPABASE_ANON_KEY" ] || fail "No Supabase key" "The SUPABASE_ANON_KEY repository variable is empty."
 
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
 
