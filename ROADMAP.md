@@ -36,7 +36,7 @@ The planning loop above works end to end, but real friends can't use it yet. Wor
 
 | # | Feature | Status | Why it matters | Notes |
 |---|---|---|---|---|
-| L1 | Production builds with EAS + a hosted web build | ⬜ | Nobody outside a dev machine can install or open the app, and invites only work if the friend can get it | iOS and Android store submission via `bunx eas-cli`; a hosted web build gives invite links somewhere to land |
+| L1 | Production builds with EAS + a hosted web build | 🟡 | Nobody outside a dev machine can install or open the app, and invites only work if the friend can get it | iOS and Android store submission via `bunx eas-cli`; a hosted web build gives invite links somewhere to land. Done: tag-triggered APK + OTA release pipeline on GitHub Actions (needs EAS project and repo variables) |
 | L2 | Invite links that work for new users | 🟡 | Invites are the whole growth loop | Done: links are `https://<app>/invite/<code>`, a public invite page shows the trip (`invite_preview`), and the code survives sign-in (incl. the web Google redirect). Left, needs L1: set `EXPO_PUBLIC_APP_URL`, fill the Apple Team ID and Android SHA256 in `public/.well-known/`, then test universal/app links on a device |
 | L3 | Google and Apple sign-in tested end to end | 🟡 | They are the only way real users can sign in; dev sign-in is dev-only | MVP rows 2 and 3: test Google against hosted Supabase, Apple in a development build |
 | L4 | Push notifications | ⬜ | Without nudges people mark days once and drift off, and the organiser goes back to chasing them in the group chat | Start with "trip locked" and "vote now"; new votes later |
