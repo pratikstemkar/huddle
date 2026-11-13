@@ -25,6 +25,7 @@
     "expo-status-bar": "~58.0.4",
     "expo-symbols": "~58.0.4",
     "expo-system-ui": "~58.0.7",
+    "expo-updates": "~58.0.22",
     "expo-web-browser": "~58.0.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -58,7 +59,10 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "release:check": "node scripts/release.mjs check",
+    "release:set": "node scripts/release.mjs set",
+    "release:changelog": "node scripts/release.mjs changelog"
   },
   "private": true,
   "jest": {
