@@ -42,12 +42,10 @@ describe('Text', () => {
     ['secondary', light.textSecondary],
     ['muted', light.textMuted],
     ['iris', light.irisText],
-    ['accent', light.irisText],
     ['positive', light.positive],
     ['owe', light.owe],
     ['onIris', light.onIris],
     ['onBeak', light.onBeak],
-    ['onColor', light.onColor],
     ['danger', light.danger],
   ] as const)('uses the %s tone colour', async (tone, color) => {
     await render(<Text tone={tone}>T</Text>);

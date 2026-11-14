@@ -4,6 +4,7 @@ import { router } from '../../test-utils/expo-router-mock';
 import { sessionFor } from '../../test-utils/fixtures';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
+jest.mock('expo-constants', () => ({ __esModule: true, default: { expoConfig: { version: '1.0.1' } } }));
 
 const mockSignOut = jest.fn();
 let mockSession: unknown;
@@ -37,7 +38,14 @@ describe('Profile', () => {
     expect(mockState.refresh).toHaveBeenCalled();
   });
 
-  it('saves a new name and colour, then closes', async () => {
+  it('shows who I am signed in as and the app version', async () => {
+    await render(<ProfileScreen />);
+    expect(screen.getByText('You')).toBeTruthy();
+    expect(screen.getByText('Signed in as aarav@dev.test')).toBeTruthy();
+    expect(screen.getByText('Huddle 1.0.1')).toBeTruthy();
+  });
+
+  it('saves a new name and colour, and stays on the tab', async () => {
     updateProfile.mockResolvedValue(undefined);
     await render(<ProfileScreen />);
     const input = screen.getByLabelText('Your name');
@@ -46,7 +54,9 @@ describe('Profile', () => {
     await fireEvent.press(screen.getByRole('radio', { name: 'Blush' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Save profile' }));
     expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Aarav', avatar_color: 'blush' });
-    expect(router.back).toHaveBeenCalled();
+    expect(await screen.findByText('Saved')).toBeTruthy();
+    expect(mockState.refresh).toHaveBeenCalledTimes(2);
+    expect(router.back).not.toHaveBeenCalled();
   });
 
   it('caps the name at 40 characters', async () => {
@@ -67,7 +77,7 @@ describe('Profile', () => {
     await render(<ProfileScreen />);
     await fireEvent.press(screen.getByRole('button', { name: 'Save profile' }));
     expect(await screen.findByText("Couldn't save your profile. Check your connection and try again.")).toBeTruthy();
-    expect(router.back).not.toHaveBeenCalled();
+    expect(screen.queryByText('Saved')).toBeNull();
   });
 
   it('can swap a sign-in photo for my initial', async () => {
@@ -83,7 +93,6 @@ describe('Profile', () => {
 
   it('signs out', async () => {
     await render(<ProfileScreen />);
-    expect(screen.getByText('Signed in as aarav@dev.test')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
     expect(mockSignOut).toHaveBeenCalled();
   });

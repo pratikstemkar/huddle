@@ -36,18 +36,6 @@ export type Colors = {
   navGlass: string;
   heat: readonly string[];
   tint: Readonly<Record<TintArea, string>>;
-  /** @deprecated Use `iris`. */
-  accent: string;
-  /** @deprecated Use `irisPressed`. */
-  accentPressed: string;
-  /** @deprecated Use `iris`. */
-  votes: string;
-  /** @deprecated Use `beak`. */
-  celebrate: string;
-  /** @deprecated Use `track` or a tint. */
-  cardMuted: string;
-  /** @deprecated Text on beak or a tint. Use `onBeak`, `onIris` or `onTripColor[key]`. */
-  onColor: string;
 };
 
 const light: Colors = {
@@ -76,12 +64,6 @@ const light: Colors = {
   navGlass: 'rgba(255, 255, 255, 0.88)',
   heat: ['#ECEDF6', '#C7C9FA', '#8E92F0', '#5257E8'],
   tint: { trip: '#FFF1CC', vote: '#E9EAFF', plan: '#FFE9D6', split: '#DDF5EE', photos: '#FFE3EA' },
-  accent: '#5257E8',
-  accentPressed: '#4449D6',
-  votes: '#5257E8',
-  celebrate: '#FFC23D',
-  cardMuted: '#EEF0F8',
-  onColor: '#171A2F',
 };
 
 const dark: Colors = {
@@ -110,12 +92,6 @@ const dark: Colors = {
   navGlass: 'rgba(27, 30, 51, 0.88)',
   heat: ['#24283F', '#363A7A', '#5A5EC4', '#8286FF'],
   tint: { trip: '#3A3220', vote: '#2A2D5C', plan: '#3D2A1F', split: '#173A35', photos: '#3D2230' },
-  accent: '#8286FF',
-  accentPressed: '#9599FF',
-  votes: '#8286FF',
-  celebrate: '#FFC23D',
-  cardMuted: '#22263D',
-  onColor: '#10121F',
 };
 
 export const palette: { readonly light: Colors; readonly dark: Colors } = { light, dark };

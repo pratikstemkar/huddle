@@ -8,14 +8,12 @@ export type Tone =
   | 'secondary'
   | 'muted'
   | 'iris'
-  | 'accent'
   | 'positive'
   | 'owe'
   | 'danger'
   | 'onIris'
   | 'onBeak'
-  | 'onInk'
-  | 'onColor';
+  | 'onInk';
 
 export type AppTextProps = TextProps & { variant?: TypeVariant; tone?: Tone };
 
@@ -27,14 +25,12 @@ export function toneColor(colors: Colors, tone: Tone) {
     secondary: colors.textSecondary,
     muted: colors.textMuted,
     iris: colors.irisText,
-    accent: colors.irisText,
     positive: colors.positive,
     owe: colors.owe,
     danger: colors.danger,
     onIris: colors.onIris,
     onBeak: colors.onBeak,
     onInk: colors.onInk,
-    onColor: colors.onColor,
   }[tone];
 }
 

@@ -1,17 +1,22 @@
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
+import { OptionCard } from '@/components/trip/option-card';
+import { SheetHeader } from '@/components/trip/sheet-header';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
+import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { formatRange, fromDay, toDay } from '@/lib/dates';
 import { useTripLive } from '@/lib/realtime';
 import { lockTrip, useTrip } from '@/lib/trips';
-import { MIN_TOUCH, onTripColor, radius, space, toTripColor, tripColors } from '@/theme/tokens';
+import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -57,9 +62,9 @@ export default function LockTrip() {
   const isOrganiser = !!trip && trip.members.some((m) => m.user_id === session?.user.id && m.role === 'organiser');
   if (!trip || !isOrganiser || trip.status === 'locked') {
     return (
-      <Screen footer={<Button label="Close" onPress={close} />}>
-        <Text variant="title">Lock in the plan</Text>
-        <Text variant="body" tone="secondary" style={{ marginTop: space.md }}>
+      <Screen contentStyle={styles.content}>
+        <SheetHeader title="Lock in the plan" onClose={close} />
+        <Text variant="body" tone="secondary">
           {!trip
             ? "This trip doesn't exist, or you're not a member of it."
             : trip.status === 'locked'
@@ -70,12 +75,13 @@ export default function LockTrip() {
     );
   }
 
-  const fill = tripColors[toTripColor(trip.color)];
-  const onFill = onTripColor[toTripColor(trip.color)];
-  const best = trip.bestDays;
-  const startDay = start ?? best[0]?.start ?? '';
-  const endDay = end ?? best[0]?.end ?? '';
+  const fixed = trip.fixed_start && trip.fixed_end ? { start: trip.fixed_start, end: trip.fixed_end } : null;
+  const best = fixed ? [] : trip.bestDays;
+  const startDay = start ?? fixed?.start ?? best[0]?.start ?? '';
+  const endDay = end ?? fixed?.end ?? best[0]?.end ?? '';
   const destId = destination ?? trip.destinations[0]?.id ?? null;
+  const topVotes = trip.destinations[0]?.voteCount ?? 0;
+  const n = trip.members.length;
 
   const lock = async () => {
     if (!validDay(startDay) || !validDay(endDay)) {
@@ -94,7 +100,7 @@ export default function LockTrip() {
     try {
       await lockTrip(trip.id, startDay, endDay, destId);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      close();
+      router.replace({ pathname: '/trip/[id]/locked', params: { id: trip.id } });
     } catch {
       setError("Couldn't lock the trip. Check your connection and try again.");
     } finally {
@@ -103,120 +109,105 @@ export default function LockTrip() {
   };
 
   const dateInput = (label: string, value: string, set: (v: string) => void) => (
-    <View style={{ flex: 1, gap: space.xs }}>
-      <Text variant="caption" tone="muted">
-        {label}
-      </Text>
-      <TextInput
-        value={value}
-        onChangeText={(t) => {
-          set(t.trim());
-          if (error) setError(null);
-        }}
-        accessibilityLabel={label}
-        placeholder="2027-03-14"
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize="none"
-        autoCorrect={false}
-        maxLength={10}
-        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.line, color: colors.text }]}
-      />
-    </View>
+    <Input
+      label={label}
+      value={value}
+      onChangeText={(t) => {
+        set(t.trim());
+        if (error) setError(null);
+      }}
+      placeholder="2027-03-14"
+      autoCapitalize="none"
+      autoCorrect={false}
+      maxLength={10}
+      containerStyle={styles.flex}
+    />
   );
 
   return (
-    <Screen footer={<Button label="Lock in the plan" color={fill} loading={saving} onPress={lock} />}>
-      <Text variant="title">Lock in the plan</Text>
-      <Text variant="body" tone="secondary" style={{ marginTop: space.xs }}>
-        Everyone sees the final dates and place. Days and votes stop changing.
-      </Text>
+    <Screen contentStyle={styles.content} footer={<Button label="Lock in the plan" loading={saving} onPress={lock} />}>
+      <View style={{ gap: space.sm }}>
+        <SheetHeader title="Lock in the plan" onClose={close} />
+        <Text variant="callout" tone="secondary">
+          Everyone sees the final dates and place. Days and votes stop changing.
+        </Text>
+      </View>
 
-      <Text variant="label" style={styles.label}>
-        Dates
-      </Text>
-      {best.length > 0 ? (
-        <View style={styles.chips}>
-          {best.map((r) => {
-            const on = startDay === r.start && endDay === r.end;
-            return (
-              <Pressable
+      <View style={styles.section}>
+        <Text variant="calloutStrong">When</Text>
+        {best.length > 0 ? (
+          <View accessibilityRole="radiogroup" style={styles.options}>
+            {best.map((r) => (
+              <OptionCard
                 key={r.start}
-                accessibilityRole="radio"
-                accessibilityLabel={`${formatRange(r.start, r.end)}, ${r.free} of ${trip.members.length} free`}
-                accessibilityState={{ selected: on }}
+                icon="plan"
+                area="plan"
+                title={formatRange(r.start, r.end)}
+                sub={`${r.free} of ${n} free`}
+                selected={startDay === r.start && endDay === r.end}
                 onPress={() => {
                   setStart(r.start);
                   setEnd(r.end);
                   setError(null);
                 }}
-                style={[styles.chip, { backgroundColor: on ? fill : colors.card, borderColor: on ? fill : colors.line }]}>
-                <Text variant="label" tone="primary" style={on ? { color: onFill } : undefined}>
-                  {formatRange(r.start, r.end)}
-                </Text>
-                <Text variant="caption" tone="muted" style={on ? { color: onFill } : undefined}>
-                  {r.free} of {trip.members.length} free
-                </Text>
-              </Pressable>
-            );
-          })}
+              />
+            ))}
+          </View>
+        ) : null}
+        <View style={styles.dates}>
+          {dateInput('Start date', startDay, setStart)}
+          {dateInput('End date', endDay, setEnd)}
         </View>
-      ) : null}
-      <View style={styles.dates}>
-        {dateInput('Start date', startDay, setStart)}
-        {dateInput('End date', endDay, setEnd)}
       </View>
 
-      <Text variant="label" style={styles.label}>
-        Destination
-      </Text>
-      {trip.destinations.length === 0 ? (
-        <Card>
-          <Text variant="body" tone="secondary">
-            Suggest at least one place first, then come back to lock the trip.
-          </Text>
-        </Card>
-      ) : (
-        <View accessibilityRole="radiogroup" style={{ gap: space.sm }}>
-          {trip.destinations.map((d) => {
-            const on = d.id === destId;
-            return (
-              <Pressable
-                key={d.id}
-                accessibilityRole="radio"
-                accessibilityLabel={`${d.title}, ${d.voteCount} ${d.voteCount === 1 ? 'vote' : 'votes'}`}
-                accessibilityState={{ selected: on }}
-                onPress={() => {
-                  setDestination(d.id);
-                  setError(null);
-                }}
-                style={[styles.option, { backgroundColor: colors.card, borderColor: on ? fill : colors.line, borderWidth: on ? 2 : 1 }]}>
-                <Text variant="bodyStrong" style={{ flex: 1 }} numberOfLines={1}>
-                  {d.title}
-                </Text>
-                <Text variant="caption" tone="muted">
-                  {d.voteCount} {d.voteCount === 1 ? 'vote' : 'votes'}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      )}
+      <View style={styles.section}>
+        <Text variant="calloutStrong">Where</Text>
+        {trip.destinations.length === 0 ? (
+          <Card>
+            <Text variant="callout" tone="secondary">
+              Suggest at least one place first, then come back to lock the trip.
+            </Text>
+          </Card>
+        ) : (
+          <View accessibilityRole="radiogroup" style={styles.options}>
+            {trip.destinations.map((d) => {
+              const votes = `${d.voteCount} ${d.voteCount === 1 ? 'vote' : 'votes'}`;
+              return (
+                <OptionCard
+                  key={d.id}
+                  icon="vote"
+                  area="vote"
+                  title={d.title}
+                  sub={votes}
+                  selected={d.id === destId}
+                  trailing={topVotes > 0 && d.voteCount === topVotes ? <Badge label="Leading" tone="beakSm" /> : undefined}
+                  onPress={() => {
+                    setDestination(d.id);
+                    setError(null);
+                  }}
+                />
+              );
+            })}
+          </View>
+        )}
+      </View>
 
       {error ? (
-        <Text variant="caption" tone="danger" accessibilityLiveRegion="polite" style={{ marginTop: space.md }}>
+        <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
           {error}
         </Text>
       ) : null}
+
+      <SpeechCard>You can unlock it later in trip settings if plans change.</SpeechCard>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  label: { marginTop: space.xl, marginBottom: space.sm },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginBottom: space.md },
-  chip: { borderRadius: radius.md, borderWidth: 1, paddingHorizontal: space.lg, paddingVertical: space.sm, minHeight: MIN_TOUCH, justifyContent: 'center' },
+  content: { gap: space.s20 },
+  section: { gap: space.s10 },
+  options: { gap: space.s10 },
   dates: { flexDirection: 'row', gap: space.md },
-  input: { minHeight: MIN_TOUCH + 4, borderRadius: radius.md, borderWidth: 1, paddingHorizontal: space.lg, fontSize: 17 },
-  option: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderRadius: radius.md, paddingHorizontal: space.lg, minHeight: MIN_TOUCH + 8 },
+  flex: { flex: 1 },
 });

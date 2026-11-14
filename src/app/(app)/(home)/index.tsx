@@ -1,87 +1,254 @@
+import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 
+import { Pip } from '@/components/pip/pip';
 import { Avatar } from '@/components/ui/avatar';
+import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Icon } from '@/components/ui/icon';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { displayName, useAuth } from '@/lib/auth';
-import { formatTripDates } from '@/lib/dates';
+import { formatRange, formatTripDates, today as todayDay, type Day } from '@/lib/dates';
 import { useMyProfile } from '@/lib/profile';
-import { useTrips, type Trip, type TripCover } from '@/lib/trips';
-import { MIN_TOUCH, onTripColor, radius, space, toTripColor, tripColors, tripTints } from '@/theme/tokens';
+import { countdown, homeChip, tripDates, type ChipTone } from '@/lib/trip-status';
+import {
+  inviteLink,
+  leadingPlaceName,
+  nudgeMessage,
+  useTrips,
+  type Trip,
+  type TripCover,
+  type TripSummary,
+} from '@/lib/trips';
+import { MIN_TOUCH, palette, radius, space, toTripColor, tripTints } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
-function TripCard({ trip, cover, index }: { trip: Trip; cover?: TripCover; index: number }) {
+const CHIP_TONES: Record<ChipTone, BadgeTone> = { action: 'beak', open: 'vote', done: 'neutral' };
+const COPIED_MS = 1800;
+// Trip tints are light in both schemes, so what sits on them is always ink.
+const ON_TINT = palette.light.text;
+
+const days = (n: number) => `${n} ${n === 1 ? 'day' : 'days'}`;
+
+type Hero =
+  | { kind: 'nudge'; trip: Trip; text: string }
+  | { kind: 'vote'; trip: Trip }
+  | { kind: 'soon'; trip: Trip; text: string }
+  | { kind: 'empty' }
+  | { kind: 'idle' };
+
+/** What Pip says at the top of Home: the first rule that matches any trip wins. */
+function homeHero(trips: Trip[], summaries: Map<string, TripSummary>, today: Day): Hero {
+  if (trips.length === 0) return { kind: 'empty' };
+  for (const trip of trips) {
+    const s = summaries.get(trip.id);
+    if (trip.status !== 'planning' || !s || s.members < 2) continue;
+    const k = s.members - s.marked;
+    if (k <= 0) continue;
+    const cd = countdown(tripDates(trip), today);
+    const text =
+      cd?.kind === 'upcoming'
+        ? `${trip.name} is ${days(cd.days)} away and ${k} ${k === 1 ? 'friend still needs' : 'friends still need'} to pick dates.`
+        : `${k} of ${s.members} still need to mark their days for ${trip.name}.`;
+    return { kind: 'nudge', trip, text };
+  }
+  for (const trip of trips) {
+    const s = summaries.get(trip.id);
+    if (trip.status === 'planning' && s && s.places > 0 && !s.i_voted) return { kind: 'vote', trip };
+  }
+  for (const trip of trips) {
+    const cd = countdown(tripDates(trip), today);
+    if (cd?.kind === 'upcoming') return { kind: 'soon', trip, text: `${trip.name} is ${days(cd.days)} away. Start packing.` };
+  }
+  return { kind: 'idle' };
+}
+
+const openTrip = (id: string) => router.push({ pathname: '/trip/[id]', params: { id } });
+
+function HeroCard({ hero }: { hero: Hero }) {
+  const { colors } = useTheme();
+  const [copied, setCopied] = useState(false);
+  const [leading, setLeading] = useState<{ tripId: string; name: string | null } | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const voteTripId = hero.kind === 'vote' ? hero.trip.id : null;
+  const leader = leading && leading.tripId === voteTripId ? leading.name : null;
+  useEffect(() => {
+    if (!voteTripId) return;
+    let live = true;
+    leadingPlaceName(voteTripId)
+      .then((name) => {
+        if (live) setLeading({ tripId: voteTripId, name });
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [voteTripId]);
+
+  const nudge = async (trip: Trip) => {
+    const message = nudgeMessage(trip.name, 'days', inviteLink(trip.invite_code));
+    // Browsers without the Web Share API can't open a share sheet; copy the message instead.
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && !navigator.share) {
+      try {
+        await Clipboard.setStringAsync(message);
+        setCopied(true);
+        clearTimeout(timer.current);
+        timer.current = setTimeout(() => setCopied(false), COPIED_MS);
+      } catch {}
+      return;
+    }
+    try {
+      await Share.share({ message });
+    } catch {}
+  };
+
+  let text: string;
+  let actions: ReactNode;
+  switch (hero.kind) {
+    case 'nudge':
+      text = hero.text;
+      actions = <Button label={copied ? 'Copied' : 'Nudge them'} variant="beak" onPress={() => nudge(hero.trip)} />;
+      break;
+    case 'vote':
+      text = `Got a favourite for ${hero.trip.name}? ${leader ? `${leader} is ahead.` : 'Voting is open.'}`;
+      actions = (
+        <Button
+          label="Vote"
+          variant="beak"
+          accessibilityHint={`Opens the vote for ${hero.trip.name}`}
+          onPress={() => router.push({ pathname: '/trip/[id]/vote', params: { id: hero.trip.id, seg: 'places' } })}
+        />
+      );
+      break;
+    case 'soon':
+      text = hero.text;
+      actions = <Button label="Open" variant="beak" accessibilityHint={`Opens ${hero.trip.name}`} onPress={() => openTrip(hero.trip.id)} />;
+      break;
+    case 'empty':
+      text = "No trips yet. Start one and I'll round up the gang.";
+      actions = (
+        <View style={styles.heroButtons}>
+          <Button label="Start a trip" variant="beak" onPress={() => router.push('/new-trip')} />
+          <Button label="Join with a code" variant="outline" size="sm" onPress={() => router.push('/join')} />
+        </View>
+      );
+      break;
+    case 'idle':
+      text = "Got another trip in mind? I'll round up the gang.";
+      actions = <Button label="Start a trip" variant="beak" onPress={() => router.push('/new-trip')} />;
+      break;
+  }
+
+  return (
+    <View style={[styles.hero, { backgroundColor: colors.iris }]}>
+      <View style={styles.heroBody}>
+        <Text accessibilityLiveRegion="polite" style={[styles.heroText, { color: colors.onIris }]}>
+          {text}
+        </Text>
+        {actions}
+      </View>
+      <Pip mood={hero.kind === 'empty' ? 'snooze' : 'idle'} size={92} scarf={colors.beak} tail={colors.beak} wavePose={hero.kind !== 'empty'} />
+    </View>
+  );
+}
+
+function TripTile({ trip, cover, today }: { trip: Trip; cover?: TripCover; today: Day }) {
+  const { colors } = useTheme();
+  const cd = countdown(tripDates(trip), today);
+  if (cd?.kind === 'upcoming' || cd?.kind === 'during') {
+    const upcoming = cd.kind === 'upcoming';
+    return (
+      <View style={[styles.tile, { backgroundColor: colors.tint.trip }]}>
+        <Text variant="number">{upcoming ? cd.days : 'Now'}</Text>
+        <Text variant="tab" tone="secondary">
+          {upcoming ? (cd.days === 1 ? 'day' : 'days') : 'on trip'}
+        </Text>
+      </View>
+    );
+  }
+  if (cover) {
+    return (
+      <View style={styles.tile}>
+        <Image source={{ uri: cover.url, cacheKey: cover.path ?? undefined }} contentFit="cover" transition={200} style={StyleSheet.absoluteFill} />
+      </View>
+    );
+  }
+  return (
+    <View style={[styles.tile, { backgroundColor: tripTints[toTripColor(trip.color)] }]}>
+      <Icon name={cd?.kind === 'past' ? 'photos' : 'mountain'} size={28} color={ON_TINT} />
+    </View>
+  );
+}
+
+function TripCard({
+  trip,
+  cover,
+  summary,
+  photoCount,
+  today,
+  index,
+}: {
+  trip: Trip;
+  cover?: TripCover;
+  summary?: TripSummary;
+  photoCount: number;
+  today: Day;
+  index: number;
+}) {
+  const { colors } = useTheme();
   const reduced = useReducedMotion();
-  const key = toTripColor(trip.color);
-  const fill = tripColors[key];
-  const on = onTripColor[key];
-  const dates = trip.status === 'locked' && trip.locked_start && trip.locked_end ? formatTripDates(trip.locked_start, trip.locked_end) : null;
+  const dates = tripDates(trip);
+  const chip = homeChip(trip, summary, photoCount, today);
+  const people = summary ? (summary.members === 1 ? 'Just you' : `${summary.members} friends`) : null;
+  const sub = [dates ? formatRange(dates.start, dates.end) : 'Dates open', people].filter(Boolean).join(' · ');
+  const label = `${trip.name}${chip ? `, ${chip.text}` : ''}${dates ? `, ${formatTripDates(dates.start, dates.end)}` : ''}`;
   return (
     <Animated.View
       entering={reduced ? undefined : FadeInDown.delay(index * 70).springify().damping(16)}
       layout={reduced ? undefined : LinearTransition.springify()}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${trip.name}, ${trip.status === 'locked' ? 'locked in' : 'still planning'}${dates ? `, ${dates}` : ''}`}
+        accessibilityLabel={label}
         accessibilityHint="Opens the trip"
-        onPress={() => router.push({ pathname: '/trip/[id]', params: { id: trip.id } })}
-        style={({ pressed }) => [styles.trip, { backgroundColor: fill, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
-        {cover ? (
-          <View style={StyleSheet.absoluteFill} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            <Image source={{ uri: cover.url, cacheKey: cover.path ?? undefined }} contentFit="cover" transition={200} style={StyleSheet.absoluteFill} />
-            {/* Darkens the bottom so the trip name stays readable on any photo, tinted with the trip colour. */}
-            <LinearGradient colors={['rgba(0,0,0,0.05)', `${fill}66`, 'rgba(0,0,0,0.72)']} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
-          </View>
-        ) : null}
-        <View style={[styles.pill, { backgroundColor: cover ? fill : on }]}>
-          <Text variant="caption" style={{ color: cover ? on : fill, fontWeight: '600' }}>
-            {trip.status === 'locked' ? 'Locked in' : 'Planning'}
-          </Text>
+        onPress={() => openTrip(trip.id)}
+        style={({ pressed }) => [
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.line, transform: [{ scale: pressed && !reduced ? 0.98 : 1 }] },
+        ]}>
+        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <TripTile trip={trip} cover={cover} today={today} />
         </View>
-        <View style={{ gap: 2 }}>
-          <Text variant="title" numberOfLines={2} style={cover ? styles.onPhoto : { color: on }}>
+        <View style={styles.cardBody}>
+          <Text variant="cardTitle" numberOfLines={2}>
             {trip.name}
           </Text>
-          {dates ? (
-            <Text variant="caption" style={cover ? styles.onPhoto : { color: on }}>
-              {dates}
-            </Text>
-          ) : null}
+          <Text variant="caption" tone="secondary" numberOfLines={1}>
+            {sub}
+          </Text>
+          {chip ? <Badge label={chip.text} tone={CHIP_TONES[chip.tone]} /> : null}
         </View>
+        <Icon name="chevronRight" size={20} color={colors.textSecondary} />
       </Pressable>
     </Animated.View>
   );
 }
 
-function EmptyState() {
-  const { colors } = useTheme();
-  return (
-    <Card style={{ gap: space.md, alignItems: 'flex-start' }}>
-      <View style={styles.swatches} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        {Object.values(tripColors).map((c, i) => (
-          <View key={c} style={[styles.swatch, { backgroundColor: c, borderColor: colors.card, marginLeft: i ? -10 : 0 }]} />
-        ))}
-      </View>
-      <Text variant="heading">Start your first trip</Text>
-      <Text variant="body" tone="secondary">
-        Give it a name, invite the group, and let everyone mark when they’re free.
-      </Text>
-    </Card>
-  );
-}
-
 export default function Home() {
   const { session } = useAuth();
-  const { trips, covers, loading, error, refresh } = useTrips();
+  const { trips, covers, summaries, photoCounts, loading, error, refresh } = useTrips();
   const { profile, refresh: refreshProfile } = useMyProfile(session?.user.id);
   const name = profile?.display_name ?? displayName(session);
+  const today = todayDay();
+  const hero = useMemo(() => homeHero(trips, summaries, today), [trips, summaries, today]);
+  const firstLoad = loading && trips.length === 0;
 
   useFocusEffect(
     useCallback(() => {
@@ -91,52 +258,91 @@ export default function Home() {
   );
 
   return (
-    <Screen withNav footer={
-        <View style={{ gap: space.sm }}>
-          <Button label="New trip" onPress={() => router.push('/new-trip')} />
-          <Button label="Join with a code" variant="secondary" onPress={() => router.push('/join')} />
+    <Screen withNav>
+      <View style={styles.page}>
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            <Text variant="callout" tone="secondary">
+              Hey {name.split(' ')[0]}
+            </Text>
+            <Text variant="title">Where to next?</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Your profile"
+            accessibilityHint="Edit your name and avatar, or sign out"
+            onPress={() => router.push('/profile')}
+            style={styles.avatar}>
+            <Avatar name={name} url={profile?.avatar_url} color={profile?.avatar_color} fallbackColor={tripTints.blush} size={MIN_TOUCH} />
+          </Pressable>
         </View>
-      }>
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text variant="caption" tone="secondary">
-            Your trips
-          </Text>
-          <Text variant="title">Hey {name.split(' ')[0]}</Text>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Your profile"
-          accessibilityHint="Edit your name and avatar, or sign out"
-          onPress={() => router.push('/profile')}
-          style={styles.avatar}>
-          <Avatar name={name} url={profile?.avatar_url} color={profile?.avatar_color} fallbackColor={tripTints.beak} size={MIN_TOUCH} />
-        </Pressable>
-      </View>
 
-      {error ? (
-        <Text variant="caption" tone="danger" style={{ marginBottom: space.md }}>
-          {error}
-        </Text>
-      ) : null}
+        {firstLoad ? (
+          <View style={styles.loading}>
+            <Pip mood="hmm" size={96} />
+            <Text variant="caption" tone="secondary" accessibilityLiveRegion="polite">
+              Loading your trips
+            </Text>
+          </View>
+        ) : (
+          <HeroCard hero={hero} />
+        )}
 
-      <View style={{ gap: space.md }}>
-        {!loading && trips.length === 0 ? <EmptyState /> : null}
-        {trips.map((t, i) => (
-          <TripCard key={t.id} trip={t} cover={covers.get(t.id)} index={i} />
-        ))}
+        {!firstLoad ? (
+          <View style={styles.list}>
+            <Text variant="heading">Your trips</Text>
+            {error ? (
+              <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
+                {error}
+              </Text>
+            ) : null}
+            {trips.length === 0 ? (
+              <Card style={styles.empty}>
+                <Text variant="cardTitle">Start your first trip</Text>
+                <Text variant="callout" tone="secondary">
+                  Give it a name, invite the group, and let everyone mark when they’re free.
+                </Text>
+              </Card>
+            ) : null}
+            {trips.map((t, i) => (
+              <TripCard
+                key={t.id}
+                trip={t}
+                cover={covers.get(t.id)}
+                summary={summaries.get(t.id)}
+                photoCount={photoCounts.get(t.id) ?? 0}
+                today={today}
+                index={i}
+              />
+            ))}
+          </View>
+        ) : null}
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: space.xl, gap: space.md },
+  page: { gap: space.s18 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  headerText: { flex: 1, gap: space.xxs },
   avatar: { width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: MIN_TOUCH / 2, alignItems: 'center', justifyContent: 'center' },
-  trip: { borderRadius: radius.lg, padding: space.xl, minHeight: 150, justifyContent: 'space-between', gap: space.lg, overflow: 'hidden' },
-  // White on the darkened photo; ink text would vanish there.
-  onPhoto: { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } },
-  pill: { alignSelf: 'flex-start', borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.xs },
-  swatches: { flexDirection: 'row' },
-  swatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 3 },
+  hero: {
+    borderRadius: radius.xl,
+    paddingVertical: space.s18,
+    paddingLeft: space.s20,
+    paddingRight: space.s18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+  },
+  heroBody: { flex: 1, gap: space.s10, alignItems: 'flex-start' },
+  heroText: { fontSize: 15, lineHeight: 21, fontWeight: '500' },
+  heroButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  loading: { alignItems: 'center', gap: space.sm, paddingVertical: space.xxxl },
+  list: { gap: space.listGap },
+  empty: { gap: space.sm },
+  card: { borderWidth: 1, borderRadius: radius.card, padding: space.s14, flexDirection: 'row', alignItems: 'center', gap: space.s14 },
+  cardBody: { flex: 1, minWidth: 0, gap: space.xs },
+  tile: { width: 64, height: 64, borderRadius: radius.tileLg, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
 });

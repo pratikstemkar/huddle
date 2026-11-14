@@ -8,6 +8,7 @@ import { palette } from '@/theme/tokens';
 
 
 const long = (day: string) => formatDay(day, { weekday: 'long', day: 'numeric', month: 'long' });
+const flat = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
 const bg = (el: { props: { style?: unknown } }) => (StyleSheet.flatten(el.props.style as never) as { backgroundColor?: string }).backgroundColor;
 
 type Opts = Partial<{
@@ -133,7 +134,8 @@ describe('DayCalendar', () => {
     const { onToggle } = await renderCalendar({ myDays: new Set(['2027-03-15']) });
     const cell = screen.getByLabelText(`${long('2027-03-15')}, you are free`);
     expect(cell.props.accessibilityState).toMatchObject({ selected: true });
-    expect(bg(cell)).toBe(palette.light.accent);
+    expect(bg(cell)).toBe(palette.light.iris);
+    expect(flat(cell)).toMatchObject({ height: 44, borderRadius: 14 });
     await fireEvent.press(cell);
     expect(onToggle).toHaveBeenCalledWith('2027-03-15', false);
   });
@@ -175,6 +177,12 @@ describe('DayCalendar', () => {
     expect(bg(screen.getByLabelText(`${long('2027-03-14')}, 1 of 3 free`))).toBe(heat[1]);
     expect(bg(screen.getByLabelText(`${long('2027-03-15')}, 2 of 3 free`))).toBe(heat[2]);
     expect(bg(screen.getByLabelText(`${long('2027-03-16')}, 3 of 3 free`))).toBe(heat[3]);
+  });
+
+  it('outlines my own days in ink and the selected day in iris in Everyone mode', async () => {
+    await renderCalendar({ mode: 'all', myDays: new Set(['2027-03-15']), counts: new Map([['2027-03-15', 1]]), selected: '2027-03-16' });
+    expect(flat(screen.getByLabelText(`${long('2027-03-15')}, you are free, 1 of 3 free`))).toMatchObject({ borderWidth: 2, borderColor: palette.light.ink });
+    expect(flat(screen.getByLabelText(`${long('2027-03-16')}, 0 of 3 free`))).toMatchObject({ borderWidth: 2, borderColor: palette.light.iris });
   });
 
   it('selects a day in Everyone mode, even when read-only', async () => {

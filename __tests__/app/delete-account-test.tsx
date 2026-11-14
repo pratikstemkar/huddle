@@ -51,8 +51,17 @@ describe('Delete account', () => {
     expect(supabase.auth.signOut).not.toHaveBeenCalled();
   });
 
+  it('shows why the trips could not load', async () => {
+    queueResult('rpc:account_deletion_preview', { error: { message: 'offline' } });
+    await render(<DeleteAccount />);
+    expect(await screen.findByText("Couldn't load your trips. Check your connection and try again.")).toBeTruthy();
+  });
+
   it('backs out without deleting', async () => {
     await render(<DeleteAccount />);
+    expect(screen.getByRole('header', { name: 'Delete your account' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(router.back).toHaveBeenCalledTimes(1);
     await fireEvent.press(screen.getByRole('button', { name: 'Keep my account' }));
     expect(router.back).toHaveBeenCalled();
     expect(rpcCalls.map((c) => c.name)).not.toContain('delete_my_account');

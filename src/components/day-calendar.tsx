@@ -15,6 +15,7 @@ import {
 import { formatDay, monthGrids, type Day, type MonthGrid } from '@/lib/dates';
 import { MAX_CONTENT_WIDTH, MIN_TOUCH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
+import { Icon } from './ui/icon';
 import { Text } from './ui/text';
 
 export type CalendarMode = 'mine' | 'all';
@@ -93,10 +94,10 @@ const Cell = memo(function Cell({ day, past, mode, mine, count, total, selected,
       style={[
         styles.cell,
         { backgroundColor: fill, opacity: past ? 0.4 : 1 },
-        mode === 'all' && mine && { borderWidth: 2, borderColor: colors.text },
+        mode === 'all' && mine && { borderWidth: 2, borderColor: colors.ink },
         mode === 'all' && selected && { borderWidth: 2, borderColor: colors.iris },
       ]}>
-      <Text variant="label" style={{ color: textColor }}>
+      <Text variant="calloutStrong" style={{ color: textColor }}>
         {Number(day.slice(8))}
       </Text>
       {dots ? (
@@ -168,7 +169,7 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
   const months = useMemo(() => monthGrids(from, to), [from, to]);
   const window = useWindowDimensions();
   // A first guess from the screen size so the first frame isn't empty; onLayout gives the real width.
-  const [width, setWidth] = useState(() => Math.max(0, Math.min(window.width, MAX_CONTENT_WIDTH) - 2 * space.xl));
+  const [width, setWidth] = useState(() => Math.max(0, Math.min(window.width, MAX_CONTENT_WIDTH) - 2 * (space.screenX + space.lg + 1)));
   const [index, setIndex] = useState(0);
   const list = useRef<FlatList<MonthGrid>>(null);
   // The month an arrow is scrolling to. While set, the animation's in-between offsets don't move the index,
@@ -242,10 +243,8 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
         disabled={disabled}
         onPress={() => goTo(index + dir)}
         hitSlop={4}
-        style={[styles.arrow, { backgroundColor: colors.card, opacity: disabled ? 0.35 : 1 }]}>
-        <Text variant="title" accessibilityRole="none" style={{ lineHeight: 30 }}>
-          {dir < 0 ? '‹' : '›'}
-        </Text>
+        style={({ pressed }) => [styles.arrow, { backgroundColor: pressed ? colors.track : colors.bg, opacity: disabled ? 0.35 : 1 }]}>
+        <Icon name={dir < 0 ? 'back' : 'chevronRight'} size={20} color={colors.text} />
       </Pressable>
     );
   };
@@ -270,10 +269,10 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
             hitSlop={{ top: (MIN_TOUCH - TODAY_H) / 2, bottom: (MIN_TOUCH - TODAY_H) / 2, left: space.sm, right: space.sm }}
             style={({ pressed }) => [
               styles.today,
-              { backgroundColor: pressed ? colors.track : colors.card, borderColor: colors.line, opacity: index === 0 ? 0 : 1 },
+              { backgroundColor: pressed ? colors.track : colors.bg, borderColor: colors.line, opacity: index === 0 ? 0 : 1 },
               pressed && { transform: [{ scale: 0.96 }] },
             ]}>
-            <Text variant="caption" tone="accent" style={{ fontWeight: '600' }}>
+            <Text variant="caption" tone="iris" style={{ fontWeight: '600' }}>
               Today
             </Text>
           </Pressable>
@@ -350,7 +349,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: ROW_GAP },
   head: { flex: 1, alignItems: 'center', paddingVertical: space.xs },
   blank: { flex: 1, height: CELL },
-  cell: { flex: 1, height: CELL, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  cell: { flex: 1, height: CELL, borderRadius: radius.tile, alignItems: 'center', justifyContent: 'center' },
   dots: { position: 'absolute', bottom: 4, flexDirection: 'row', alignItems: 'center', gap: 2 },
   dot: { width: 7, height: 7, borderRadius: 4, borderWidth: 1 },
   more: { fontSize: 9, lineHeight: 10 },

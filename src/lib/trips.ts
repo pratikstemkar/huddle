@@ -335,3 +335,16 @@ export async function removeMember(tripId: string, userId: string) {
   if (error) throw error;
   if (!data?.length) throw new Error('Not removed');
 }
+
+/** The name of the place with the most votes (earliest suggested wins a tie), or null when nobody has voted. */
+export async function leadingPlaceName(tripId: string): Promise<string | null> {
+  const [destRes, votesRes] = await Promise.all([
+    supabase.from('destinations').select('id, title, created_at').eq('trip_id', tripId),
+    supabase.from('votes').select('destination_id, user_id').eq('trip_id', tripId),
+  ]);
+  if (destRes.error || votesRes.error || !destRes.data?.length) return null;
+  // Ranking only reads id and created_at, so the slim rows rank the same as full ones.
+  const rows = destRes.data as unknown as DestinationRow[];
+  const [top] = rankDestinations(rows, (votesRes.data ?? []) as { destination_id: string; user_id: string }[], undefined);
+  return top && top.voteCount > 0 ? top.title : null;
+}
