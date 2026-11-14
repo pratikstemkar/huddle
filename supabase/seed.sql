@@ -25,7 +25,7 @@ from auth.users where email like '%@dev.test';
 
 -- A sample trip so the home screen isn't empty: Aarav organises, Meera has joined.
 insert into public.trips (id, name, color, created_by, invite_code)
-values ('aaaaaaaa-0000-0000-0000-000000000001', 'Goa in March', 'sunset', '11111111-1111-1111-1111-111111111111', 'goa2027');
+values ('aaaaaaaa-0000-0000-0000-000000000001', 'Goa in March', 'coral', '11111111-1111-1111-1111-111111111111', 'goa2027');
 
 insert into public.trip_members (trip_id, user_id) values
   ('aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222');
@@ -51,10 +51,12 @@ insert into public.votes (destination_id, trip_id, user_id) values
 -- A locked trip, so the summary screen has something to show without locking one by hand.
 -- Created as planning first: the locked destination must exist before the trip can point at it.
 insert into public.trips (id, name, color, created_by, invite_code)
-values ('aaaaaaaa-0000-0000-0000-000000000002', 'Pondy long weekend', 'lagoon', '11111111-1111-1111-1111-111111111111', 'pondy27');
+values ('aaaaaaaa-0000-0000-0000-000000000002', 'Pondy long weekend', 'mint', '11111111-1111-1111-1111-111111111111', 'pondy27');
 
 insert into public.trip_members (trip_id, user_id) values
-  ('aaaaaaaa-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222');
+  ('aaaaaaaa-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222'),
+  ('aaaaaaaa-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333'),
+  ('aaaaaaaa-0000-0000-0000-000000000002', '44444444-4444-4444-4444-444444444444');
 
 insert into public.destinations (id, trip_id, title, note, url, created_by) values
   ('dddddddd-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000002', 'Pondicherry', 'Rock Beach walks, French Quarter cafes and a sunrise ride.', 'https://en.wikipedia.org/wiki/Pondicherry', '11111111-1111-1111-1111-111111111111');
@@ -68,10 +70,40 @@ update public.trips
        locked_destination_id = 'dddddddd-0000-0000-0000-000000000004'
  where id = 'aaaaaaaa-0000-0000-0000-000000000002';
 
+-- Pondy's plan: days 1 and 2 have something on, day 3 is still empty ("2 of 3 days planned").
+insert into public.itinerary_items (trip_id, day, start_time, title, note, created_by) values
+  ('aaaaaaaa-0000-0000-0000-000000000002', current_date + 40, '06:00', 'Sunrise at Rock Beach', 'Meet at the Gandhi statue', '11111111-1111-1111-1111-111111111111'),
+  ('aaaaaaaa-0000-0000-0000-000000000002', current_date + 40, '13:00', 'Lunch at Villa Shanti', 'Booked for 4', '22222222-2222-2222-2222-222222222222'),
+  ('aaaaaaaa-0000-0000-0000-000000000002', current_date + 41, '10:00', 'Auroville visitor centre', 'Scooters from the guesthouse', '33333333-3333-3333-3333-333333333333'),
+  ('aaaaaaaa-0000-0000-0000-000000000002', current_date + 41, '19:30', 'Dinner in White Town', 'Somewhere with a courtyard', '44444444-4444-4444-4444-444444444444');
+
+-- Pondy's money, with the shares written out as save_expense() would (remainder to the first user ids).
+-- Aarav is owed; Meera, Kabir and Zoya each owe a little. Zoya has already paid Meera back ₹500.
+insert into public.expenses (id, trip_id, title, category, amount_minor, paid_by, created_by, created_at) values
+  ('eeeeeeee-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000002', 'Guesthouse', 'stay', 1200000, '11111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', now() - interval '3 days'),
+  ('eeeeeeee-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002', 'Scooters', 'travel', 300000, '22222222-2222-2222-2222-222222222222', '22222222-2222-2222-2222-222222222222', now() - interval '2 days'),
+  ('eeeeeeee-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000002', 'Dinner', 'food', 340000, '33333333-3333-3333-3333-333333333333', '33333333-3333-3333-3333-333333333333', now() - interval '1 day');
+
+insert into public.expense_shares (expense_id, trip_id, user_id, share_minor) values
+  ('eeeeeeee-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 300000),
+  ('eeeeeeee-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 300000),
+  ('eeeeeeee-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', 300000),
+  ('eeeeeeee-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000002', '44444444-4444-4444-4444-444444444444', 300000),
+  ('eeeeeeee-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 75000),
+  ('eeeeeeee-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 75000),
+  ('eeeeeeee-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', 75000),
+  ('eeeeeeee-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002', '44444444-4444-4444-4444-444444444444', 75000),
+  ('eeeeeeee-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 113334),
+  ('eeeeeeee-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', 113333),
+  ('eeeeeeee-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000002', '44444444-4444-4444-4444-444444444444', 113333);
+
+insert into public.settlements (trip_id, from_user, to_user, amount_minor, created_by, created_at) values
+  ('aaaaaaaa-0000-0000-0000-000000000002', '44444444-4444-4444-4444-444444444444', '22222222-2222-2222-2222-222222222222', 50000, '44444444-4444-4444-4444-444444444444', now() - interval '12 hours');
+
 -- A trip with names hidden, so "who marked which day" being off can be tested without setting it by hand.
 -- Meera organises; Aarav and Kabir have joined. Each only sees their own days, plus counts for everyone.
 insert into public.trips (id, name, color, created_by, invite_code, show_who_marked)
-values ('aaaaaaaa-0000-0000-0000-000000000003', 'Hampi surprise', 'mango', '22222222-2222-2222-2222-222222222222', 'hampi27', false);
+values ('aaaaaaaa-0000-0000-0000-000000000003', 'Hampi surprise', 'beak', '22222222-2222-2222-2222-222222222222', 'hampi27', false);
 
 insert into public.trip_members (trip_id, user_id) values
   ('aaaaaaaa-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111'),
@@ -84,3 +116,50 @@ from (values
   ('22222222-2222-2222-2222-222222222222'::uuid, 22, 27),
   ('33333333-3333-3333-3333-333333333333'::uuid, 23, 25)
 ) as r(u, a, b), generate_series(r.a, r.b) n;
+
+-- A trip that's over, so the home screen shows its "Done" chip. Zoya organises; everyone went.
+insert into public.trips (id, name, color, created_by, invite_code)
+values ('aaaaaaaa-0000-0000-0000-000000000004', 'Coorg weekend', 'blush', '44444444-4444-4444-4444-444444444444', 'coorg26');
+
+insert into public.trip_members (trip_id, user_id) values
+  ('aaaaaaaa-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111'),
+  ('aaaaaaaa-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222'),
+  ('aaaaaaaa-0000-0000-0000-000000000004', '33333333-3333-3333-3333-333333333333');
+
+insert into public.destinations (id, trip_id, title, note, created_by) values
+  ('dddddddd-0000-0000-0000-000000000005', 'aaaaaaaa-0000-0000-0000-000000000004', 'Madikeri', 'Coffee estates and Abbey Falls.', '44444444-4444-4444-4444-444444444444');
+
+update public.trips
+   set status = 'locked', locked_start = current_date - 60, locked_end = current_date - 58,
+       locked_destination_id = 'dddddddd-0000-0000-0000-000000000005'
+ where id = 'aaaaaaaa-0000-0000-0000-000000000004';
+
+insert into public.expenses (id, trip_id, title, category, amount_minor, paid_by, created_by, created_at) values
+  ('eeeeeeee-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000004', 'Homestay', 'stay', 800000, '44444444-4444-4444-4444-444444444444', '44444444-4444-4444-4444-444444444444', now() - interval '59 days');
+
+insert into public.expense_shares (expense_id, trip_id, user_id, share_minor)
+select 'eeeeeeee-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000004', u, 200000
+from unnest(array[
+  '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222',
+  '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444'
+]::uuid[]) u;
+
+-- A trip whose organiser set the dates up front: still planning (the place is open), but the Plan
+-- tab already works on those days. Kabir organises; Aarav and Zoya have joined.
+insert into public.trips (id, name, color, created_by, invite_code, fixed_start, fixed_end)
+values ('aaaaaaaa-0000-0000-0000-000000000005', 'Udaipur in winter', 'iris', '33333333-3333-3333-3333-333333333333', 'udaipur27',
+        current_date + 70, current_date + 73);
+
+insert into public.trip_members (trip_id, user_id) values
+  ('aaaaaaaa-0000-0000-0000-000000000005', '11111111-1111-1111-1111-111111111111'),
+  ('aaaaaaaa-0000-0000-0000-000000000005', '44444444-4444-4444-4444-444444444444');
+
+insert into public.destinations (id, trip_id, title, note, created_by) values
+  ('dddddddd-0000-0000-0000-000000000006', 'aaaaaaaa-0000-0000-0000-000000000005', 'Lake Pichola', 'Boat ride at sunset.', '33333333-3333-3333-3333-333333333333'),
+  ('dddddddd-0000-0000-0000-000000000007', 'aaaaaaaa-0000-0000-0000-000000000005', 'Kumbhalgarh', 'The great wall, a day trip away.', '11111111-1111-1111-1111-111111111111');
+
+insert into public.votes (destination_id, trip_id, user_id) values
+  ('dddddddd-0000-0000-0000-000000000006', 'aaaaaaaa-0000-0000-0000-000000000005', '33333333-3333-3333-3333-333333333333');
+
+insert into public.itinerary_items (trip_id, day, start_time, title, note, created_by) values
+  ('aaaaaaaa-0000-0000-0000-000000000005', current_date + 70, '16:00', 'Check in and walk the old city', null, '33333333-3333-3333-3333-333333333333');

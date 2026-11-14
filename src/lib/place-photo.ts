@@ -10,6 +10,8 @@ export const PHOTO_WIDTH = 1600;
 export const PHOTO_HEIGHT = 900;
 const PHOTO_QUALITY = 0.75;
 export const PHOTO_BUCKET = 'place-photos';
+/** The trip album's bucket (see trip-photos.ts). Defined here so trip deletion can clear both. */
+export const ALBUM_BUCKET = 'trip-photos';
 /** How long a signed photo link works. expo-image keys its cache on the path, so a new link doesn't re-download. */
 const SIGNED_URL_SECONDS = 60 * 60;
 
@@ -63,7 +65,8 @@ export function photoPath(tripId: string, destinationId: string) {
   return `${tripId}/${destinationId}.jpg`;
 }
 
-async function readBytes(uri: string): Promise<ArrayBuffer> {
+/** The bytes of a local photo, ready to upload. */
+export async function readBytes(uri: string): Promise<ArrayBuffer> {
   if (Platform.OS === 'web') return (await fetch(uri)).arrayBuffer();
   return new File(uri).arrayBuffer();
 }
@@ -76,22 +79,21 @@ export async function uploadPhoto(tripId: string, destinationId: string, uri: st
   return path;
 }
 
-/** Removes photos from the bucket. Best effort: a leftover photo is only visible to the trip's members. */
-export async function removePhotos(paths: string[]) {
+/** Removes photos from a bucket. Best effort: a leftover photo is only visible to the trip's members. */
+export async function removePhotos(paths: string[], bucket = PHOTO_BUCKET) {
   if (!paths.length) return;
-  await supabase.storage.from(PHOTO_BUCKET).remove(paths);
+  await supabase.storage.from(bucket).remove(paths);
 }
 
 /** Storage lists and removes at most this many objects per call. */
 const STORAGE_PAGE = 1000;
 
 /**
- * Removes every photo in a trip's folder, including ones left by a place that failed to save. Call it
- * before deleting the trip: once the trip is gone, nobody is a member and its photos can't be reached.
- * Throws if the photos can't be listed or removed, so the caller can stop instead of stranding them.
+ * Removes every file in a trip's folder of one bucket, including ones left by an upload that failed to
+ * save. Throws if the files can't be listed or removed, so the caller can stop instead of stranding them.
  */
-export async function removeTripPhotos(tripId: string) {
-  const bucket = supabase.storage.from(PHOTO_BUCKET);
+export async function removeTripFolder(bucketName: string, tripId: string) {
+  const bucket = supabase.storage.from(bucketName);
   const paths: string[] = [];
   for (let offset = 0; ; offset += STORAGE_PAGE) {
     const { data, error } = await bucket.list(tripId, { limit: STORAGE_PAGE, offset });
@@ -105,12 +107,21 @@ export async function removeTripPhotos(tripId: string) {
   }
 }
 
-/** Short-lived links for photos, by path. Paths that can't be signed are left out. */
-export async function signPhotos(paths: (string | null | undefined)[]): Promise<Map<string, string>> {
+/**
+ * Removes a trip's place photos and its album. Call it before deleting the trip: once the trip is gone,
+ * nobody is a member and its files can't be reached. Throws if anything can't be removed.
+ */
+export async function removeTripPhotos(tripId: string) {
+  await removeTripFolder(PHOTO_BUCKET, tripId);
+  await removeTripFolder(ALBUM_BUCKET, tripId);
+}
+
+/** Short-lived links for photos in a bucket, by path. Paths that can't be signed are left out. */
+export async function signPhotos(paths: (string | null | undefined)[], bucket = PHOTO_BUCKET): Promise<Map<string, string>> {
   const unique = [...new Set(paths.filter((p): p is string => !!p))];
   const urls = new Map<string, string>();
   if (!unique.length) return urls;
-  const { data, error } = await supabase.storage.from(PHOTO_BUCKET).createSignedUrls(unique, SIGNED_URL_SECONDS);
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrls(unique, SIGNED_URL_SECONDS);
   if (error || !data) return urls;
   for (const row of data) if (row.path && row.signedUrl) urls.set(row.path, row.signedUrl);
   return urls;

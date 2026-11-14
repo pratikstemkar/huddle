@@ -48,6 +48,65 @@ describe('useTripLive', () => {
     expect(ch.subscribe).toHaveBeenCalledTimes(1);
   });
 
+  it('watches plan items, expenses, settlements and photos by default', async () => {
+    const { ch } = await setup();
+    for (const table of ['itinerary_items', 'expenses', 'settlements', 'trip_photos']) {
+      expect(handler(ch, 'INSERT', table).filter).toEqual({ event: 'INSERT', schema: 'public', table, filter: 'trip_id=eq.t1' });
+      expect(handler(ch, 'DELETE', table).filter).toEqual({ event: 'DELETE', schema: 'public', table });
+    }
+    // Edited in place: plan items, and expenses (whose shares change with them).
+    for (const table of ['itinerary_items', 'expenses', 'day_counts']) {
+      expect(handler(ch, 'UPDATE', table).filter.filter).toBe('trip_id=eq.t1');
+    }
+  });
+
+  it('reloads on any delete from the new tables (old rows only carry their id)', async () => {
+    const { ch, onChange } = await setup();
+    for (const table of ['itinerary_items', 'expenses', 'settlements', 'trip_photos']) {
+      handler(ch, 'DELETE', table).cb({ old: { id: 'x' } });
+      await act(async () => {
+        jest.advanceTimersByTime(300);
+      });
+    }
+    expect(onChange).toHaveBeenCalledTimes(4);
+  });
+
+  it('only listens to the tables it is given', async () => {
+    const onChange = jest.fn();
+    await renderHook(() => useTripLive(TRIP, onChange, ['expenses', 'settlements', 'trip_members']));
+    const ch = channels[channels.length - 1];
+    const tables = [...new Set(ch.handlers.map((h) => h.filter.table))].sort();
+    expect(tables).toEqual(['expenses', 'settlements', 'trip_members']);
+    expect(ch.handlers.map((h) => `${h.filter.event} ${h.filter.table}`).sort()).toEqual([
+      'DELETE expenses',
+      'DELETE settlements',
+      'DELETE trip_members',
+      'INSERT expenses',
+      'INSERT settlements',
+      'INSERT trip_members',
+      'UPDATE expenses',
+    ]);
+  });
+
+  it('watches the trip row itself when asked', async () => {
+    await renderHook(() => useTripLive(TRIP, jest.fn(), ['itinerary_items', 'trips']));
+    const ch = channels[channels.length - 1];
+    expect(handler(ch, 'UPDATE', 'trips').filter.filter).toBe('id=eq.t1');
+    expect(handler(ch, 'DELETE', 'trips')).toBeTruthy();
+    expect(ch.handlers.some((h) => h.filter.table === 'votes')).toBe(false);
+  });
+
+  it("doesn't resubscribe when given an equal list of tables", async () => {
+    const { rerender } = await renderHook(({ tables }: { tables: ('expenses' | 'settlements')[] }) => useTripLive(TRIP, jest.fn(), tables), {
+      initialProps: { tables: ['expenses', 'settlements'] },
+    });
+    await rerender({ tables: ['settlements', 'expenses'] });
+    expect(channels).toHaveLength(1);
+    await rerender({ tables: ['expenses'] });
+    expect(channels).toHaveLength(2);
+    expect(supabase.removeChannel).toHaveBeenCalledWith(channels[0]);
+  });
+
   it('gives every subscription its own channel name', async () => {
     await setup();
     await setup();
