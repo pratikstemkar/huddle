@@ -8,6 +8,7 @@ const mockAuth = {
 };
 
 jest.mock('@/lib/auth', () => ({ useAuth: () => mockAuth }));
+jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
 jest.mock('expo-apple-authentication', () => {
   const { Pressable, Text: RNText } = require('react-native');
   return {
@@ -38,6 +39,7 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 
+const { router } = require('../../test-utils/expo-router-mock') as typeof import('../../test-utils/expo-router-mock');
 const SignIn = require('@/app/sign-in').default as () => React.JSX.Element;
 
 function withOS<T>(os: string, fn: () => Promise<T>) {
@@ -58,6 +60,12 @@ describe('Sign in screen', () => {
     expect(screen.getByText('Plan the trip, not the group chat.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy();
     expect(screen.queryByText('Supabase isn’t set up yet')).toBeNull();
+  });
+
+  it('links to the privacy policy', async () => {
+    await render(<SignIn />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Privacy policy' }));
+    expect(router.push).toHaveBeenCalledWith('/privacy');
   });
 
   it('signs in with Google', async () => {

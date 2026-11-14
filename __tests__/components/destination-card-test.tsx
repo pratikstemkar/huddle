@@ -60,6 +60,11 @@ describe('DestinationCard', () => {
     expect(screen.getByText('Suggested by Someone')).toBeTruthy();
   });
 
+  it('names the author "Someone" once they have deleted their account', async () => {
+    await renderCard({ created_by: null, voters: [], voteCount: 0 });
+    expect(screen.getByText('Suggested by Someone')).toBeTruthy();
+  });
+
   it('names unknown voters "Someone"', async () => {
     await renderCard({ voters: ['ghost'], voteCount: 1 });
     expect(screen.getByText('Suggested by Aarav · Voted by Someone')).toBeTruthy();

@@ -87,4 +87,12 @@ describe('Profile', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
     expect(mockSignOut).toHaveBeenCalled();
   });
+
+  it('links to the privacy policy and account deletion', async () => {
+    await render(<ProfileScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Privacy policy' }));
+    expect(router.push).toHaveBeenCalledWith('/privacy');
+    await fireEvent.press(screen.getByRole('button', { name: 'Delete account' }));
+    expect(router.push).toHaveBeenCalledWith('/delete-account');
+  });
 });

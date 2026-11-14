@@ -45,3 +45,6 @@ example
 # verify-huddle evidence
 /.verify-evidence
 coverage/
+
+# per-checkout Supabase stacks (see AGENTS.md)
+/.supabase-isolated

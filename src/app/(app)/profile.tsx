@@ -129,6 +129,11 @@ export default function ProfileScreen() {
         </Text>
         <Button label="Sign out" variant="secondary" onPress={signOut} />
       </View>
+
+      <View style={styles.links}>
+        <Button label="Privacy policy" variant="ghost" onPress={() => router.push('/privacy')} />
+        <Button label="Delete account" variant="ghost" onPress={() => router.push('/delete-account')} />
+      </View>
     </Screen>
   );
 }
@@ -138,5 +143,6 @@ const styles = StyleSheet.create({
   preview: { alignItems: 'center', gap: space.sm },
   label: { marginTop: space.xl, marginBottom: space.sm },
   input: { minHeight: MIN_TOUCH + 4, borderRadius: radius.md, borderWidth: 1, paddingHorizontal: space.lg, fontSize: 17 },
+  links: { marginTop: space.md, gap: space.xs },
   signOut: { marginTop: space.xxl, borderRadius: radius.lg, borderWidth: 1, padding: space.lg, gap: space.md },
 });

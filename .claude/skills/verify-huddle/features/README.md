@@ -24,4 +24,5 @@ Every user-facing feature, how to reach it on web, and what proves it works. Kee
 | Remove a member | `/trip/[id]` → `/trip/[id]/settings` | [remove-member.md](remove-member.md) | 2026-11-12 (Aarav removes Kabir, RLS) |
 | Lock the trip | `/trip/[id]` → `/trip/[id]/lock` | [lock-trip.md](lock-trip.md) | 2026-11-11 (Aarav, RLS as Kabir) |
 | Locked trip summary | `/`, `/trip/[id]` | [locked-summary.md](locked-summary.md) | 2026-11-11 (Aarav, seeded Pondy trip) |
-
+| Privacy policy | `/sign-in` or `/profile` → `/privacy` | [privacy.md](privacy.md) | 2026-11-14 (signed out, redirect check) |
+| Delete my account | `/profile` → `/delete-account` | [delete-account.md](delete-account.md) | 2026-11-14 (Aarav, isolated stack, DB + Meera) |

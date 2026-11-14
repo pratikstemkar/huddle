@@ -43,6 +43,10 @@ Use accessibility handles via `find` / `read_page`, then click by `ref`. Never c
 | `/profile` | `Your name` | textbox (max 40 chars) |
 | `/profile` | `Sunset` … `Sky` | radio (avatar colour) |
 | `/profile` | `Save profile` / `Sign out` | button |
+| `/profile` | `Privacy policy` / `Delete account` | button |
+| `/sign-in`, `/privacy` | `Privacy policy` / `Done` | button |
+| `/delete-account` | `Type DELETE to confirm` | textbox |
+| `/delete-account` | `Delete my account` / `Keep my account` | button (**isolated stack only**) |
 | `/` | `<trip name>, still planning` / `<trip name>, locked in` | button per trip card |
 | `/new-trip` | `Trip name` | textbox (max 60 chars) |
 | `/new-trip` | `Sunset` `Lagoon` `Mango` `Plum` `Bougainvillea` `Sky` | radio |

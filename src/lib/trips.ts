@@ -98,7 +98,8 @@ export type TripMember = {
 };
 
 export type TripDetail = Trip & {
-  created_by: string;
+  /** Null once the creator deletes their account. */
+  created_by: string | null;
   locked_destination_id: string | null;
   /** Whether members can see who marked each day. Off means counts only. */
   show_who_marked: boolean;

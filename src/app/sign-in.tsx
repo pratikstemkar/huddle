@@ -1,4 +1,5 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -89,6 +90,8 @@ export default function SignIn() {
               </View>
             </View>
           ) : null}
+
+          <Button label="Privacy policy" variant="ghost" onPress={() => router.push('/privacy')} />
         </View>
       }>
       <Text variant="heading" tone="accent" accessibilityRole="text">
