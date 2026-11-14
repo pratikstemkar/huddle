@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { bestRanges, summarise, useAvailability } from '@/lib/availability';
+import { supabase } from '@/lib/supabase';
 import { queriesFor, queueResult } from '../../test-utils/supabase-mock';
 
 const ME = 'me';
@@ -160,6 +161,41 @@ describe('useAvailability', () => {
       ['eq', ['user_id', ME]],
       ['eq', ['day', '2027-03-12']],
     ]);
+  });
+
+  it("keeps a cleared day cleared when a reload lands before the save does", async () => {
+    queueResult('availability', { data: [{ user_id: ME, day: '2027-03-12' }] });
+    queueResult('day_counts', { data: [{ day: '2027-03-12', free: 1 }] });
+    const { result } = await renderHook(() => useAvailability('t1', ME));
+    await act(() => result.current.refresh());
+
+    // Hold the delete until we say so.
+    let finish!: (v: unknown) => void;
+    const held = new Promise((r) => {
+      finish = r;
+    });
+    const chain: Record<string, unknown> = { delete: () => chain, eq: () => chain, then: (ok: never, fail: never) => held.then(ok, fail) };
+    jest.spyOn(supabase, 'from').mockImplementationOnce(() => chain as never);
+    let saving!: Promise<void>;
+    await act(async () => {
+      saving = result.current.setDay('2027-03-12', false);
+      await Promise.resolve();
+    });
+    expect(result.current.myDays.has('2027-03-12')).toBe(false);
+
+    // A realtime reload reads the database before the delete has gone through.
+    queueResult('availability', { data: [{ user_id: ME, day: '2027-03-12' }] });
+    queueResult('day_counts', { data: [{ day: '2027-03-12', free: 1 }] });
+    await act(() => result.current.refresh());
+    expect(result.current.myDays.has('2027-03-12')).toBe(false);
+    expect(result.current.counts.has('2027-03-12')).toBe(false);
+
+    await act(async () => {
+      finish({ data: null, error: null });
+      await saving;
+    });
+    expect(result.current.myDays.has('2027-03-12')).toBe(false);
+    expect(result.current.error).toBeNull();
   });
 
   it('rolls back and shows an error when saving fails', async () => {
