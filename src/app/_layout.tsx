@@ -33,14 +33,17 @@ function RootStack() {
     <ThemeProvider value={navTheme}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Protected guard={!!session}>
+        {/* Explicit targets: the "first available screen" fallback would pick the public privacy page. */}
+        <Stack.Protected guard={!!session} redirectTo="/sign-in">
           <Stack.Screen name="(app)" />
         </Stack.Protected>
-        <Stack.Protected guard={!session}>
+        <Stack.Protected guard={!session} redirectTo="/">
           <Stack.Screen name="sign-in" />
         </Stack.Protected>
         {/* Invite links work signed in or out; signed out, the code is kept through sign-in. */}
         <Stack.Screen name="invite/[code]" />
+        {/* Public too: the app stores link here. */}
+        <Stack.Screen name="privacy" />
       </Stack>
     </ThemeProvider>
   );
