@@ -4,14 +4,20 @@ import { Alert, Linking, Platform } from 'react-native';
 
 import { DestinationCard } from '@/components/destination-card';
 import type { Destination } from '@/lib/destinations';
+import { photoState } from '../../test-utils/photo-mocks';
+
+const { File } = jest.requireMock('expo-file-system') as typeof import('../../test-utils/photo-mocks').fileSystem;
 
 
 const base: Destination = {
   id: 'd1',
+  trip_id: 't1',
   title: 'Palolem Beach',
   note: 'Quiet cove',
   url: 'https://www.example.com/palolem',
   image_url: 'https://img.example.com/p.jpg',
+  image_path: null,
+  photoUrl: 'https://img.example.com/p.jpg',
   created_by: 'u1',
   created_at: '2027-01-01',
   voteCount: 2,
@@ -52,8 +58,25 @@ describe('DestinationCard', () => {
     expect(screen.getByText('♡ Vote · 2')).toBeTruthy();
   });
 
+  it('shows an uploaded photo from the Huddle folder when the device has a copy', async () => {
+    photoState.files.add('file:///docs/huddle/trips/t1/places/d1.jpg');
+    await renderCard({ image_url: null, image_path: 't1/d1.jpg', photoUrl: 'https://signed/d1' });
+    expect(screen.getByLabelText('Photo of Palolem Beach').props.source).toEqual(
+      expect.arrayContaining([expect.objectContaining({ uri: 'file:///docs/huddle/trips/t1/places/d1.jpg' })]),
+    );
+    expect(File.downloadFileAsync).not.toHaveBeenCalled();
+  });
+
+  it('otherwise loads the uploaded photo and saves a copy to the Huddle folder', async () => {
+    await renderCard({ image_url: null, image_path: 't1/d1.jpg', photoUrl: 'https://signed/d1' });
+    expect(screen.getByLabelText('Photo of Palolem Beach').props.source).toEqual(
+      expect.arrayContaining([expect.objectContaining({ uri: 'https://signed/d1' })]),
+    );
+    expect(File.downloadFileAsync).toHaveBeenCalledWith('https://signed/d1', expect.objectContaining({ uri: 'file:///docs/huddle/trips/t1/places/d1.jpg' }));
+  });
+
   it('hides optional parts and uses "Someone" for unknown people', async () => {
-    await renderCard({ note: null, url: null, image_url: null, created_by: 'stranger', voters: [], voteCount: 0 });
+    await renderCard({ note: null, url: null, image_url: null, photoUrl: null, created_by: 'stranger', voters: [], voteCount: 0 });
     expect(screen.queryByText('Quiet cove')).toBeNull();
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.queryByLabelText(/Photo of/)).toBeNull();

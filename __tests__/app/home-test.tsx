@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { router } from '../../test-utils/expo-router-mock';
 import { formatTripDates } from '@/lib/dates';
-import type { Trip } from '@/lib/trips';
+import type { Trip, TripCover } from '@/lib/trips';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
 
@@ -15,7 +15,7 @@ jest.mock('@/lib/auth', () => ({
 let mockProfile: { profile: unknown; loading: boolean; error: null; refresh: jest.Mock };
 jest.mock('@/lib/profile', () => ({ useMyProfile: () => mockProfile }));
 
-let mockTrips: { trips: Trip[]; loading: boolean; error: string | null; refresh: jest.Mock };
+let mockTrips: { trips: Trip[]; covers: Map<string, TripCover>; loading: boolean; error: string | null; refresh: jest.Mock };
 jest.mock('@/lib/trips', () => ({ useTrips: () => mockTrips }));
 
 const Home = require('@/app/(app)/index').default as () => React.JSX.Element;
@@ -36,7 +36,7 @@ const locked: Trip = { ...planning, id: 't2', name: 'Pondy', color: 'lagoon', st
 describe('Home', () => {
   beforeEach(() => {
     mockSession = sessionFor('u1', 'Aarav Shah');
-    mockTrips = { trips: [], loading: false, error: null, refresh: jest.fn() };
+    mockTrips = { trips: [], covers: new Map(), loading: false, error: null, refresh: jest.fn() };
     mockProfile = { profile: null, loading: false, error: null, refresh: jest.fn() };
   });
 
@@ -80,6 +80,17 @@ describe('Home', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Goa in March, still planning' }));
     expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[id]', params: { id: 't1' } });
+  });
+
+  it("puts a trip's cover photo behind its card", async () => {
+    mockTrips.trips = [planning, locked];
+    mockTrips.covers = new Map([['t2', { tripId: 't2', path: 't2/p.jpg', url: 'https://signed/pondy' }]]);
+    await render(<Home />);
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree).toContain('https://signed/pondy');
+    expect(tree.match(/"uri":"https:\/\/signed/g)).toHaveLength(1);
+    // The photo is decoration: the card still reads the same to a screen reader.
+    expect(screen.getByRole('button', { name: `Pondy, locked in, ${formatTripDates('2027-03-12', '2027-03-14')}` })).toBeTruthy();
   });
 
   it('shows the loading error', async () => {

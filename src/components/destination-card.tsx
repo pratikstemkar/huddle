@@ -1,10 +1,10 @@
 import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
 import { Alert, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { hostOf, type Destination } from '@/lib/destinations';
 import { MIN_TOUCH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
+import { PlacePhoto } from './place-photo';
 import { Card } from './ui/card';
 import { Text } from './ui/text';
 
@@ -42,9 +42,7 @@ export function DestinationCard({ destination: d, names, fill, readOnly, canRemo
 
   return (
     <Card style={{ gap: space.sm, padding: 0, overflow: 'hidden' }}>
-      {d.image_url ? (
-        <Image source={{ uri: d.image_url }} accessibilityLabel={`Photo of ${d.title}`} contentFit="cover" style={[styles.image, { backgroundColor: colors.cardMuted }]} />
-      ) : null}
+      <PlacePhoto place={d} accessibilityLabel={`Photo of ${d.title}`} style={[styles.image, { backgroundColor: colors.cardMuted }]} />
       <View style={{ padding: space.lg, gap: space.sm }}>
         <Text variant="heading">{d.title}</Text>
         {d.note ? (
@@ -94,7 +92,7 @@ export function DestinationCard({ destination: d, names, fill, readOnly, canRemo
 }
 
 const styles = StyleSheet.create({
-  image: { height: 160, width: '100%' },
+  image: { width: '100%', aspectRatio: 16 / 9 },
   link: { minHeight: 24, justifyContent: 'center', alignSelf: 'flex-start' },
   actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   vote: { minHeight: MIN_TOUCH, borderRadius: radius.pill, borderWidth: 1.5, paddingHorizontal: space.lg, alignItems: 'center', justifyContent: 'center' },
