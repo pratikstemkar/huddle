@@ -1,3 +1,5 @@
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -11,11 +13,11 @@ import { Text } from '@/components/ui/text';
 import { displayName, useAuth } from '@/lib/auth';
 import { formatTripDates } from '@/lib/dates';
 import { useMyProfile } from '@/lib/profile';
-import { useTrips, type Trip } from '@/lib/trips';
+import { useTrips, type Trip, type TripCover } from '@/lib/trips';
 import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
-function TripCard({ trip, index }: { trip: Trip; index: number }) {
+function TripCard({ trip, cover, index }: { trip: Trip; cover?: TripCover; index: number }) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const fill = tripColors[trip.color] ?? tripColors.sunset;
@@ -30,17 +32,24 @@ function TripCard({ trip, index }: { trip: Trip; index: number }) {
         accessibilityHint="Opens the trip"
         onPress={() => router.push({ pathname: '/trip/[id]', params: { id: trip.id } })}
         style={({ pressed }) => [styles.trip, { backgroundColor: fill, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
-        <View style={[styles.pill, { backgroundColor: colors.onColor }]}>
-          <Text variant="caption" style={{ color: fill, fontWeight: '600' }}>
+        {cover ? (
+          <View style={StyleSheet.absoluteFill} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Image source={{ uri: cover.url, cacheKey: cover.path ?? undefined }} contentFit="cover" transition={200} style={StyleSheet.absoluteFill} />
+            {/* Darkens the bottom so the trip name stays readable on any photo, tinted with the trip colour. */}
+            <LinearGradient colors={['rgba(0,0,0,0.05)', `${fill}66`, 'rgba(0,0,0,0.72)']} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
+          </View>
+        ) : null}
+        <View style={[styles.pill, { backgroundColor: cover ? fill : colors.onColor }]}>
+          <Text variant="caption" style={{ color: cover ? colors.onColor : fill, fontWeight: '600' }}>
             {trip.status === 'locked' ? 'Locked in' : 'Planning'}
           </Text>
         </View>
         <View style={{ gap: 2 }}>
-          <Text variant="title" tone="onColor" numberOfLines={2}>
+          <Text variant="title" tone="onColor" numberOfLines={2} style={cover ? styles.onPhoto : undefined}>
             {trip.name}
           </Text>
           {dates ? (
-            <Text variant="caption" tone="onColor">
+            <Text variant="caption" tone="onColor" style={cover ? styles.onPhoto : undefined}>
               {dates}
             </Text>
           ) : null}
@@ -69,7 +78,7 @@ function EmptyState() {
 
 export default function Home() {
   const { session } = useAuth();
-  const { trips, loading, error, refresh } = useTrips();
+  const { trips, covers, loading, error, refresh } = useTrips();
   const { colors } = useTheme();
   const { profile, refresh: refreshProfile } = useMyProfile(session?.user.id);
   const name = profile?.display_name ?? displayName(session);
@@ -114,7 +123,7 @@ export default function Home() {
       <View style={{ gap: space.md }}>
         {!loading && trips.length === 0 ? <EmptyState /> : null}
         {trips.map((t, i) => (
-          <TripCard key={t.id} trip={t} index={i} />
+          <TripCard key={t.id} trip={t} cover={covers.get(t.id)} index={i} />
         ))}
       </View>
     </Screen>
@@ -124,7 +133,9 @@ export default function Home() {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: space.xl, gap: space.md },
   avatar: { width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: MIN_TOUCH / 2, alignItems: 'center', justifyContent: 'center' },
-  trip: { borderRadius: radius.lg, padding: space.xl, minHeight: 150, justifyContent: 'space-between', gap: space.lg },
+  trip: { borderRadius: radius.lg, padding: space.xl, minHeight: 150, justifyContent: 'space-between', gap: space.lg, overflow: 'hidden' },
+  // White on the darkened photo; the near-black onColor would vanish there.
+  onPhoto: { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } },
   pill: { alignSelf: 'flex-start', borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.xs },
   swatches: { flexDirection: 'row' },
   swatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 3 },

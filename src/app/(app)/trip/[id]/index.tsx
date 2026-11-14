@@ -1,10 +1,10 @@
 import * as Clipboard from 'expo-clipboard';
-import { Image } from 'expo-image';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { PlacePhoto } from '@/components/place-photo';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -238,15 +238,8 @@ function WhereCard({ trip }: { trip: TripDetail }) {
     }
     return (
       <Card style={{ gap: space.sm, padding: 0, overflow: 'hidden' }}>
-        {locked.image_url ? (
-          <Image
-            source={{ uri: locked.image_url }}
-            accessibilityLabel={`Photo of ${locked.title}`}
-            contentFit="cover"
-            style={[styles.placeImage, { backgroundColor: colors.cardMuted }]}
-          />
-        ) : null}
-        <View style={{ gap: space.xs, padding: space.lg, paddingTop: locked.image_url ? space.xs : space.lg }}>
+        <PlacePhoto place={locked} accessibilityLabel={`Photo of ${locked.title}`} style={[styles.placeImage, { backgroundColor: colors.cardMuted }]} />
+        <View style={{ gap: space.xs, padding: space.lg, paddingTop: locked.photoUrl ? space.xs : space.lg }}>
           <Text variant="heading">{locked.title}</Text>
           {locked.note ? (
             <Text variant="body" tone="secondary">
@@ -453,6 +446,6 @@ const styles = StyleSheet.create({
   tag: { borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 2 },
   destination: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm, minHeight: MIN_TOUCH },
   whereActions: { flexDirection: 'row', gap: space.sm, paddingTop: space.sm },
-  placeImage: { width: '100%', height: 180 },
+  placeImage: { width: '100%', aspectRatio: 16 / 9 },
   votes: { minWidth: 28, height: 28, borderRadius: 14, paddingHorizontal: space.sm, alignItems: 'center', justifyContent: 'center' },
 });

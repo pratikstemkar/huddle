@@ -22,7 +22,7 @@ What the MVP needs, and where each piece stands. Update the status when work lan
 | 10 | See trip members | ✅ | ✅ `trip_members` | ✅ list on trip detail with avatars (photo or initial on their colour) | [trip-detail](.claude/skills/verify-huddle/features/trip-detail.md) |
 | 11 | Mark the days I'm free | ✅ | ✅ `availability` | ✅ `(app)/trip/[id]/days`, one month at a time (swipe or arrows) | [mark-days](.claude/skills/verify-huddle/features/mark-days.md) |
 | 12 | See overlap: which days suit most people | ✅ | ✅ `day_counts` | ✅ Everyone tab with a dot per person + best days on trip detail | [overlap](.claude/skills/verify-huddle/features/overlap.md) |
-| 13 | Suggest a destination (title, note, link, image) | ✅ | ✅ `destinations` + link/length checks | ✅ `(app)/trip/[id]/suggest` | [suggest-destination](.claude/skills/verify-huddle/features/suggest-destination.md) |
+| 13 | Suggest a destination (title, note, link, photo) | ✅ | ✅ `destinations` + link/length checks; photos in the private `place-photos` bucket, members only | ✅ `(app)/trip/[id]/suggest`: choose or take a photo, cropped to 16:9 at 1600×900; a copy kept in the device's `huddle/` folder; the top place's photo is the trip's cover on the home screen | [suggest-destination](.claude/skills/verify-huddle/features/suggest-destination.md) |
 | 14 | Vote on destinations | ✅ | ✅ `votes` | ✅ `(app)/trip/[id]/places` + top 3 on trip detail | [vote](.claude/skills/verify-huddle/features/vote.md) |
 | 15 | Live updates while others vote and mark days | ✅ | ✅ realtime on availability, day_counts, destinations, votes, trips, trip_members | ✅ `useTripLive` on trip detail, days, places | [live-updates](.claude/skills/verify-huddle/features/live-updates.md) |
 | 16 | Organiser locks the trip (dates + destination) | ✅ | ✅ `lock_trip()` + locked trips refuse new days, places and votes | ✅ `(app)/trip/[id]/lock` | [lock-trip](.claude/skills/verify-huddle/features/lock-trip.md) |
@@ -69,6 +69,9 @@ Nothing here is started. Ordered roughly by how much each one helps a group get 
 | Reset the invite code | `regenerate_invite_code(trip)` function | For when a link leaks; old links stop working |
 | Voting deadline | `trips.vote_until` + a countdown on trip detail | Pairs well with push notifications (L4): "voting closes tomorrow" |
 | Nudge people who haven't marked days | Uses `availability` + push | Organiser taps "nudge" on members with no days marked |
+| Clean up photos of deleted trips | Edge function or scheduled job removing `place-photos/<trip_id>/` once a trip is gone | SQL can't delete Storage files; today a deleted trip's photos stay in the bucket (only reachable by its former members' signed links, which expire in an hour) |
+| Fill a place in from a pasted link | Edge function reading the page's title and preview image | Paste an Airbnb or blog link and the name and photo fill in |
+| Several photos per place | Up to 3 under `place-photos/<trip_id>/<place_id>-n.jpg`, swiped on the card | The bucket layout already allows it |
 
 ### After the trip is locked
 

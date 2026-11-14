@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { normaliseUrl, suggestDestination } from '@/lib/destinations';
+import { PHOTO_HEIGHT, PHOTO_WIDTH, PhotoPermissionError, pickPhoto, preparePhoto, type PreparedPhoto } from '@/lib/place-photo';
 import { MIN_TOUCH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
-type Errors = { title?: string; url?: string; image?: string; form?: string };
+type Errors = { title?: string; url?: string; photo?: string; form?: string };
 
 export default function SuggestPlace() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,26 +20,40 @@ export default function SuggestPlace() {
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
   const [url, setUrl] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
+  const [preparing, setPreparing] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
 
-  const previewUrl = normaliseUrl(imageUrl);
+  const addPhoto = async (from: 'library' | 'camera') => {
+    clear('photo');
+    try {
+      const picked = await pickPhoto(from);
+      if (!picked) return;
+      setPreparing(true);
+      setPhoto(await preparePhoto(picked));
+    } catch (e) {
+      setErrors((prev) => ({
+        ...prev,
+        photo: e instanceof PhotoPermissionError ? 'Allow camera access in Settings to take a photo.' : "Couldn't use that photo. Try another one.",
+      }));
+    } finally {
+      setPreparing(false);
+    }
+  };
 
   const submit = async () => {
     const next: Errors = {};
     const trimmed = title.trim();
     const link = url.trim() ? normaliseUrl(url) : null;
-    const image = imageUrl.trim() ? normaliseUrl(imageUrl) : null;
     if (!trimmed) next.title = 'Give the place a name first.';
     if (url.trim() && !link) next.url = "That doesn't look like a web link.";
-    if (imageUrl.trim() && !image) next.image = "That doesn't look like a web link.";
     setErrors(next);
-    if (Object.keys(next).length > 0 || !id) return;
+    if (Object.keys(next).length > 0 || !id || preparing) return;
 
     setSaving(true);
     try {
-      await suggestDestination(id, { title: trimmed, note: note.trim(), url: link ?? undefined, imageUrl: image ?? undefined });
+      await suggestDestination(id, { title: trimmed, note: note.trim(), url: link ?? undefined, photoUri: photo?.uri });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } catch {
@@ -52,7 +67,7 @@ export default function SuggestPlace() {
   const clear = (key: keyof Errors) => setErrors((e) => (e[key] ? { ...e, [key]: undefined } : e));
 
   return (
-    <Screen footer={<Button label="Add place" loading={saving} onPress={submit} />}>
+    <Screen footer={<Button label={saving && photo ? 'Uploading photo…' : 'Add place'} loading={saving} onPress={submit} />}>
       <Text variant="title" style={{ marginBottom: space.md }}>
         Suggest a place
       </Text>
@@ -109,26 +124,34 @@ export default function SuggestPlace() {
       {errors.url ? <FieldError text={errors.url} /> : null}
 
       <Text variant="label" style={styles.label}>
-        Image link (optional)
+        Photo (optional)
       </Text>
-      <TextInput
-        value={imageUrl}
-        onChangeText={(t) => {
-          setImageUrl(t);
-          clear('image');
-        }}
-        placeholder="https://…/photo.jpg"
-        placeholderTextColor={colors.textMuted}
-        accessibilityLabel="Image link"
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="url"
-        style={input(errors.image)}
-      />
-      {errors.image ? <FieldError text={errors.image} /> : null}
-      {previewUrl ? (
-        <Image source={{ uri: previewUrl }} accessibilityLabel="Image preview" contentFit="cover" style={[styles.preview, { backgroundColor: colors.cardMuted }]} />
-      ) : null}
+      {photo ? (
+        <View style={{ gap: space.sm }}>
+          <Image
+            source={{ uri: photo.uri }}
+            accessibilityLabel="Photo preview"
+            contentFit="cover"
+            style={[styles.preview, { backgroundColor: colors.cardMuted }]}
+          />
+          <View style={styles.photoActions}>
+            <Button label="Change photo" variant="secondary" onPress={() => addPhoto('library')} style={{ flex: 1 }} />
+            <Button label="Remove photo" variant="ghost" onPress={() => setPhoto(null)} style={{ flex: 1 }} />
+          </View>
+        </View>
+      ) : preparing ? (
+        <View style={[styles.preview, styles.placeholder, { backgroundColor: colors.cardMuted }]}>
+          <Text variant="caption" tone="secondary" accessibilityLiveRegion="polite">
+            Preparing photo…
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.photoActions}>
+          <Button label="Choose photo" variant="secondary" onPress={() => addPhoto('library')} style={{ flex: 1 }} />
+          {Platform.OS !== 'web' ? <Button label="Take photo" variant="secondary" onPress={() => addPhoto('camera')} style={{ flex: 1 }} /> : null}
+        </View>
+      )}
+      {errors.photo ? <FieldError text={errors.photo} /> : null}
 
       {errors.form ? (
         <View style={{ marginTop: space.lg }}>
@@ -151,5 +174,8 @@ const styles = StyleSheet.create({
   label: { marginTop: space.lg, marginBottom: space.sm },
   input: { minHeight: MIN_TOUCH + 4, borderRadius: radius.md, borderWidth: 1, paddingHorizontal: space.lg, fontSize: 17 },
   multiline: { minHeight: 96, paddingTop: space.md, textAlignVertical: 'top' },
-  preview: { height: 140, borderRadius: radius.md, marginTop: space.md },
+  // Same shape as the stored photo, so the preview shows exactly what everyone will see.
+  preview: { width: '100%', aspectRatio: PHOTO_WIDTH / PHOTO_HEIGHT, borderRadius: radius.md },
+  placeholder: { alignItems: 'center', justifyContent: 'center' },
+  photoActions: { flexDirection: 'row', gap: space.sm },
 });

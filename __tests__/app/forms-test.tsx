@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { router, setParams } from '../../test-utils/expo-router-mock';
+import { photoState } from '../../test-utils/photo-mocks';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
 jest.mock('@/lib/trips', () => ({ joinTrip: jest.fn(), createTrip: jest.fn() }));
@@ -112,21 +113,57 @@ describe('Suggest a place', () => {
     await render(<SuggestPlace />);
     await fireEvent.changeText(screen.getByLabelText('Place name'), 'Palolem');
     await fireEvent.changeText(screen.getByLabelText('Link'), 'not a link');
-    await fireEvent.changeText(screen.getByLabelText('Image link'), 'nope');
     await fireEvent.press(screen.getByRole('button', { name: 'Add place' }));
-    expect(screen.getAllByText("That doesn't look like a web link.")).toHaveLength(2);
+    expect(screen.getByText("That doesn't look like a web link.")).toBeTruthy();
     expect(suggestDestination).not.toHaveBeenCalled();
 
     await fireEvent.changeText(screen.getByLabelText('Link'), 'x.com');
-    await fireEvent.changeText(screen.getByLabelText('Image link'), 'y.com/p.jpg');
     expect(screen.queryByText("That doesn't look like a web link.")).toBeNull();
   });
 
-  it('previews the image once the link is valid', async () => {
+  it('adds a photo, resized to 16:9, and sends it with the place', async () => {
+    photoState.pickerResult = { canceled: false, assets: [{ uri: 'file:///pick.jpg', width: 4000, height: 3000 }] };
+    suggestDestination.mockResolvedValue('new-id');
     await render(<SuggestPlace />);
-    expect(screen.queryByLabelText('Image preview')).toBeNull();
-    await fireEvent.changeText(screen.getByLabelText('Image link'), 'img.example.com/p.jpg');
-    expect(screen.getByLabelText('Image preview')).toBeTruthy();
+    expect(screen.queryByLabelText('Photo preview')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Choose photo' }));
+    expect(await screen.findByLabelText('Photo preview')).toBeTruthy();
+    expect(photoState.actions.map(([a]) => a)).toEqual(['crop', 'resize', 'save']);
+
+    await fireEvent.changeText(screen.getByLabelText('Place name'), 'Palolem');
+    await fireEvent.press(screen.getByRole('button', { name: 'Add place' }));
+    expect(suggestDestination).toHaveBeenCalledWith('trip-1', expect.objectContaining({ photoUri: 'file:///cache/prepared.jpg' }));
+  });
+
+  it('removes the chosen photo', async () => {
+    photoState.pickerResult = { canceled: false, assets: [{ uri: 'file:///pick.jpg', width: 1, height: 1 }] };
+    await render(<SuggestPlace />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Choose photo' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Remove photo' }));
+    expect(screen.queryByLabelText('Photo preview')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Choose photo' })).toBeTruthy();
+  });
+
+  it('keeps the form as it was when picking is cancelled', async () => {
+    await render(<SuggestPlace />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Choose photo' }));
+    expect(screen.queryByLabelText('Photo preview')).toBeNull();
+    expect(photoState.actions).toEqual([]);
+  });
+
+  it("says so when a photo can't be used", async () => {
+    photoState.pickerResult = { canceled: false, assets: [{ uri: 'file:///bad', width: 0, height: 0 }] };
+    photoState.failDecode = true;
+    await render(<SuggestPlace />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Choose photo' }));
+    expect(await screen.findByText("Couldn't use that photo. Try another one.")).toBeTruthy();
+  });
+
+  it('explains when the camera is not allowed', async () => {
+    photoState.cameraGranted = false;
+    await render(<SuggestPlace />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Take photo' }));
+    expect(await screen.findByText('Allow camera access in Settings to take a photo.')).toBeTruthy();
   });
 
   it('adds the place with normalised links and closes', async () => {
@@ -136,7 +173,7 @@ describe('Suggest a place', () => {
     await fireEvent.changeText(screen.getByLabelText('Note'), ' quiet ');
     await fireEvent.changeText(screen.getByLabelText('Link'), 'example.com');
     await fireEvent.press(screen.getByRole('button', { name: 'Add place' }));
-    expect(suggestDestination).toHaveBeenCalledWith('trip-1', { title: 'Palolem', note: 'quiet', url: 'https://example.com', imageUrl: undefined });
+    expect(suggestDestination).toHaveBeenCalledWith('trip-1', { title: 'Palolem', note: 'quiet', url: 'https://example.com', photoUri: undefined });
     expect(router.back).toHaveBeenCalled();
   });
 
