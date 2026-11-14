@@ -4,7 +4,7 @@
  * - `from(table)` returns a chainable query that records every call and resolves to the next result
  *   queued for that table with `queueResult(table, ...)` (or `{ data: null, error: null }`).
  * - `rpc(name, args)` resolves to the next result queued for `rpc:<name>`.
- * - `storage.from(bucket).upload | remove | createSignedUrls` record calls in `storageCalls` and resolve to
+ * - `storage.from(bucket).upload | list | remove | createSignedUrls` record calls in `storageCalls` and resolve to
  *   the next result queued for `storage:<method>`.
  * - `channel(name)` records `.on(...)` handlers and the `.subscribe(...)` callback so tests can fire them.
  */
@@ -86,10 +86,10 @@ function bucket(name: string) {
       storageCalls.push({ bucket: name, method, args });
       return Promise.resolve(next(`storage:${method}`));
     });
-  return { upload: call('upload'), remove: call('remove'), createSignedUrls: call('createSignedUrls') };
+  return { upload: call('upload'), list: call('list'), remove: call('remove'), createSignedUrls: call('createSignedUrls') };
 }
 
-/** The recorded storage calls for one method (`upload`, `remove`, `createSignedUrls`), in order. */
+/** The recorded storage calls for one method (`upload`, `list`, `remove`, `createSignedUrls`), in order. */
 export function storageCallsFor(method: string) {
   return storageCalls.filter((c) => c.method === method);
 }

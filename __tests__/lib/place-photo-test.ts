@@ -11,6 +11,7 @@ import {
   pickPhoto,
   preparePhoto,
   removePhotos,
+  removeTripPhotos,
   signPhotos,
 } from '@/lib/place-photo';
 import { photoState } from '../../test-utils/photo-mocks';
@@ -120,5 +121,42 @@ describe('the Huddle folder on the device', () => {
     } finally {
       Object.defineProperty(Platform, 'OS', { value: os, configurable: true });
     }
+  });
+});
+
+describe('removeTripPhotos', () => {
+  const files = (n: number, from = 0) => Array.from({ length: n }, (_, i) => ({ name: `p${from + i}.jpg` }));
+
+  it("removes every photo in the trip's folder", async () => {
+    queueResult('storage:list', { data: files(2) });
+    await removeTripPhotos('t1');
+    expect(storageCallsFor('list')[0]).toMatchObject({ bucket: 'place-photos', args: ['t1', { limit: 1000, offset: 0 }] });
+    expect(storageCallsFor('remove').map((c) => c.args[0])).toEqual([['t1/p0.jpg', 't1/p1.jpg']]);
+  });
+
+  it('does nothing for a trip without photos', async () => {
+    queueResult('storage:list', { data: [] });
+    await removeTripPhotos('t1');
+    expect(storageCallsFor('remove')).toHaveLength(0);
+  });
+
+  it('pages through a folder with more than one listing of photos', async () => {
+    queueResult('storage:list', { data: files(1000) });
+    queueResult('storage:list', { data: files(1, 1000) });
+    await removeTripPhotos('t1');
+    expect(storageCallsFor('list').map((c) => (c.args[1] as { offset: number }).offset)).toEqual([0, 1000]);
+    expect(storageCallsFor('remove').map((c) => (c.args[0] as string[]).length)).toEqual([1000, 1]);
+  });
+
+  it('throws when the photos cannot be listed', async () => {
+    queueResult('storage:list', { error: { message: 'offline' } });
+    await expect(removeTripPhotos('t1')).rejects.toEqual({ message: 'offline' });
+    expect(storageCallsFor('remove')).toHaveLength(0);
+  });
+
+  it('throws when the photos cannot be removed', async () => {
+    queueResult('storage:list', { data: files(1) });
+    queueResult('storage:remove', { error: { message: 'offline' } });
+    await expect(removeTripPhotos('t1')).rejects.toEqual({ message: 'offline' });
   });
 });
