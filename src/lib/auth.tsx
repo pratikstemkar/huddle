@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { Platform } from 'react-native';
 
 import { DEV_PASSWORD, devAuthEnabled } from './dev-auth';
+import { exchangeOAuthCode, OAUTH_CALLBACK_PATH, oauthCode } from './oauth-callback';
 import { supabase } from './supabase';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -34,7 +35,7 @@ async function signInWithGoogle() {
   }
 
   // Native: open Google in an in-app browser and catch the redirect back to the app.
-  const redirectTo = makeRedirectUri({ path: 'auth/callback' });
+  const redirectTo = makeRedirectUri({ path: OAUTH_CALLBACK_PATH });
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo, skipBrowserRedirect: true },
@@ -44,10 +45,9 @@ async function signInWithGoogle() {
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (result.type !== 'success') return; // user cancelled
 
-  const code = new URL(result.url).searchParams.get('code');
+  const code = oauthCode(result.url);
   if (!code) throw new Error("Google didn't return a sign-in code. Try again.");
-  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-  if (exchangeError) throw exchangeError;
+  await exchangeOAuthCode(code);
 }
 
 async function signInWithApple() {
