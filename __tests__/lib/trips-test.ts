@@ -19,7 +19,8 @@ import {
 } from '@/lib/trips';
 import { Platform } from 'react-native';
 
-import { queriesFor, queueResult, rpcCalls } from '../../test-utils/supabase-mock';
+import { photoState } from '../../test-utils/photo-mocks';
+import { queriesFor, queueResult, rpcCalls, storageCallsFor } from '../../test-utils/supabase-mock';
 
 jest.mock('expo-linking', () => ({ createURL: (path: string) => `huddle://${path}` }));
 
@@ -165,6 +166,14 @@ describe('deleteTrip', () => {
     ]);
   });
 
+  it("clears the trip's photos from the device", async () => {
+    photoState.files.add(`file:///docs/huddle/trips/${TRIP_ID}/places/d1.jpg`);
+    photoState.files.add('file:///docs/huddle/trips/other/places/d2.jpg');
+    queueResult('trips', { data: [{ id: TRIP_ID }] });
+    await deleteTrip(TRIP_ID);
+    expect([...photoState.files]).toEqual(['file:///docs/huddle/trips/other/places/d2.jpg']);
+  });
+
   it('throws when nothing was deleted (not the organiser)', async () => {
     queueResult('trips', { data: [] });
     await expect(deleteTrip(TRIP_ID)).rejects.toThrow('Not deleted');
@@ -186,6 +195,13 @@ describe('leaveTrip', () => {
       ['eq', ['user_id', 'me']],
       ['select', ['user_id']],
     ]);
+  });
+
+  it("clears the trip's photos from the device", async () => {
+    photoState.files.add(`file:///docs/huddle/trips/${TRIP_ID}/places/d1.jpg`);
+    queueResult('trip_members', { data: [{ user_id: 'me' }] });
+    await leaveTrip(TRIP_ID, 'me');
+    expect(photoState.files.size).toBe(0);
   });
 
   it('throws when I was not a member', async () => {
@@ -256,6 +272,34 @@ describe('useTrips', () => {
     expect(queriesFor('trips')[0].ops[1]).toEqual(['order', ['created_at', { ascending: false }]]);
   });
 
+  it('loads cover photos, signing uploaded ones', async () => {
+    queueResult('trips', { data: [{ id: 't1' }, { id: 't2' }, { id: 't3' }] });
+    queueResult('trip_covers', {
+      data: [
+        { trip_id: 't1', image_path: 't1/a.jpg', image_url: null },
+        { trip_id: 't2', image_path: null, image_url: 'https://img/b.jpg' },
+        { trip_id: 't3', image_path: 't3/gone.jpg', image_url: null },
+      ],
+    });
+    queueResult('storage:createSignedUrls', { data: [{ path: 't1/a.jpg', signedUrl: 'https://signed/a' }] });
+    const { result } = await renderHook(() => useTrips());
+    await act(() => result.current.refresh());
+    expect(Object.fromEntries(result.current.covers)).toEqual({
+      t1: { tripId: 't1', path: 't1/a.jpg', url: 'https://signed/a' },
+      t2: { tripId: 't2', path: null, url: 'https://img/b.jpg' },
+    });
+    expect(storageCallsFor('createSignedUrls')[0].args[0]).toEqual(['t1/a.jpg', 't3/gone.jpg']);
+  });
+
+  it('still shows the trips when covers fail to load', async () => {
+    queueResult('trips', { data: [{ id: 't1' }] });
+    queueResult('trip_covers', { error: { message: 'offline' } });
+    const { result } = await renderHook(() => useTrips());
+    await act(() => result.current.refresh());
+    expect(result.current).toMatchObject({ error: null, trips: [{ id: 't1' }] });
+    expect(result.current.covers.size).toBe(0);
+  });
+
   it('keeps the last list and shows an error when loading fails', async () => {
     queueResult('trips', { data: [{ id: TRIP_ID }] }, { error: { message: 'offline' } });
     const { result } = await renderHook(() => useTrips());
@@ -287,8 +331,8 @@ describe('useTrip', () => {
       'destinations',
       overrides.destinations ?? {
         data: [
-          { id: 'd1', title: 'A', note: null, url: null, image_url: null, created_by: 'org', created_at: '2027-01-01' },
-          { id: 'd2', title: 'B', note: null, url: null, image_url: null, created_by: 'org', created_at: '2027-01-02' },
+          { id: 'd1', trip_id: 't1', title: 'A', note: null, url: null, image_url: null, image_path: null, created_by: 'org', created_at: '2027-01-01' },
+          { id: 'd2', trip_id: 't1', title: 'B', note: null, url: null, image_url: null, image_path: null, created_by: 'org', created_at: '2027-01-02' },
         ],
       },
     );

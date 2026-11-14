@@ -5,7 +5,8 @@ import { Platform } from 'react-native';
 import type { TripColor } from '@/theme/tokens';
 import { bestRanges, type BestRange } from './availability';
 import { today } from './dates';
-import { rankDestinations, type Destination } from './destinations';
+import { DESTINATION_COLUMNS, rankDestinations, withPhotos, type Destination, type DestinationRow } from './destinations';
+import { deleteLocalTrip, signPhotos } from './place-photo';
 import { supabase } from './supabase';
 
 export type Trip = {
@@ -18,6 +19,11 @@ export type Trip = {
   locked_start: string | null;
   locked_end: string | null;
 };
+
+/** The trip's cover picture on the home screen: the locked place's photo, else the most-voted place's. */
+export type TripCover = { tripId: string; path: string | null; url: string };
+
+type CoverRow = { trip_id: string; image_path: string | null; image_url: string | null };
 
 // NOTE: direct Supabase calls for now. The offline-first local store replaces these in a later step.
 
@@ -70,23 +76,40 @@ export function planMessage(tripName: string, dates: string, place: string) {
   return `${tripName} is locked in on Huddle! ${dates} · ${place}`;
 }
 
+/** Signs uploaded cover photos; covers whose photo can't be signed (and have no web link) are left out. */
+export async function resolveCovers(rows: CoverRow[]): Promise<Map<string, TripCover>> {
+  const signed = await signPhotos(rows.map((r) => r.image_path));
+  const covers = new Map<string, TripCover>();
+  for (const r of rows) {
+    const url = (r.image_path && signed.get(r.image_path)) || r.image_url;
+    if (url) covers.set(r.trip_id, { tripId: r.trip_id, path: r.image_path, url });
+  }
+  return covers;
+}
+
 export function useTrips() {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [covers, setCovers] = useState<Map<string, TripCover>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('trips')
-      .select('id, name, color, status, invite_code, created_at, locked_start, locked_end')
-      .order('created_at', { ascending: false });
+    const [{ data, error }, coverRes] = await Promise.all([
+      supabase
+        .from('trips')
+        .select('id, name, color, status, invite_code, created_at, locked_start, locked_end')
+        .order('created_at', { ascending: false }),
+      supabase.from('trip_covers').select('trip_id, image_path, image_url'),
+    ]);
     setError(error ? "Couldn't load your trips. Pull to retry." : null);
     if (data) setTrips(data as Trip[]);
+    // Covers are decoration: if they fail to load, the cards keep their trip colour.
+    if (!coverRes.error) setCovers(await resolveCovers((coverRes.data ?? []) as CoverRow[]));
     setLoading(false);
   }, []);
 
   // Callers trigger `refresh` (e.g. via useFocusEffect) so the list reloads when a screen regains focus.
-  return { trips, loading, error, refresh };
+  return { trips, covers, loading, error, refresh };
 }
 
 export type TripMember = {
@@ -140,7 +163,7 @@ export function useTrip(id: string | undefined, myId?: string) {
         .eq('id', id)
         .maybeSingle(),
       supabase.from('trip_members').select('user_id, role, profiles(display_name, avatar_url, avatar_color)').eq('trip_id', id).order('joined_at'),
-      supabase.from('destinations').select('id, title, note, url, image_url, created_by, created_at').eq('trip_id', id),
+      supabase.from('destinations').select(DESTINATION_COLUMNS).eq('trip_id', id),
       supabase.from('votes').select('destination_id, user_id').eq('trip_id', id),
       // Counts and a headcount rather than rows, so this works when the trip hides who marked what.
       supabase.from('day_counts').select('day, free').eq('trip_id', id),
@@ -165,10 +188,11 @@ export function useTrip(id: string | undefined, myId?: string) {
           avatar_color: m.profiles?.avatar_color ?? null,
         }));
         members.sort((a, b) => Number(b.role === 'organiser') - Number(a.role === 'organiser'));
+        const places = await withPhotos((destRes.data ?? []) as DestinationRow[]);
         setTrip({
           ...(tripRes.data as Omit<TripDetail, 'members' | 'destinations' | 'availabilityCount' | 'bestDays'>),
           members,
-          destinations: rankDestinations(destRes.data ?? [], votesRes.data ?? [], myId),
+          destinations: rankDestinations(places, votesRes.data ?? [], myId),
           availabilityCount: Number(markedRes.data ?? 0),
           bestDays: bestRanges(counts, today()),
         });
@@ -198,6 +222,7 @@ export async function deleteTrip(id: string) {
   if (error) throw error;
   // RLS hides rows you can't delete instead of erroring, so an empty result means nothing happened.
   if (!data?.length) throw new Error('Not deleted');
+  deleteLocalTrip(id);
 }
 
 /** Leaves a trip. The database also clears your free days and votes, and refuses if you're the last organiser. */
@@ -205,6 +230,7 @@ export async function leaveTrip(tripId: string, userId: string) {
   const { data, error } = await supabase.from('trip_members').delete().eq('trip_id', tripId).eq('user_id', userId).select('user_id');
   if (error) throw error;
   if (!data?.length) throw new Error('Not a member');
+  deleteLocalTrip(tripId);
 }
 
 /** Locks the trip to these dates and this destination (organiser only; the database checks everything). */

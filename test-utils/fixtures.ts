@@ -15,10 +15,13 @@ export const members: TripMember[] = [
 export function destination(overrides: Partial<Destination> = {}): Destination {
   return {
     id: 'd1',
+    trip_id: TRIP_ID,
     title: 'Palolem Beach',
     note: null,
     url: null,
     image_url: null,
+    image_path: null,
+    photoUrl: overrides.image_url ?? null,
     created_by: ORGANISER,
     created_at: '2027-01-01T00:00:00Z',
     voteCount: 0,

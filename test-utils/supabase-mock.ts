@@ -4,6 +4,8 @@
  * - `from(table)` returns a chainable query that records every call and resolves to the next result
  *   queued for that table with `queueResult(table, ...)` (or `{ data: null, error: null }`).
  * - `rpc(name, args)` resolves to the next result queued for `rpc:<name>`.
+ * - `storage.from(bucket).upload | remove | createSignedUrls` record calls in `storageCalls` and resolve to
+ *   the next result queued for `storage:<method>`.
  * - `channel(name)` records `.on(...)` handlers and the `.subscribe(...)` callback so tests can fire them.
  */
 
@@ -23,6 +25,7 @@ const queues = new Map<string, Result[]>();
 export const queries: QueryCall[] = [];
 export const rpcCalls: { name: string; args: unknown }[] = [];
 export const channels: FakeChannel[] = [];
+export const storageCalls: { bucket: string; method: string; args: unknown[] }[] = [];
 
 function next(key: string) {
   const r = queues.get(key)?.shift();
@@ -77,6 +80,20 @@ function channel(name: string) {
   return ch;
 }
 
+function bucket(name: string) {
+  const call = (method: string) =>
+    jest.fn((...args: unknown[]) => {
+      storageCalls.push({ bucket: name, method, args });
+      return Promise.resolve(next(`storage:${method}`));
+    });
+  return { upload: call('upload'), remove: call('remove'), createSignedUrls: call('createSignedUrls') };
+}
+
+/** The recorded storage calls for one method (`upload`, `remove`, `createSignedUrls`), in order. */
+export function storageCallsFor(method: string) {
+  return storageCalls.filter((c) => c.method === method);
+}
+
 const unsubscribe = jest.fn();
 
 export const supabase = {
@@ -87,6 +104,7 @@ export const supabase = {
   }),
   channel: jest.fn(channel),
   removeChannel: jest.fn(),
+  storage: { from: jest.fn(bucket) },
   auth: {
     getSession: jest.fn(),
     onAuthStateChange: jest.fn(),
@@ -109,6 +127,8 @@ export function resetSupabaseMock() {
   queries.length = 0;
   rpcCalls.length = 0;
   channels.length = 0;
+  storageCalls.length = 0;
+  supabase.storage.from.mockClear();
   unsubscribe.mockReset();
   supabase.from.mockClear();
   supabase.rpc.mockClear();
