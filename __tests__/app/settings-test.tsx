@@ -17,10 +17,11 @@ jest.mock('@/lib/trips', () => ({
   leaveTrip: jest.fn(),
   unlockTrip: jest.fn(),
   removeMember: jest.fn(),
+  setShowWhoMarked: jest.fn(),
 }));
 
-const { renameTrip, deleteTrip, leaveTrip, unlockTrip, removeMember } = require('@/lib/trips') as Record<
-  'renameTrip' | 'deleteTrip' | 'leaveTrip' | 'unlockTrip' | 'removeMember',
+const { renameTrip, deleteTrip, leaveTrip, unlockTrip, removeMember, setShowWhoMarked } = require('@/lib/trips') as Record<
+  'renameTrip' | 'deleteTrip' | 'leaveTrip' | 'unlockTrip' | 'removeMember' | 'setShowWhoMarked',
   jest.Mock
 >;
 const { useTripLive } = require('@/lib/realtime') as { useTripLive: jest.Mock };
@@ -161,6 +162,32 @@ describe('Trip settings', () => {
   });
 
   describe('removing members (organiser)', () => {
+    it('hides who marked each day, then reloads', async () => {
+      setShowWhoMarked.mockResolvedValue(undefined);
+      await render(<TripSettings />);
+      const toggle = screen.getByLabelText('Show who marked each day');
+      expect(toggle.props.value).toBe(true);
+      expect(screen.getByText('Everyone can see whose days are whose.')).toBeTruthy();
+      await fireEvent(toggle, 'valueChange', false);
+      expect(setShowWhoMarked).toHaveBeenCalledWith(TRIP_ID, false);
+      expect(mockState.refresh).toHaveBeenCalled();
+    });
+
+    it('explains what hiding means when names are hidden', async () => {
+      mockState = tripState(trip({ show_who_marked: false }));
+      await render(<TripSettings />);
+      expect(screen.getByLabelText('Show who marked each day').props.value).toBe(false);
+      expect(screen.getByText(/Everyone sees only how many people are free each day, not who/)).toBeTruthy();
+    });
+
+    it('shows an error when changing who can see fails', async () => {
+      setShowWhoMarked.mockRejectedValue(new Error('offline'));
+      await render(<TripSettings />);
+      await fireEvent(screen.getByLabelText('Show who marked each day'), 'valueChange', false);
+      expect(await screen.findByText("Couldn't change who can see marked days. Check your connection and try again.")).toBeTruthy();
+      expect(screen.getByLabelText('Show who marked each day').props.value).toBe(true);
+    });
+
     it('lists members but not organisers', async () => {
       await render(<TripSettings />);
       expect(screen.getByRole('button', { name: 'Remove Meera' })).toBeTruthy();
@@ -200,6 +227,12 @@ describe('Trip settings', () => {
   describe('as a member', () => {
     beforeEach(() => {
       mockSession = sessionFor(MEMBER);
+    });
+
+    it("can't change who sees marked days", async () => {
+      mockSession = sessionFor(MEMBER);
+      await render(<TripSettings />);
+      expect(screen.queryByLabelText('Show who marked each day')).toBeNull();
     });
 
     it("can't rename, delete, unlock or remove people", async () => {

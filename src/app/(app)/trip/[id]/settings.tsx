@@ -1,14 +1,14 @@
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { useTripLive } from '@/lib/realtime';
-import { deleteTrip, leaveTrip, removeMember, renameTrip, unlockTrip, useTrip } from '@/lib/trips';
+import { deleteTrip, leaveTrip, removeMember, renameTrip, setShowWhoMarked, unlockTrip, useTrip } from '@/lib/trips';
 import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
@@ -31,6 +31,8 @@ export default function TripSettings() {
   // The member waiting for a "remove?" confirmation, and the one being removed right now.
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
+  // The switch's value while a change is saving; null shows the saved setting.
+  const [showWho, setShowWho] = useState<boolean | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -175,6 +177,19 @@ export default function TripSettings() {
     }
   };
 
+  const toggleShowWho = async (show: boolean) => {
+    setShowWho(show);
+    setError(null);
+    try {
+      await setShowWhoMarked(trip.id, show);
+      await refresh();
+    } catch {
+      setError("Couldn't change who can see marked days. Check your connection and try again.");
+    } finally {
+      setShowWho(null);
+    }
+  };
+
   // Organisers can remove members, but not themselves or other organisers.
   const removable = trip.members.filter((m) => m.role === 'member');
 
@@ -229,6 +244,29 @@ export default function TripSettings() {
           </View>
         </>
       ) : null}
+
+      <Text variant="label" style={[styles.label, { marginTop: space.xxl }]}>
+        Privacy
+      </Text>
+      <View style={[styles.danger, { borderColor: colors.line, backgroundColor: colors.card }]}>
+        <View style={styles.memberRow}>
+          <Text variant="body" style={{ flex: 1 }}>
+            Show who marked each day
+          </Text>
+          <Switch
+            value={showWho ?? trip.show_who_marked}
+            onValueChange={toggleShowWho}
+            disabled={showWho !== null}
+            accessibilityLabel="Show who marked each day"
+            trackColor={{ true: fill, false: colors.line }}
+          />
+        </View>
+        <Text variant="caption" tone="muted">
+          {(showWho ?? trip.show_who_marked)
+            ? 'Everyone can see whose days are whose.'
+            : "Everyone sees only how many people are free each day, not who. Each person still sees their own days."}
+        </Text>
+      </View>
 
       {removable.length ? (
         <>
