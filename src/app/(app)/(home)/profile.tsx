@@ -10,7 +10,7 @@ import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { displayName, useAuth } from '@/lib/auth';
 import { MAX_NAME, updateProfile, useMyProfile } from '@/lib/profile';
-import { MIN_TOUCH, radius, space, type TripColor } from '@/theme/tokens';
+import { MIN_TOUCH, radius, space, toTripColor, tripTints, type TripColor } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 export default function ProfileScreen() {
@@ -39,14 +39,15 @@ export default function ProfileScreen() {
 
   if (loading && !profile) {
     return (
-      <Screen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={colors.accent} accessibilityLabel="Loading your profile" />
+      <Screen withNav scroll={false} contentStyle={styles.center}>
+        <ActivityIndicator color={colors.iris} accessibilityLabel="Loading your profile" />
       </Screen>
     );
   }
 
   const name = nameDraft ?? profile?.display_name ?? displayName(session);
-  const color = colorDraft ?? profile?.avatar_color ?? null;
+  const stored = profile?.avatar_color;
+  const color = colorDraft ?? (stored ? toTripColor(stored) : null);
   const photo = dropPhoto ? null : (profile?.avatar_url ?? null);
   const trimmed = name.trim();
 
@@ -73,13 +74,13 @@ export default function ProfileScreen() {
   };
 
   return (
-    <Screen footer={<Button label="Save profile" loading={saving} onPress={save} />}>
+    <Screen withNav footer={<Button label="Save profile" loading={saving} onPress={save} />}>
       <Text variant="title" style={{ marginBottom: space.xl }}>
         Your profile
       </Text>
 
       <View style={styles.preview} accessible accessibilityLabel={`Avatar preview, ${trimmed || 'no name yet'}`}>
-        <Avatar name={trimmed || '?'} url={photo} color={color} fallbackColor={colors.celebrate} size={88} />
+        <Avatar name={trimmed || '?'} url={photo} color={color} fallbackColor={tripTints.beak} size={88} />
         <Text variant="caption" tone="secondary">
           This is how your trip-mates see you.
         </Text>

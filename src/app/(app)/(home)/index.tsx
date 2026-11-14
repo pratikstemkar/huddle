@@ -14,13 +14,14 @@ import { displayName, useAuth } from '@/lib/auth';
 import { formatTripDates } from '@/lib/dates';
 import { useMyProfile } from '@/lib/profile';
 import { useTrips, type Trip, type TripCover } from '@/lib/trips';
-import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
+import { MIN_TOUCH, onTripColor, radius, space, toTripColor, tripColors, tripTints } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
 function TripCard({ trip, cover, index }: { trip: Trip; cover?: TripCover; index: number }) {
-  const { colors } = useTheme();
   const reduced = useReducedMotion();
-  const fill = tripColors[trip.color] ?? tripColors.sunset;
+  const key = toTripColor(trip.color);
+  const fill = tripColors[key];
+  const on = onTripColor[key];
   const dates = trip.status === 'locked' && trip.locked_start && trip.locked_end ? formatTripDates(trip.locked_start, trip.locked_end) : null;
   return (
     <Animated.View
@@ -39,17 +40,17 @@ function TripCard({ trip, cover, index }: { trip: Trip; cover?: TripCover; index
             <LinearGradient colors={['rgba(0,0,0,0.05)', `${fill}66`, 'rgba(0,0,0,0.72)']} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
           </View>
         ) : null}
-        <View style={[styles.pill, { backgroundColor: cover ? fill : colors.onColor }]}>
-          <Text variant="caption" style={{ color: cover ? colors.onColor : fill, fontWeight: '600' }}>
+        <View style={[styles.pill, { backgroundColor: cover ? fill : on }]}>
+          <Text variant="caption" style={{ color: cover ? on : fill, fontWeight: '600' }}>
             {trip.status === 'locked' ? 'Locked in' : 'Planning'}
           </Text>
         </View>
         <View style={{ gap: 2 }}>
-          <Text variant="title" tone="onColor" numberOfLines={2} style={cover ? styles.onPhoto : undefined}>
+          <Text variant="title" numberOfLines={2} style={cover ? styles.onPhoto : { color: on }}>
             {trip.name}
           </Text>
           {dates ? (
-            <Text variant="caption" tone="onColor" style={cover ? styles.onPhoto : undefined}>
+            <Text variant="caption" style={cover ? styles.onPhoto : { color: on }}>
               {dates}
             </Text>
           ) : null}
@@ -79,7 +80,6 @@ function EmptyState() {
 export default function Home() {
   const { session } = useAuth();
   const { trips, covers, loading, error, refresh } = useTrips();
-  const { colors } = useTheme();
   const { profile, refresh: refreshProfile } = useMyProfile(session?.user.id);
   const name = profile?.display_name ?? displayName(session);
 
@@ -91,7 +91,7 @@ export default function Home() {
   );
 
   return (
-    <Screen footer={
+    <Screen withNav footer={
         <View style={{ gap: space.sm }}>
           <Button label="New trip" onPress={() => router.push('/new-trip')} />
           <Button label="Join with a code" variant="secondary" onPress={() => router.push('/join')} />
@@ -110,7 +110,7 @@ export default function Home() {
           accessibilityHint="Edit your name and avatar, or sign out"
           onPress={() => router.push('/profile')}
           style={styles.avatar}>
-          <Avatar name={name} url={profile?.avatar_url} color={profile?.avatar_color} fallbackColor={colors.celebrate} size={MIN_TOUCH} />
+          <Avatar name={name} url={profile?.avatar_url} color={profile?.avatar_color} fallbackColor={tripTints.beak} size={MIN_TOUCH} />
         </Pressable>
       </View>
 
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: space.xl, gap: space.md },
   avatar: { width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: MIN_TOUCH / 2, alignItems: 'center', justifyContent: 'center' },
   trip: { borderRadius: radius.lg, padding: space.xl, minHeight: 150, justifyContent: 'space-between', gap: space.lg, overflow: 'hidden' },
-  // White on the darkened photo; the near-black onColor would vanish there.
+  // White on the darkened photo; ink text would vanish there.
   onPhoto: { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } },
   pill: { alignSelf: 'flex-start', borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.xs },
   swatches: { flexDirection: 'row' },

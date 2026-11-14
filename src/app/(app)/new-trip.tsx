@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { createTrip } from '@/lib/trips';
-import { MIN_TOUCH, radius, space, tripColors, type TripColor } from '@/theme/tokens';
+import { MIN_TOUCH, onTripColor, radius, space, tripColors, type TripColor } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 export default function NewTrip() {
   const { colors } = useTheme();
   const [name, setName] = useState('');
-  const [color, setColor] = useState<TripColor>('sunset');
+  const [color, setColor] = useState<TripColor>('iris');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -43,7 +43,7 @@ export default function NewTrip() {
       </Text>
 
       <View style={[styles.preview, { backgroundColor: tripColors[color] }]}>
-        <Text variant="title" tone="onColor" numberOfLines={2}>
+        <Text variant="title" numberOfLines={2} style={{ color: onTripColor[color] }}>
           {name.trim() || 'Goa in March'}
         </Text>
       </View>

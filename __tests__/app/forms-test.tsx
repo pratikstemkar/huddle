@@ -11,7 +11,7 @@ jest.mock('@/lib/destinations', () => ({ ...jest.requireActual('@/lib/destinatio
 
 const { joinTrip, createTrip } = require('@/lib/trips') as { joinTrip: jest.Mock; createTrip: jest.Mock };
 const { suggestDestination } = require('@/lib/destinations') as { suggestDestination: jest.Mock };
-const JoinTrip = require('@/app/(app)/join').default as () => React.JSX.Element;
+const JoinTrip = require('@/app/(app)/(home)/join').default as () => React.JSX.Element;
 const NewTrip = require('@/app/(app)/new-trip').default as () => React.JSX.Element;
 const SuggestPlace = require('@/app/(app)/trip/[id]/suggest').default as () => React.JSX.Element;
 
@@ -64,7 +64,7 @@ describe('New trip', () => {
   it('previews a placeholder name and the default colour', async () => {
     await render(<NewTrip />);
     expect(screen.getByText('Goa in March')).toBeTruthy();
-    expect(screen.getByRole('radio', { name: 'Sunset' }).props.accessibilityState).toEqual({ selected: true });
+    expect(screen.getByRole('radio', { name: 'Iris' }).props.accessibilityState).toEqual({ selected: true });
   });
 
   it('asks for a name first', async () => {
@@ -80,10 +80,10 @@ describe('New trip', () => {
     await render(<NewTrip />);
     await fireEvent.changeText(screen.getByLabelText('Trip name'), '  Manali  ');
     expect(screen.getByText('Manali')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('radio', { name: 'Lagoon' }));
-    expect(screen.getByRole('radio', { name: 'Lagoon' }).props.accessibilityState).toEqual({ selected: true });
+    await fireEvent.press(screen.getByRole('radio', { name: 'Mint' }));
+    expect(screen.getByRole('radio', { name: 'Mint' }).props.accessibilityState).toEqual({ selected: true });
     await fireEvent(screen.getByLabelText('Trip name'), 'submitEditing');
-    expect(createTrip).toHaveBeenCalledWith('Manali', 'lagoon');
+    expect(createTrip).toHaveBeenCalledWith('Manali', 'mint');
     expect(router.back).toHaveBeenCalled();
   });
 

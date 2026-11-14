@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { formatRange, fromDay, toDay } from '@/lib/dates';
 import { useTripLive } from '@/lib/realtime';
 import { lockTrip, useTrip } from '@/lib/trips';
-import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
+import { MIN_TOUCH, onTripColor, radius, space, toTripColor, tripColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -49,7 +49,7 @@ export default function LockTrip() {
   if (loading && !trip) {
     return (
       <Screen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={colors.accent} accessibilityLabel="Loading" />
+        <ActivityIndicator color={colors.iris} accessibilityLabel="Loading" />
       </Screen>
     );
   }
@@ -70,7 +70,8 @@ export default function LockTrip() {
     );
   }
 
-  const fill = tripColors[trip.color] ?? tripColors.sunset;
+  const fill = tripColors[toTripColor(trip.color)];
+  const onFill = onTripColor[toTripColor(trip.color)];
   const best = trip.bestDays;
   const startDay = start ?? best[0]?.start ?? '';
   const endDay = end ?? best[0]?.end ?? '';
@@ -149,10 +150,10 @@ export default function LockTrip() {
                   setError(null);
                 }}
                 style={[styles.chip, { backgroundColor: on ? fill : colors.card, borderColor: on ? fill : colors.line }]}>
-                <Text variant="label" tone={on ? 'onColor' : 'primary'}>
+                <Text variant="label" tone="primary" style={on ? { color: onFill } : undefined}>
                   {formatRange(r.start, r.end)}
                 </Text>
-                <Text variant="caption" tone={on ? 'onColor' : 'muted'}>
+                <Text variant="caption" tone="muted" style={on ? { color: onFill } : undefined}>
                   {r.free} of {trip.members.length} free
                 </Text>
               </Pressable>

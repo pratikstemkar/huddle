@@ -37,7 +37,7 @@ export default function JoinTrip() {
   };
 
   return (
-    <Screen footer={<Button label="Join trip" loading={joining} onPress={submit} />}>
+    <Screen withNav footer={<Button label="Join trip" loading={joining} onPress={submit} />}>
       <Text variant="title" style={{ marginBottom: space.sm }}>
         Join a trip
       </Text>

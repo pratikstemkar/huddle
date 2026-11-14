@@ -195,7 +195,7 @@ describe('Trip settings', () => {
     });
 
     it('hides the section when there is nobody to remove', async () => {
-      mockState = tripState(trip({ members: [{ user_id: ORGANISER, role: 'organiser', display_name: 'Aarav', avatar_url: null, avatar_color: null }] }));
+      mockState = tripState(trip({ members: [{ user_id: ORGANISER, role: 'organiser', joined_at: '2027-01-01T00:00:00Z', display_name: 'Aarav', avatar_url: null, avatar_color: null }] }));
       await render(<TripSettings />);
       expect(screen.queryByText('Members')).toBeNull();
     });

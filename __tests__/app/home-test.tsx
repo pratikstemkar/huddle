@@ -18,20 +18,22 @@ jest.mock('@/lib/profile', () => ({ useMyProfile: () => mockProfile }));
 let mockTrips: { trips: Trip[]; covers: Map<string, TripCover>; loading: boolean; error: string | null; refresh: jest.Mock };
 jest.mock('@/lib/trips', () => ({ useTrips: () => mockTrips }));
 
-const Home = require('@/app/(app)/index').default as () => React.JSX.Element;
+const Home = require('@/app/(app)/(home)/index').default as () => React.JSX.Element;
 const { sessionFor } = require('../../test-utils/fixtures') as typeof import('../../test-utils/fixtures');
 
 const planning: Trip = {
   id: 't1',
   name: 'Goa in March',
-  color: 'sunset',
+  color: 'coral',
   status: 'planning',
   invite_code: 'goa',
   created_at: '',
   locked_start: null,
   locked_end: null,
+  fixed_start: null,
+  fixed_end: null,
 };
-const locked: Trip = { ...planning, id: 't2', name: 'Pondy', color: 'lagoon', status: 'locked', locked_start: '2027-03-12', locked_end: '2027-03-14' };
+const locked: Trip = { ...planning, id: 't2', name: 'Pondy', color: 'mint', status: 'locked', locked_start: '2027-03-12', locked_end: '2027-03-14' };
 
 describe('Home', () => {
   beforeEach(() => {
@@ -50,7 +52,7 @@ describe('Home', () => {
   });
 
   it('uses the name from my profile once it loads', async () => {
-    mockProfile.profile = { id: 'u1', display_name: 'Ravi Kumar', avatar_url: null, avatar_color: 'sky' };
+    mockProfile.profile = { id: 'u1', display_name: 'Ravi Kumar', avatar_url: null, avatar_color: 'iris' };
     await render(<Home />);
     expect(screen.getByText('Hey Ravi')).toBeTruthy();
     expect(screen.getByText('R', { includeHiddenElements: true })).toBeTruthy();

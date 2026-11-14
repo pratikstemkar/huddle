@@ -20,7 +20,7 @@ jest.mock('@/lib/profile', () => ({
 }));
 
 const { updateProfile } = require('@/lib/profile') as { updateProfile: jest.Mock };
-const ProfileScreen = require('@/app/(app)/profile').default as () => React.JSX.Element;
+const ProfileScreen = require('@/app/(app)/(home)/profile').default as () => React.JSX.Element;
 
 const me = { id: 'u1', display_name: 'Aarav Shah', avatar_url: null, avatar_color: null };
 
@@ -43,9 +43,9 @@ describe('Profile', () => {
     const input = screen.getByLabelText('Your name');
     expect(input.props.value).toBe('Aarav Shah');
     await fireEvent.changeText(input, '  Aarav  ');
-    await fireEvent.press(screen.getByRole('radio', { name: 'Plum' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Blush' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Save profile' }));
-    expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Aarav', avatar_color: 'plum' });
+    expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Aarav', avatar_color: 'blush' });
     expect(router.back).toHaveBeenCalled();
   });
 
@@ -74,11 +74,11 @@ describe('Profile', () => {
     mockState.profile = { ...me, avatar_url: 'https://photo.png' };
     updateProfile.mockResolvedValue(undefined);
     await render(<ProfileScreen />);
-    expect(screen.queryByRole('radio', { name: 'Sky' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: 'Mint' })).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Use my initial instead' }));
-    await fireEvent.press(screen.getByRole('radio', { name: 'Sky' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Mint' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Save profile' }));
-    expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Aarav Shah', avatar_color: 'sky', avatar_url: null });
+    expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Aarav Shah', avatar_color: 'mint', avatar_url: null });
   });
 
   it('signs out', async () => {

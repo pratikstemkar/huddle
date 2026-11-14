@@ -42,7 +42,7 @@ export function DestinationCard({ destination: d, names, fill, readOnly, canRemo
 
   return (
     <Card style={{ gap: space.sm, padding: 0, overflow: 'hidden' }}>
-      <PlacePhoto place={d} accessibilityLabel={`Photo of ${d.title}`} style={[styles.image, { backgroundColor: colors.cardMuted }]} />
+      <PlacePhoto place={d} accessibilityLabel={`Photo of ${d.title}`} style={[styles.image, { backgroundColor: colors.track }]} />
       <View style={{ padding: space.lg, gap: space.sm }}>
         <Text variant="heading">{d.title}</Text>
         {d.note ? (
@@ -73,8 +73,8 @@ export function DestinationCard({ destination: d, names, fill, readOnly, canRemo
             accessibilityState={{ selected: d.iVoted, disabled: readOnly }}
             disabled={readOnly}
             onPress={vote}
-            style={[styles.vote, { backgroundColor: d.iVoted ? colors.votes : colors.cardMuted, borderColor: colors.votes, opacity: readOnly ? 0.6 : 1 }]}>
-            <Text variant="bodyStrong" tone={d.iVoted ? 'onColor' : 'primary'}>
+            style={[styles.vote, { backgroundColor: d.iVoted ? colors.iris : colors.tint.vote, borderColor: colors.iris, opacity: readOnly ? 0.6 : 1 }]}>
+            <Text variant="bodyStrong" tone={d.iVoted ? 'onIris' : 'primary'}>
               {d.iVoted ? '♥ Voted' : '♡ Vote'} · {d.voteCount}
             </Text>
           </Pressable>

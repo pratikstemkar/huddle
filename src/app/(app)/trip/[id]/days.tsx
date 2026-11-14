@@ -13,7 +13,7 @@ import { formatDay, formatRange, today as getToday, windowEnd } from '@/lib/date
 import { useAuth } from '@/lib/auth';
 import { useTripLive } from '@/lib/realtime';
 import { useTrip } from '@/lib/trips';
-import { MIN_TOUCH, radius, space, tripColors, type TripColor } from '@/theme/tokens';
+import { MIN_TOUCH, radius, space, toTripColor, tripColors, type TripColor } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 function goBack(id: string) {
@@ -54,11 +54,11 @@ export default function DaysScreen() {
     if (!trip) return out;
     // People who haven't picked a colour each get a different one, never the trip's own (the heatmap uses it),
     // so dots can be told apart.
-    const spare = (Object.keys(tripColors) as TripColor[]).filter((c) => c !== trip.color);
+    const spare = (Object.keys(tripColors) as TripColor[]).filter((c) => c !== toTripColor(trip.color));
     trip.members.forEach((m, i) => {
       out.set(m.user_id, {
         name: m.user_id === me ? 'You' : m.display_name,
-        color: tripColors[m.avatar_color ?? spare[i % spare.length]],
+        color: tripColors[m.avatar_color ? toTripColor(m.avatar_color) : spare[i % spare.length]],
       });
     });
     return out;
@@ -67,7 +67,7 @@ export default function DaysScreen() {
   if ((tripLoading && !trip) || (av.loading && !tripError)) {
     return (
       <Screen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={colors.accent} accessibilityLabel="Loading days" />
+        <ActivityIndicator color={colors.iris} accessibilityLabel="Loading days" />
       </Screen>
     );
   }
@@ -199,7 +199,7 @@ export default function DaysScreen() {
                     const name = u === me ? 'You' : (m?.display_name ?? 'Traveller');
                     return (
                       <View key={u} style={styles.person} accessible accessibilityLabel={name}>
-                        <Avatar name={m?.display_name ?? name} url={m?.avatar_url} color={m?.avatar_color} fallbackColor={people.get(u)?.color ?? tripColors[trip.color]} size={28} />
+                        <Avatar name={m?.display_name ?? name} url={m?.avatar_url} color={m?.avatar_color} fallbackColor={people.get(u)?.color ?? tripColors[toTripColor(trip.color)]} size={28} />
                         <Text variant="body">{name}</Text>
                       </View>
                     );

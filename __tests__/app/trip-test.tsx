@@ -18,7 +18,7 @@ let mockState: ReturnType<typeof tripState>;
 jest.mock('@/lib/trips', () => ({ ...jest.requireActual('@/lib/trips'), useTrip: () => mockState }));
 
 const { useTripLive } = require('@/lib/realtime') as { useTripLive: jest.Mock };
-const TripScreen = require('@/app/(app)/trip/[id]/index').default as () => React.JSX.Element;
+const TripScreen = require('@/app/(app)/trip/[id]/(tabs)/index').default as () => React.JSX.Element;
 const setString = Clipboard.setStringAsync as jest.Mock;
 
 const INVITE = 'Join "Goa in March" on Huddle! Use code goa2027, or open huddle://invite/goa2027';

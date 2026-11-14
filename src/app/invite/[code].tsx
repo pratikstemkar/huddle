@@ -8,7 +8,7 @@ import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { savePendingInvite, takePendingInvite } from '@/lib/pending-invite';
 import { invitePreview, type InvitePreview } from '@/lib/trips';
-import { radius, space, tripColors } from '@/theme/tokens';
+import { onTripColor, radius, space, toTripColor, tripColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 /**
@@ -63,7 +63,7 @@ function SignedOutInvite({ code }: { code: string }) {
 
       <View style={styles.body}>
         {loading ? (
-          <ActivityIndicator color={colors.accent} accessibilityLabel="Loading the invite" />
+          <ActivityIndicator color={colors.iris} accessibilityLabel="Loading the invite" />
         ) : unknown ? (
           <>
             <Text variant="title">This invite doesn’t work</Text>
@@ -77,11 +77,11 @@ function SignedOutInvite({ code }: { code: string }) {
               You’re invited to
             </Text>
             {preview ? (
-              <View style={[styles.card, { backgroundColor: tripColors[preview.color] ?? tripColors.sunset }]}>
-                <Text variant="title" tone="onColor" numberOfLines={2}>
+              <View style={[styles.card, { backgroundColor: tripColors[toTripColor(preview.color)] }]}>
+                <Text variant="title" numberOfLines={2} style={{ color: onTripColor[toTripColor(preview.color)] }}>
                   {preview.name}
                 </Text>
-                <Text variant="caption" tone="onColor">
+                <Text variant="caption" style={{ color: onTripColor[toTripColor(preview.color)] }}>
                   {preview.members === 1 ? '1 person is going' : `${preview.members} people are going`}
                 </Text>
               </View>

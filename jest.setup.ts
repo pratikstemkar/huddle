@@ -23,6 +23,9 @@ jest.mock('expo-image-picker', () => require('./test-utils/photo-mocks').imagePi
 jest.mock('expo-image-manipulator', () => require('./test-utils/photo-mocks').imageManipulator);
 jest.mock('expo-file-system', () => require('./test-utils/photo-mocks').fileSystem);
 
+// Safe-area insets are zero in tests; screens read them for padding around the floating tab bar.
+jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
+
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 
 // Reanimated runs its web implementation in tests (see the jest `resolver` in package.json).

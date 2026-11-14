@@ -69,7 +69,7 @@ export default function DeleteAccount() {
           {loadError}
         </Text>
       ) : trips === null ? (
-        <ActivityIndicator color={colors.accent} accessibilityLabel="Loading your trips" />
+        <ActivityIndicator color={colors.iris} accessibilityLabel="Loading your trips" />
       ) : trips.length === 0 ? (
         <Text variant="body" tone="secondary">
           You’re not in any trips.

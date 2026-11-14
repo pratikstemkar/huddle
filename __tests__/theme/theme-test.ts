@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { AccessibilityInfo, useColorScheme } from 'react-native';
 
-import { MIN_TOUCH, palette, tripColors } from '@/theme/tokens';
+import { MIN_TOUCH, navClearance, onTripColor, palette, toTripColor, tripColors, tripTints, TRIP_COLOR_NAMES, type TintArea } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
 jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({ __esModule: true, default: jest.fn() }));
@@ -30,11 +30,50 @@ describe('tokens', () => {
     expect(contrast(c.text, c.bg)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(c.text, c.card)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(c.textSecondary, c.card)).toBeGreaterThanOrEqual(4.5);
-    for (const fill of [c.accent, c.votes, c.celebrate]) expect(contrast(c.onColor, fill)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.textSecondary, c.bg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.onIris, c.iris)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.onBeak, c.beak)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.onInk, c.ink)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.irisText, c.card)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.positive, c.card)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.owe, c.card)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.danger, c.card)).toBeGreaterThanOrEqual(4.5);
+    for (const area of Object.keys(c.tint) as TintArea[]) {
+      expect(contrast(c.text, c.tint[area])).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(c.irisText, c.tint[area])).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(contrast(c.onIris, c.heat[3])).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('trip colours match the colours the database accepts', () => {
-    expect(Object.keys(tripColors).sort()).toEqual(['bougainvillea', 'lagoon', 'mango', 'plum', 'sky', 'sunset']);
+  it('every trip colour has a tint, a readable text colour and a name', () => {
+    expect(Object.keys(tripColors).sort()).toEqual(['beak', 'blush', 'coral', 'iris', 'mint']);
+    for (const key of Object.keys(tripColors) as (keyof typeof tripColors)[]) {
+      expect(contrast(onTripColor[key], tripColors[key])).toBeGreaterThanOrEqual(4.5);
+      expect(contrast('#171A2F', tripTints[key])).toBeGreaterThanOrEqual(4.5);
+      expect(TRIP_COLOR_NAMES[key]).toBeTruthy();
+    }
+  });
+
+  it.each([
+    ['iris', 'iris'],
+    ['mint', 'mint'],
+    ['sunset', 'coral'],
+    ['lagoon', 'mint'],
+    ['mango', 'beak'],
+    ['plum', 'iris'],
+    ['bougainvillea', 'blush'],
+    ['sky', 'iris'],
+    ['nonsense', 'iris'],
+    ['', 'iris'],
+    [null, 'iris'],
+    [undefined, 'iris'],
+  ])('maps the stored colour %p to %p', (stored, expected) => {
+    expect(toTripColor(stored)).toBe(expected);
+  });
+
+  it('keeps tab content clear of the floating nav', () => {
+    expect(navClearance({ bottom: 0 })).toBe(100);
+    expect(navClearance({ bottom: 34 })).toBe(134);
   });
 
   it('touch targets are at least 44pt', () => {

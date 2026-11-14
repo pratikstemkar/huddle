@@ -65,9 +65,9 @@ type CellProps = {
 const Cell = memo(function Cell({ day, past, mode, mine, count, total, selected, readOnly, marked, onToggle, onSelect }: CellProps) {
   const { colors } = useTheme();
   const level = count === 0 ? 0 : Math.min(3, Math.ceil((count / Math.max(total, 1)) * 3));
-  const fill = mode === 'mine' ? (mine ? colors.accent : 'transparent') : colors.heat[level];
+  const fill = mode === 'mine' ? (mine ? colors.iris : 'transparent') : colors.heat[level];
   const strong = mode === 'mine' ? mine : level >= 3;
-  const textColor = strong ? colors.onColor : past ? colors.textMuted : colors.text;
+  const textColor = strong ? colors.onIris : past ? colors.textMuted : colors.text;
   const editable = mode === 'mine' && !readOnly && !past;
   const selectable = mode === 'all';
   const dots = mode === 'all' && marked?.length ? marked : null;
@@ -94,7 +94,7 @@ const Cell = memo(function Cell({ day, past, mode, mine, count, total, selected,
         styles.cell,
         { backgroundColor: fill, opacity: past ? 0.4 : 1 },
         mode === 'all' && mine && { borderWidth: 2, borderColor: colors.text },
-        mode === 'all' && selected && { borderWidth: 2, borderColor: colors.votes },
+        mode === 'all' && selected && { borderWidth: 2, borderColor: colors.iris },
       ]}>
       <Text variant="label" style={{ color: textColor }}>
         {Number(day.slice(8))}
@@ -270,7 +270,7 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
             hitSlop={{ top: (MIN_TOUCH - TODAY_H) / 2, bottom: (MIN_TOUCH - TODAY_H) / 2, left: space.sm, right: space.sm }}
             style={({ pressed }) => [
               styles.today,
-              { backgroundColor: pressed ? colors.cardMuted : colors.card, borderColor: colors.line, opacity: index === 0 ? 0 : 1 },
+              { backgroundColor: pressed ? colors.track : colors.card, borderColor: colors.line, opacity: index === 0 ? 0 : 1 },
               pressed && { transform: [{ scale: 0.96 }] },
             ]}>
             <Text variant="caption" tone="accent" style={{ fontWeight: '600' }}>

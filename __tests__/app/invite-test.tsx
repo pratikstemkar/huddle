@@ -31,7 +31,7 @@ describe('Invite link', () => {
   });
 
   it('shows signed-out visitors the trip and keeps the code for after sign-in', async () => {
-    queueResult('rpc:invite_preview', { data: [{ name: 'Goa in March', color: 'sunset', members: 2 }] });
+    queueResult('rpc:invite_preview', { data: [{ name: 'Goa in March', color: 'coral', members: 2 }] });
     setParams({ code: ' goa2027 ' });
     await render(<Invite />);
 

@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth';
 import { useTripLive } from '@/lib/realtime';
 import { useDestinations } from '@/lib/destinations';
 import { useTrip } from '@/lib/trips';
-import { MIN_TOUCH, space, tripColors } from '@/theme/tokens';
+import { MIN_TOUCH, space, toTripColor, tripColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 function goBack(id: string) {
@@ -44,7 +44,7 @@ export default function PlacesScreen() {
   if ((tripLoading && !trip) || (d.loading && !tripError)) {
     return (
       <Screen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={colors.accent} accessibilityLabel="Loading places" />
+        <ActivityIndicator color={colors.iris} accessibilityLabel="Loading places" />
       </Screen>
     );
   }
@@ -62,7 +62,7 @@ export default function PlacesScreen() {
 
   const locked = trip.status === 'locked';
   const isOrganiser = trip.members.some((m) => m.user_id === me && m.role === 'organiser');
-  const fill = tripColors[trip.color] ?? tripColors.sunset;
+  const fill = tripColors[toTripColor(trip.color)];
   const error = d.error ?? tripError;
 
   return (

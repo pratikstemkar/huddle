@@ -9,7 +9,7 @@ import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { useTripLive } from '@/lib/realtime';
 import { deleteTrip, leaveTrip, removeMember, renameTrip, setShowWhoMarked, unlockTrip, useTrip } from '@/lib/trips';
-import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
+import { MIN_TOUCH, radius, space, toTripColor, tripColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 export default function TripSettings() {
@@ -49,7 +49,7 @@ export default function TripSettings() {
   if (loading && !trip) {
     return (
       <Screen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={colors.accent} accessibilityLabel="Loading settings" />
+        <ActivityIndicator color={colors.iris} accessibilityLabel="Loading settings" />
       </Screen>
     );
   }
@@ -113,7 +113,7 @@ export default function TripSettings() {
     );
   }
 
-  const fill = tripColors[trip.color] ?? tripColors.sunset;
+  const fill = tripColors[toTripColor(trip.color)];
   const name = draft ?? trip.name;
   const trimmed = name.trim();
   const dirty = trimmed !== trip.name;

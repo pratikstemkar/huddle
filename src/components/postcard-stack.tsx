@@ -16,9 +16,9 @@ import { useReducedMotion, useTheme } from '@/theme/use-theme';
 import { Text } from './ui/text';
 
 const CARDS = [
-  { place: 'Goa', note: 'beach week', color: tripColors.sunset, rotate: -8, x: -80, y: -40 },
-  { place: 'Manali', note: 'snow + maggi', color: tripColors.lagoon, rotate: 6, x: 72, y: -58 },
-  { place: 'Pondy', note: 'long weekend', color: tripColors.mango, rotate: -3, x: -4, y: 62 },
+  { place: 'Goa', note: 'beach week', color: tripColors.coral, rotate: -8, x: -80, y: -40 },
+  { place: 'Manali', note: 'snow + maggi', color: tripColors.mint, rotate: 6, x: 72, y: -58 },
+  { place: 'Pondy', note: 'long weekend', color: tripColors.beak, rotate: -3, x: -4, y: 62 },
 ];
 
 function Postcard({ card, index }: { card: (typeof CARDS)[number]; index: number }) {

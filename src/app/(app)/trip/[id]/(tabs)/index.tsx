@@ -15,7 +15,7 @@ import { useTripLive } from '@/lib/realtime';
 import { formatRange, formatTripDates, nightsBetween } from '@/lib/dates';
 import { hostOf } from '@/lib/destinations';
 import { inviteMessage, planMessage, useTrip, type TripDetail, type TripMember } from '@/lib/trips';
-import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
+import { MIN_TOUCH, onTripColor, radius, space, toTripColor, tripColors, tripTints } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
 function goBack() {
@@ -168,7 +168,7 @@ function MemberRow({ member, fill, isMe }: { member: TripMember; fill: string; i
         {isMe ? <Text tone="muted"> (you)</Text> : null}
       </Text>
       {member.role === 'organiser' ? (
-        <View style={[styles.tag, { backgroundColor: colors.cardMuted }]}>
+        <View style={[styles.tag, { backgroundColor: colors.track }]}>
           <Text variant="caption" tone="secondary" style={{ fontWeight: '600' }}>
             Organiser
           </Text>
@@ -238,7 +238,7 @@ function WhereCard({ trip }: { trip: TripDetail }) {
     }
     return (
       <Card style={{ gap: space.sm, padding: 0, overflow: 'hidden' }}>
-        <PlacePhoto place={locked} accessibilityLabel={`Photo of ${locked.title}`} style={[styles.placeImage, { backgroundColor: colors.cardMuted }]} />
+        <PlacePhoto place={locked} accessibilityLabel={`Photo of ${locked.title}`} style={[styles.placeImage, { backgroundColor: colors.track }]} />
         <View style={{ gap: space.xs, padding: space.lg, paddingTop: locked.photoUrl ? space.xs : space.lg }}>
           <Text variant="heading">{locked.title}</Text>
           {locked.note ? (
@@ -293,8 +293,8 @@ function WhereCard({ trip }: { trip: TripDetail }) {
               </Text>
             ) : null}
           </View>
-          <View style={[styles.votes, { backgroundColor: colors.votes }]}>
-            <Text variant="caption" tone="onColor" style={{ fontWeight: '700' }}>
+          <View style={[styles.votes, { backgroundColor: colors.iris }]}>
+            <Text variant="caption" tone="onIris" style={{ fontWeight: '700' }}>
               {d.voteCount}
             </Text>
           </View>
@@ -339,15 +339,15 @@ export default function TripScreen() {
 
   if (loading && !trip) {
     return (
-      <Screen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={colors.accent} accessibilityLabel="Loading trip" />
+      <Screen withNav scroll={false} contentStyle={styles.center}>
+        <ActivityIndicator color={colors.iris} accessibilityLabel="Loading trip" />
       </Screen>
     );
   }
 
   if (!trip) {
     return (
-      <Screen footer={<Button label={error ? 'Try again' : 'Back to your trips'} onPress={error ? refresh : goBack} />}>
+      <Screen withNav footer={<Button label={error ? 'Try again' : 'Back to your trips'} onPress={error ? refresh : goBack} />}>
         <BackButton />
         <View style={[styles.center, { gap: space.sm }]}>
           <Text variant="title" style={{ textAlign: 'center' }}>
@@ -361,19 +361,21 @@ export default function TripScreen() {
     );
   }
 
-  const fill = tripColors[trip.color] ?? tripColors.sunset;
+  const key = toTripColor(trip.color);
+  const fill = tripColors[key];
+  const on = onTripColor[key];
   const isLocked = trip.status === 'locked';
   const isOrganiser = trip.members.some((m) => m.user_id === session?.user.id && m.role === 'organiser');
 
   return (
-    <Screen>
+    <Screen withNav>
       <Animated.View
         entering={reduced ? undefined : FadeInDown.springify().damping(16)}
         style={[styles.hero, { backgroundColor: fill }]}>
         <View style={styles.heroTop}>
           <BackButton />
           <View style={styles.heroActions}>
-            <View style={[styles.pill, { backgroundColor: colors.onColor }]}>
+            <View style={[styles.pill, { backgroundColor: on }]}>
               <Text variant="caption" style={{ color: fill, fontWeight: '600' }}>
                 {isLocked ? 'Locked in' : 'Planning'}
               </Text>
@@ -381,7 +383,7 @@ export default function TripScreen() {
             <SettingsButton tripId={trip.id} />
           </View>
         </View>
-        <Text variant="title" tone="onColor" numberOfLines={3}>
+        <Text variant="title" numberOfLines={3} style={{ color: on }}>
           {trip.name}
         </Text>
       </Animated.View>
@@ -424,7 +426,7 @@ export default function TripScreen() {
       <Section title={`Who's going · ${trip.members.length}`} index={4}>
         <Card style={{ paddingVertical: space.sm }}>
           {trip.members.map((m) => (
-            <MemberRow key={m.user_id} member={m} fill={fill} isMe={m.user_id === session?.user.id} />
+            <MemberRow key={m.user_id} member={m} fill={tripTints[key]} isMe={m.user_id === session?.user.id} />
           ))}
         </Card>
       </Section>
