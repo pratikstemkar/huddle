@@ -70,6 +70,21 @@ describe('DayCalendar', () => {
     expect(screen.getByRole('header').props.children).toBe('April 2027');
   });
 
+  it("doesn't flick back to the old month while an arrow's scroll is animating", async () => {
+    await renderCalendar();
+    const list = screen.getByTestId('month-pager');
+    const width = list.props.getItemLayout(null, 1).offset;
+    await fireEvent.press(screen.getByLabelText('Next month'));
+    // The first frames of the animated scroll are still nearer March.
+    await fireEvent.scroll(list, { nativeEvent: { contentOffset: { x: width * 0.2, y: 0 } } });
+    expect(screen.getByRole('header').props.children).toBe('April 2027');
+    await fireEvent.scroll(list, { nativeEvent: { contentOffset: { x: width, y: 0 } } });
+    expect(screen.getByRole('header').props.children).toBe('April 2027');
+    // Once it has landed, a swipe back works as usual.
+    await fireEvent.scroll(list, { nativeEvent: { contentOffset: { x: 0, y: 0 } } });
+    expect(screen.getByRole('header').props.children).toBe('March 2027');
+  });
+
   it('counts my days in the month shown', async () => {
     await renderCalendar({ myDays: new Set(['2027-03-15', '2027-03-16', '2027-04-02']) });
     expect(screen.getByText('2 days marked this month')).toBeTruthy();

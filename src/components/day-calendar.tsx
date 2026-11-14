@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Platform,
@@ -45,6 +45,7 @@ const WEEKS = 6;
 const CELL = 44;
 const ROW_GAP = 4;
 const MAX_DOTS = 3;
+const TODAY_H = 32;
 
 type CellProps = {
   day: Day;
@@ -170,6 +171,12 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
   const [width, setWidth] = useState(() => Math.max(0, Math.min(window.width, MAX_CONTENT_WIDTH) - 2 * space.xl));
   const [index, setIndex] = useState(0);
   const list = useRef<FlatList<MonthGrid>>(null);
+  // The month an arrow is scrolling to. While set, the animation's in-between offsets don't move the index,
+  // or the header would flick back to the old month for the first half of the scroll.
+  const target = useRef<number | null>(null);
+  // Lets go of `target` once the pager has been still for a moment, in case the scroll never lands exactly.
+  const settle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(settle.current), []);
 
   const marked = useMemo(() => {
     const out = new Map<Day, CalendarPerson[]>();
@@ -189,6 +196,12 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
   const goTo = useCallback(
     (i: number) => {
       const next = Math.max(0, Math.min(months.length - 1, i));
+      target.current = next;
+      // The scroll can start a good while after the tap on a busy device, so wait long before giving up on it.
+      clearTimeout(settle.current);
+      settle.current = setTimeout(() => {
+        target.current = null;
+      }, 2000);
       setIndex(next);
       list.current?.scrollToOffset({ offset: next * width, animated: true });
     },
@@ -199,7 +212,18 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (!width) return;
     const i = Math.round(e.nativeEvent.contentOffset.x / width);
-    if (i !== index && i >= 0 && i < months.length) setIndex(i);
+    const valid = i >= 0 && i < months.length;
+    if (target.current !== null) {
+      clearTimeout(settle.current);
+      if (Math.abs(e.nativeEvent.contentOffset.x - target.current * width) < 1) target.current = null;
+      else
+        settle.current = setTimeout(() => {
+          target.current = null;
+          if (valid) setIndex(i);
+        }, 300);
+      return;
+    }
+    if (i !== index && valid) setIndex(i);
   };
 
   const month = months[index] ?? months[0];
@@ -242,9 +266,14 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
             importantForAccessibility={index === 0 ? 'no-hide-descendants' : 'auto'}
             disabled={index === 0}
             onPress={() => goTo(0)}
-            hitSlop={8}
-            style={{ opacity: index === 0 ? 0 : 1 }}>
-            <Text variant="caption" tone="accent">
+            // The chip is drawn 32 tall; the slop takes the touch area to 44.
+            hitSlop={{ top: (MIN_TOUCH - TODAY_H) / 2, bottom: (MIN_TOUCH - TODAY_H) / 2, left: space.sm, right: space.sm }}
+            style={({ pressed }) => [
+              styles.today,
+              { backgroundColor: pressed ? colors.cardMuted : colors.card, borderColor: colors.line, opacity: index === 0 ? 0 : 1 },
+              pressed && { transform: [{ scale: 0.96 }] },
+            ]}>
+            <Text variant="caption" tone="accent" style={{ fontWeight: '600' }}>
               Today
             </Text>
           </Pressable>
@@ -273,6 +302,11 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             onScroll={onScroll}
+            // A finger on the pager takes over from any arrow scroll still running.
+            onScrollBeginDrag={() => {
+              clearTimeout(settle.current);
+              target.current = null;
+            }}
             scrollEventThrottle={32}
             getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
             initialNumToRender={2}
@@ -311,6 +345,7 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  today: { height: TODAY_H, paddingHorizontal: space.md, marginTop: space.xs, borderRadius: radius.pill, borderWidth: 1, justifyContent: 'center' },
   arrow: { width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: MIN_TOUCH / 2, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', gap: ROW_GAP },
   head: { flex: 1, alignItems: 'center', paddingVertical: space.xs },
