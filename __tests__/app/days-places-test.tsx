@@ -105,18 +105,39 @@ describe('Days screen', () => {
     mockAv.who = new Map([['2027-03-15', [ORGANISER, MEMBER]]]);
     await render(<DaysScreen />);
     await fireEvent.press(screen.getByRole('tab', { name: 'Everyone' }));
-    expect(screen.getByText('Tap a day to see who is free. Your own days have an outline.')).toBeTruthy();
+    const hint = 'Tap a day to see who is free. Dots show who marked it; your own days have an outline.';
+    expect(screen.getByText(hint)).toBeTruthy();
     expect(screen.getByLabelText('Darker means more people are free')).toBeTruthy();
+    expect(screen.getByTestId('dots-2027-03-15')).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText(`${long('2027-03-15')}, 2 of 2 free`));
-    expect(screen.getByText(`${long('2027-03-15')}: You, Meera`)).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText(`${long('2027-03-15')}, 2 of 2 free: You, Meera`));
+    expect(screen.getByText(`${long('2027-03-15')}: 2 of 2 free`)).toBeTruthy();
+    expect(screen.getByLabelText('You')).toBeTruthy();
+    expect(screen.getByLabelText('Meera')).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText(`${long('2027-03-16')}, 0 of 2 free`));
     expect(screen.getByText(`${long('2027-03-16')}: nobody is free`)).toBeTruthy();
 
     // Tapping the selected day again clears it.
     await fireEvent.press(screen.getByLabelText(`${long('2027-03-16')}, 0 of 2 free`));
-    expect(screen.getByText('Tap a day to see who is free. Your own days have an outline.')).toBeTruthy();
+    expect(screen.getByText(hint)).toBeTruthy();
+  });
+
+  it('shows only counts when the trip hides who marked what', async () => {
+    mockState = tripState(trip({ show_who_marked: false }));
+    // The database only returns my own rows; counts include everyone.
+    mockAv.myDays = new Set(['2027-03-15']);
+    mockAv.counts = new Map([['2027-03-15', 2]]);
+    mockAv.who = new Map([['2027-03-15', [ORGANISER]]]);
+    await render(<DaysScreen />);
+    await fireEvent.press(screen.getByRole('tab', { name: 'Everyone' }));
+    expect(screen.getByText('Tap a day to see how many are free. Names are hidden for this trip; your own days have an outline.')).toBeTruthy();
+    expect(screen.queryByTestId('dots-2027-03-15')).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText(`${long('2027-03-15')}, you are free, 2 of 2 free`));
+    expect(screen.getByText(`${long('2027-03-15')}: 2 of 2 free`)).toBeTruthy();
+    expect(screen.getByText('Including you. The organiser has hidden who marked which day.')).toBeTruthy();
+    expect(screen.queryByLabelText('You')).toBeNull();
   });
 
   it('names people who left the trip "Traveller"', async () => {
@@ -125,7 +146,7 @@ describe('Days screen', () => {
     await render(<DaysScreen />);
     await fireEvent.press(screen.getByRole('tab', { name: 'Everyone' }));
     await fireEvent.press(screen.getByLabelText(`${long('2027-03-15')}, 1 of 2 free`));
-    expect(screen.getByText(`${long('2027-03-15')}: Traveller`)).toBeTruthy();
+    expect(screen.getByLabelText('Traveller')).toBeTruthy();
   });
 
   it('is read-only and shows everyone once locked', async () => {
