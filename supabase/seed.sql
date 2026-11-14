@@ -67,3 +67,20 @@ update public.trips
    set status = 'locked', locked_start = current_date + 40, locked_end = current_date + 42,
        locked_destination_id = 'dddddddd-0000-0000-0000-000000000004'
  where id = 'aaaaaaaa-0000-0000-0000-000000000002';
+
+-- A trip with names hidden, so "who marked which day" being off can be tested without setting it by hand.
+-- Meera organises; Aarav and Kabir have joined. Each only sees their own days, plus counts for everyone.
+insert into public.trips (id, name, color, created_by, invite_code, show_who_marked)
+values ('aaaaaaaa-0000-0000-0000-000000000003', 'Hampi surprise', 'mango', '22222222-2222-2222-2222-222222222222', 'hampi27', false);
+
+insert into public.trip_members (trip_id, user_id) values
+  ('aaaaaaaa-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111'),
+  ('aaaaaaaa-0000-0000-0000-000000000003', '33333333-3333-3333-3333-333333333333');
+
+insert into public.availability (trip_id, user_id, day)
+select 'aaaaaaaa-0000-0000-0000-000000000003', u, current_date + n
+from (values
+  ('11111111-1111-1111-1111-111111111111'::uuid, 20, 24),
+  ('22222222-2222-2222-2222-222222222222'::uuid, 22, 27),
+  ('33333333-3333-3333-3333-333333333333'::uuid, 23, 25)
+) as r(u, a, b), generate_series(r.a, r.b) n;

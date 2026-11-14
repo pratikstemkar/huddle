@@ -100,6 +100,8 @@ export type TripMember = {
 export type TripDetail = Trip & {
   created_by: string;
   locked_destination_id: string | null;
+  /** Whether members can see who marked each day. Off means counts only. */
+  show_who_marked: boolean;
   members: TripMember[];
   /** Ranked: most votes first. */
   destinations: Destination[];
@@ -130,19 +132,21 @@ export function useTrip(id: string | undefined, myId?: string) {
       setLoading(false);
       return;
     }
-    const [tripRes, membersRes, destRes, votesRes, availRes] = await Promise.all([
+    const [tripRes, membersRes, destRes, votesRes, countsRes, markedRes] = await Promise.all([
       supabase
         .from('trips')
-        .select('id, name, color, status, invite_code, created_at, created_by, locked_start, locked_end, locked_destination_id')
+        .select('id, name, color, status, invite_code, created_at, created_by, locked_start, locked_end, locked_destination_id, show_who_marked')
         .eq('id', id)
         .maybeSingle(),
       supabase.from('trip_members').select('user_id, role, profiles(display_name, avatar_url, avatar_color)').eq('trip_id', id).order('joined_at'),
       supabase.from('destinations').select('id, title, note, url, image_url, created_by, created_at').eq('trip_id', id),
       supabase.from('votes').select('destination_id, user_id').eq('trip_id', id),
-      supabase.from('availability').select('user_id, day').eq('trip_id', id),
+      // Counts and a headcount rather than rows, so this works when the trip hides who marked what.
+      supabase.from('day_counts').select('day, free').eq('trip_id', id),
+      supabase.rpc('marked_member_count', { t: id }),
     ]);
 
-    const failed = tripRes.error ?? membersRes.error ?? destRes.error ?? votesRes.error ?? availRes.error;
+    const failed = tripRes.error ?? membersRes.error ?? destRes.error ?? votesRes.error ?? countsRes.error ?? markedRes.error;
     setError(failed ? "Couldn't load this trip. Check your connection and try again." : null);
 
     if (!failed) {
@@ -151,7 +155,7 @@ export function useTrip(id: string | undefined, myId?: string) {
         setTrip(null);
       } else {
         const counts = new Map<string, number>();
-        for (const a of availRes.data ?? []) counts.set(a.day, (counts.get(a.day) ?? 0) + 1);
+        for (const c of countsRes.data ?? []) counts.set(c.day, c.free);
         const members = ((membersRes.data ?? []) as unknown as MemberRow[]).map((m) => ({
           user_id: m.user_id,
           role: m.role,
@@ -164,7 +168,7 @@ export function useTrip(id: string | undefined, myId?: string) {
           ...(tripRes.data as Omit<TripDetail, 'members' | 'destinations' | 'availabilityCount' | 'bestDays'>),
           members,
           destinations: rankDestinations(destRes.data ?? [], votesRes.data ?? [], myId),
-          availabilityCount: new Set((availRes.data ?? []).map((a) => a.user_id)).size,
+          availabilityCount: Number(markedRes.data ?? 0),
           bestDays: bestRanges(counts, today()),
         });
       }
@@ -173,6 +177,13 @@ export function useTrip(id: string | undefined, myId?: string) {
   }, [id, myId]);
 
   return { trip, loading, error, refresh };
+}
+
+/** Shows or hides who marked each day for everyone in the trip (organisers only; RLS enforces it). */
+export async function setShowWhoMarked(id: string, show: boolean) {
+  const { data, error } = await supabase.from('trips').update({ show_who_marked: show }).eq('id', id).select('id');
+  if (error) throw error;
+  if (!data?.length) throw new Error('Not changed');
 }
 
 export async function renameTrip(id: string, name: string) {

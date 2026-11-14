@@ -2,7 +2,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
-import { DayCalendar, type CalendarMode } from '@/components/day-calendar';
+import { DayCalendar, type CalendarMode, type CalendarPerson } from '@/components/day-calendar';
+import { Avatar } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { Segmented } from '@/components/ui/segmented';
@@ -12,7 +13,7 @@ import { formatDay, formatRange, today as getToday, windowEnd } from '@/lib/date
 import { useAuth } from '@/lib/auth';
 import { useTripLive } from '@/lib/realtime';
 import { useTrip } from '@/lib/trips';
-import { MIN_TOUCH, radius, space } from '@/theme/tokens';
+import { MIN_TOUCH, radius, space, tripColors, type TripColor } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 function goBack(id: string) {
@@ -48,6 +49,21 @@ export default function DaysScreen() {
 
   const ranges = useMemo(() => bestRanges(av.counts, from), [av.counts, from]);
 
+  const people = useMemo(() => {
+    const out = new Map<string, CalendarPerson>();
+    if (!trip) return out;
+    // People who haven't picked a colour each get a different one, never the trip's own (the heatmap uses it),
+    // so dots can be told apart.
+    const spare = (Object.keys(tripColors) as TripColor[]).filter((c) => c !== trip.color);
+    trip.members.forEach((m, i) => {
+      out.set(m.user_id, {
+        name: m.user_id === me ? 'You' : m.display_name,
+        color: tripColors[m.avatar_color ?? spare[i % spare.length]],
+      });
+    });
+    return out;
+  }, [trip, me]);
+
   if ((tripLoading && !trip) || (av.loading && !tripError)) {
     return (
       <Screen scroll={false} contentStyle={styles.center}>
@@ -69,8 +85,11 @@ export default function DaysScreen() {
 
   const locked = trip.status === 'locked';
   const effectiveMode: CalendarMode = locked ? 'all' : mode;
-  const names = new Map(trip.members.map((m) => [m.user_id, m.display_name]));
-  const freeOnSelected = selected ? (av.who.get(selected) ?? []).map((u) => (u === me ? 'You' : (names.get(u) ?? 'Traveller'))) : [];
+  const showWho = trip.show_who_marked;
+  const membersById = new Map(trip.members.map((m) => [m.user_id, m]));
+  const freeOnSelected = selected && showWho ? (av.who.get(selected) ?? []) : [];
+  const countOnSelected = selected ? (av.counts.get(selected) ?? 0) : 0;
+  const selectedLabel = selected ? formatDay(selected, { weekday: 'long', day: 'numeric', month: 'long' }) : '';
   const error = av.error ?? tripError;
 
   return (
@@ -150,6 +169,8 @@ export default function DaysScreen() {
           readOnly={locked}
           onToggle={av.setDay}
           onSelect={(d) => setSelected((s) => (s === d ? null : d))}
+          who={showWho ? av.who : undefined}
+          people={showWho ? people : undefined}
         />
       </View>
 
@@ -166,13 +187,37 @@ export default function DaysScreen() {
               More free
             </Text>
           </View>
-          <Text variant="caption" tone="secondary" accessibilityLiveRegion="polite">
-            {selected
-              ? `${formatDay(selected, { weekday: 'long', day: 'numeric', month: 'long' })}: ${
-                  freeOnSelected.length ? freeOnSelected.join(', ') : 'nobody is free'
-                }`
-              : 'Tap a day to see who is free. Your own days have an outline.'}
-          </Text>
+          {selected ? (
+            <Card style={{ gap: space.sm }}>
+              <Text variant="label" tone="secondary" accessibilityLiveRegion="polite">
+                {selectedLabel}: {countOnSelected === 0 ? 'nobody is free' : `${countOnSelected} of ${trip.members.length} free`}
+              </Text>
+              {freeOnSelected.length ? (
+                <View style={styles.people}>
+                  {freeOnSelected.map((u) => {
+                    const m = membersById.get(u);
+                    const name = u === me ? 'You' : (m?.display_name ?? 'Traveller');
+                    return (
+                      <View key={u} style={styles.person} accessible accessibilityLabel={name}>
+                        <Avatar name={m?.display_name ?? name} url={m?.avatar_url} color={m?.avatar_color} fallbackColor={people.get(u)?.color ?? tripColors[trip.color]} size={28} />
+                        <Text variant="body">{name}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : !showWho && countOnSelected > 0 ? (
+                <Text variant="caption" tone="muted">
+                  {av.myDays.has(selected) ? 'Including you. ' : ''}The organiser has hidden who marked which day.
+                </Text>
+              ) : null}
+            </Card>
+          ) : (
+            <Text variant="caption" tone="secondary">
+              {showWho
+                ? 'Tap a day to see who is free. Dots show who marked it; your own days have an outline.'
+                : 'Tap a day to see how many are free. Names are hidden for this trip; your own days have an outline.'}
+            </Text>
+          )}
         </View>
       ) : null}
     </Screen>
@@ -185,4 +230,6 @@ const styles = StyleSheet.create({
   back: { width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: MIN_TOUCH / 2, alignItems: 'center', justifyContent: 'center' },
   legend: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   swatch: { width: 24, height: 16, borderRadius: radius.sm / 2 },
+  people: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
+  person: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 });

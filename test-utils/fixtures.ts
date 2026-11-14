@@ -40,6 +40,7 @@ export function trip(overrides: Partial<TripDetail> = {}): TripDetail {
     locked_start: null,
     locked_end: null,
     locked_destination_id: null,
+    show_who_marked: true,
     members,
     destinations: [],
     availabilityCount: 0,

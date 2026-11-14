@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
-import { DayCalendar, type CalendarMode } from '@/components/day-calendar';
+import { DayCalendar, type CalendarMode, type CalendarPerson } from '@/components/day-calendar';
 import { formatDay } from '@/lib/dates';
 import { palette } from '@/theme/tokens';
 
@@ -10,7 +10,17 @@ import { palette } from '@/theme/tokens';
 const long = (day: string) => formatDay(day, { weekday: 'long', day: 'numeric', month: 'long' });
 const bg = (el: { props: { style?: unknown } }) => (StyleSheet.flatten(el.props.style as never) as { backgroundColor?: string }).backgroundColor;
 
-type Opts = Partial<{ mode: CalendarMode; myDays: Set<string>; counts: Map<string, number>; readOnly: boolean; selected: string | null; memberCount: number }>;
+type Opts = Partial<{
+  mode: CalendarMode;
+  myDays: Set<string>;
+  counts: Map<string, number>;
+  readOnly: boolean;
+  selected: string | null;
+  memberCount: number;
+  who: Map<string, string[]>;
+  people: Map<string, CalendarPerson>;
+  to: string;
+}>;
 
 async function renderCalendar(opts: Opts = {}) {
   const onToggle = jest.fn();
@@ -18,7 +28,7 @@ async function renderCalendar(opts: Opts = {}) {
   await render(
     <DayCalendar
       from="2027-03-10"
-      to="2027-04-05"
+      to={opts.to ?? '2027-04-05'}
       today="2027-03-12"
       mode={opts.mode ?? 'mine'}
       myDays={opts.myDays ?? new Set()}
@@ -28,15 +38,73 @@ async function renderCalendar(opts: Opts = {}) {
       readOnly={opts.readOnly ?? false}
       onToggle={onToggle}
       onSelect={onSelect}
+      who={opts.who}
+      people={opts.people}
     />,
   );
   return { onToggle, onSelect };
 }
 
 describe('DayCalendar', () => {
-  it('renders a heading per month in the range', async () => {
+  it('shows one month at a time and steps through them with the arrows', async () => {
+    await renderCalendar({ to: '2027-05-20' });
+    expect(screen.getAllByRole('header').map((h) => h.props.children)).toEqual(['March 2027']);
+    const prev = screen.getByLabelText('Previous month');
+    expect(prev.props.accessibilityState).toMatchObject({ disabled: true });
+
+    await fireEvent.press(screen.getByLabelText('Next month'));
+    expect(screen.getByRole('header').props.children).toBe('April 2027');
+    await fireEvent.press(screen.getByLabelText('Next month'));
+    expect(screen.getByRole('header').props.children).toBe('May 2027');
+    expect(screen.getByLabelText('Next month').props.accessibilityState).toMatchObject({ disabled: true });
+
+    await fireEvent.press(screen.getByLabelText('Back to this month'));
+    expect(screen.getByRole('header').props.children).toBe('March 2027');
+  });
+
+  it('follows a swipe to another month', async () => {
     await renderCalendar();
-    expect(screen.getAllByRole('header')).toHaveLength(2);
+    const list = screen.getByTestId('month-pager');
+    const width = list.props.getItemLayout(null, 1).offset;
+    await fireEvent.scroll(list, { nativeEvent: { contentOffset: { x: width, y: 0 } } });
+    expect(screen.getByRole('header').props.children).toBe('April 2027');
+  });
+
+  it('counts my days in the month shown', async () => {
+    await renderCalendar({ myDays: new Set(['2027-03-15', '2027-03-16', '2027-04-02']) });
+    expect(screen.getByText('2 days marked this month')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Next month'));
+    expect(screen.getByText('1 day marked this month')).toBeTruthy();
+  });
+
+  it('shows a dot per person in Everyone mode, and names them for screen readers', async () => {
+    const people = new Map<string, CalendarPerson>([
+      ['a', { name: 'You', color: '#111111' }],
+      ['b', { name: 'Meera', color: '#222222' }],
+      ['c', { name: 'Kabir', color: '#333333' }],
+      ['d', { name: 'Zoya', color: '#444444' }],
+    ]);
+    const who = new Map([
+      ['2027-03-15', ['a', 'b']],
+      ['2027-03-16', ['a', 'b', 'c', 'd']],
+    ]);
+    await renderCalendar({ mode: 'all', memberCount: 4, counts: new Map([['2027-03-15', 2], ['2027-03-16', 4]]), who, people });
+    expect(screen.getByLabelText(`${long('2027-03-15')}, 2 of 4 free: You, Meera`)).toBeTruthy();
+    const two = screen.getByTestId('dots-2027-03-15');
+    expect(two.children).toHaveLength(2);
+    // More than three: two dots and "+2".
+    expect(screen.getByTestId('dots-2027-03-16').children).toHaveLength(3);
+    expect(screen.getByText('+2')).toBeTruthy();
+  });
+
+  it('shows no dots when names are hidden', async () => {
+    await renderCalendar({ mode: 'all', counts: new Map([['2027-03-15', 2]]) });
+    expect(screen.queryByTestId('dots-2027-03-15')).toBeNull();
+  });
+
+  it('shows no dots in Mine mode', async () => {
+    await renderCalendar({ who: new Map([['2027-03-15', ['a']]]), people: new Map([['a', { name: 'You', color: '#111' }]]) });
+    expect(screen.queryByTestId('dots-2027-03-15')).toBeNull();
   });
 
   it('marks a free day in Mine mode', async () => {

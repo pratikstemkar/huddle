@@ -25,6 +25,12 @@ describe('summarise', () => {
     expect(summarise(rows, undefined).myDays.size).toBe(0);
   });
 
+  it('takes counts from day_counts when given, so hidden people still count', () => {
+    const s = summarise([{ user_id: ME, day: '2027-03-10' }], ME, [{ day: '2027-03-10', free: 3 }, { day: '2027-03-12', free: 1 }]);
+    expect(s.who.get('2027-03-10')).toEqual([ME]);
+    expect(Object.fromEntries(s.counts)).toEqual({ '2027-03-10': 3, '2027-03-12': 1 });
+  });
+
   it('is empty for no rows', () => {
     const s = summarise([], ME);
     expect(s.myDays.size + s.who.size + s.counts.size).toBe(0);
@@ -71,6 +77,7 @@ describe('bestRanges', () => {
 describe('useAvailability', () => {
   it('loads and summarises the trip days', async () => {
     queueResult('availability', { data: rows });
+    queueResult('day_counts', { data: [{ day: '2027-03-10', free: 3 }, { day: '2027-03-11', free: 1 }, { day: '2027-03-12', free: 1 }] });
     const { result } = await renderHook(() => useAvailability('t1', ME));
     expect(result.current.loading).toBe(true);
     await act(() => result.current.refresh());
@@ -82,6 +89,31 @@ describe('useAvailability', () => {
       ['select', ['user_id, day']],
       ['eq', ['trip_id', 't1']],
     ]);
+    expect(queriesFor('day_counts')[0].ops).toEqual([
+      ['select', ['day, free']],
+      ['eq', ['trip_id', 't1']],
+    ]);
+  });
+
+  it('shows an error when the counts fail to load', async () => {
+    queueResult('availability', { data: rows });
+    queueResult('day_counts', { error: { message: 'offline' } });
+    const { result } = await renderHook(() => useAvailability('t1', ME));
+    await act(() => result.current.refresh());
+    expect(result.current.error).toMatch(/Couldn't load/);
+  });
+
+  it('counts hidden people when marking a day', async () => {
+    // Names hidden: no rows for others, but day_counts says 2 people are free.
+    queueResult('availability', { data: [] });
+    queueResult('day_counts', { data: [{ day: '2027-03-12', free: 2 }] });
+    const { result } = await renderHook(() => useAvailability('t1', ME));
+    await act(() => result.current.refresh());
+    await act(() => result.current.setDay('2027-03-12', true));
+    expect(result.current.counts.get('2027-03-12')).toBe(3);
+    expect(result.current.who.get('2027-03-12')).toEqual([ME]);
+    await act(() => result.current.setDay('2027-03-12', false));
+    expect(result.current.counts.get('2027-03-12')).toBe(2);
   });
 
   it('shows an error when loading fails', async () => {
@@ -100,6 +132,7 @@ describe('useAvailability', () => {
 
   it('marks a day straight away and saves it', async () => {
     queueResult('availability', { data: [{ user_id: 'b', day: '2027-03-12' }] });
+    queueResult('day_counts', { data: [{ day: '2027-03-12', free: 1 }] });
     const { result } = await renderHook(() => useAvailability('t1', ME));
     await act(() => result.current.refresh());
 
@@ -113,6 +146,7 @@ describe('useAvailability', () => {
 
   it('clears a day and removes it entirely when nobody is left', async () => {
     queueResult('availability', { data: [{ user_id: ME, day: '2027-03-12' }] });
+    queueResult('day_counts', { data: [{ day: '2027-03-12', free: 1 }] });
     const { result } = await renderHook(() => useAvailability('t1', ME));
     await act(() => result.current.refresh());
 

@@ -12,6 +12,7 @@ import {
   planMessage,
   removeMember,
   renameTrip,
+  setShowWhoMarked,
   unlockTrip,
   useTrip,
   useTrips,
@@ -128,6 +129,28 @@ describe('renameTrip', () => {
   it('throws the database error', async () => {
     queueResult('trips', { error: { message: 'denied' } });
     await expect(renameTrip(TRIP_ID, 'x')).rejects.toEqual({ message: 'denied' });
+  });
+});
+
+describe('setShowWhoMarked', () => {
+  it('updates the trip setting', async () => {
+    queueResult('trips', { data: [{ id: TRIP_ID }] });
+    await setShowWhoMarked(TRIP_ID, false);
+    expect(queriesFor('trips')[0].ops).toEqual([
+      ['update', [{ show_who_marked: false }]],
+      ['eq', ['id', TRIP_ID]],
+      ['select', ['id']],
+    ]);
+  });
+
+  it('throws when RLS hides the change (not the organiser)', async () => {
+    queueResult('trips', { data: [] });
+    await expect(setShowWhoMarked(TRIP_ID, false)).rejects.toThrow('Not changed');
+  });
+
+  it('passes database errors on', async () => {
+    queueResult('trips', { error: { message: 'offline' } });
+    await expect(setShowWhoMarked(TRIP_ID, true)).rejects.toEqual({ message: 'offline' });
   });
 });
 
@@ -248,7 +271,7 @@ describe('useTrip', () => {
 
   const trip = { id: TRIP_ID, name: 'Goa', created_by: 'org', status: 'planning' };
 
-  function queueTrip(overrides: Partial<Record<'trips' | 'trip_members' | 'destinations' | 'votes' | 'availability', object>> = {}) {
+  function queueTrip(overrides: Partial<Record<'trips' | 'trip_members' | 'destinations' | 'votes' | 'day_counts' | 'marked', object>> = {}) {
     queueResult('trips', overrides.trips ?? { data: trip });
     queueResult(
       'trip_members',
@@ -271,15 +294,15 @@ describe('useTrip', () => {
     );
     queueResult('votes', overrides.votes ?? { data: [{ destination_id: 'd2', user_id: 'me' }] });
     queueResult(
-      'availability',
-      overrides.availability ?? {
+      'day_counts',
+      overrides.day_counts ?? {
         data: [
-          { user_id: 'org', day: '2027-03-10' },
-          { user_id: 'm1', day: '2027-03-10' },
-          { user_id: 'org', day: '2027-03-11' },
+          { day: '2027-03-10', free: 2 },
+          { day: '2027-03-11', free: 1 },
         ],
       },
     );
+    queueResult('rpc:marked_member_count', overrides.marked ?? { data: 2 });
   }
 
   it('loads the trip with members, ranked places and best days', async () => {
@@ -303,6 +326,20 @@ describe('useTrip', () => {
     ]);
     expect(t.availabilityCount).toBe(2);
     expect(t.bestDays).toEqual([{ start: '2027-03-10', end: '2027-03-10', free: 2 }]);
+    // Counts and a headcount, never other people's rows, so this works when names are hidden.
+    expect(queriesFor('availability')).toHaveLength(0);
+    expect(queriesFor('day_counts')[0].ops).toEqual([
+      ['select', ['day, free']],
+      ['eq', ['trip_id', TRIP_ID]],
+    ]);
+    expect(rpcCalls).toContainEqual({ name: 'marked_member_count', args: { t: TRIP_ID } });
+  });
+
+  it('shows an error when the headcount fails', async () => {
+    queueTrip({ marked: { error: { message: 'offline' } } });
+    const { result } = await renderHook(() => useTrip(TRIP_ID, 'me'));
+    await act(() => result.current.refresh());
+    expect(result.current.error).toBe("Couldn't load this trip. Check your connection and try again.");
   });
 
   it("is null when the trip is missing or hidden (I'm not a member)", async () => {
