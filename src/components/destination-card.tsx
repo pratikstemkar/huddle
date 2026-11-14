@@ -21,7 +21,7 @@ type Props = {
 
 export function DestinationCard({ destination: d, names, fill, readOnly, canRemove, onVote, onRemove }: Props) {
   const { colors } = useTheme();
-  const by = names.get(d.created_by) ?? 'Someone';
+  const by = (d.created_by && names.get(d.created_by)) || 'Someone';
   const voterNames = d.voters.map((u) => names.get(u) ?? 'Someone');
 
   const vote = () => {

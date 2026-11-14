@@ -8,7 +8,8 @@ export type Destination = {
   note: string | null;
   url: string | null;
   image_url: string | null;
-  created_by: string;
+  /** Null once the author deletes their account. */
+  created_by: string | null;
   created_at: string;
   /** How many members voted for it. */
   voteCount: number;
