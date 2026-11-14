@@ -45,6 +45,7 @@ const WEEKS = 6;
 const CELL = 44;
 const ROW_GAP = 4;
 const MAX_DOTS = 3;
+const TODAY_H = 32;
 
 type CellProps = {
   day: Day;
@@ -265,9 +266,14 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
             importantForAccessibility={index === 0 ? 'no-hide-descendants' : 'auto'}
             disabled={index === 0}
             onPress={() => goTo(0)}
-            hitSlop={8}
-            style={{ opacity: index === 0 ? 0 : 1 }}>
-            <Text variant="caption" tone="accent">
+            // The chip is drawn 32 tall; the slop takes the touch area to 44.
+            hitSlop={{ top: (MIN_TOUCH - TODAY_H) / 2, bottom: (MIN_TOUCH - TODAY_H) / 2, left: space.sm, right: space.sm }}
+            style={({ pressed }) => [
+              styles.today,
+              { backgroundColor: pressed ? colors.cardMuted : colors.card, borderColor: colors.line, opacity: index === 0 ? 0 : 1 },
+              pressed && { transform: [{ scale: 0.96 }] },
+            ]}>
+            <Text variant="caption" tone="accent" style={{ fontWeight: '600' }}>
               Today
             </Text>
           </Pressable>
@@ -339,6 +345,7 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  today: { height: TODAY_H, paddingHorizontal: space.md, marginTop: space.xs, borderRadius: radius.pill, borderWidth: 1, justifyContent: 'center' },
   arrow: { width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: MIN_TOUCH / 2, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', gap: ROW_GAP },
   head: { flex: 1, alignItems: 'center', paddingVertical: space.xs },
