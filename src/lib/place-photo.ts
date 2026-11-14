@@ -82,6 +82,29 @@ export async function removePhotos(paths: string[]) {
   await supabase.storage.from(PHOTO_BUCKET).remove(paths);
 }
 
+/** Storage lists and removes at most this many objects per call. */
+const STORAGE_PAGE = 1000;
+
+/**
+ * Removes every photo in a trip's folder, including ones left by a place that failed to save. Call it
+ * before deleting the trip: once the trip is gone, nobody is a member and its photos can't be reached.
+ * Throws if the photos can't be listed or removed, so the caller can stop instead of stranding them.
+ */
+export async function removeTripPhotos(tripId: string) {
+  const bucket = supabase.storage.from(PHOTO_BUCKET);
+  const paths: string[] = [];
+  for (let offset = 0; ; offset += STORAGE_PAGE) {
+    const { data, error } = await bucket.list(tripId, { limit: STORAGE_PAGE, offset });
+    if (error) throw error;
+    paths.push(...(data ?? []).map((f) => `${tripId}/${f.name}`));
+    if (!data || data.length < STORAGE_PAGE) break;
+  }
+  for (let i = 0; i < paths.length; i += STORAGE_PAGE) {
+    const { error } = await bucket.remove(paths.slice(i, i + STORAGE_PAGE));
+    if (error) throw error;
+  }
+}
+
 /** Short-lived links for photos, by path. Paths that can't be signed are left out. */
 export async function signPhotos(paths: (string | null | undefined)[]): Promise<Map<string, string>> {
   const unique = [...new Set(paths.filter((p): p is string => !!p))];

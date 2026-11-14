@@ -6,7 +6,7 @@ import type { TripColor } from '@/theme/tokens';
 import { bestRanges, type BestRange } from './availability';
 import { today } from './dates';
 import { DESTINATION_COLUMNS, rankDestinations, withPhotos, type Destination, type DestinationRow } from './destinations';
-import { deleteLocalTrip, signPhotos } from './place-photo';
+import { deleteLocalTrip, removeTripPhotos, signPhotos } from './place-photo';
 import { supabase } from './supabase';
 
 export type Trip = {
@@ -216,8 +216,12 @@ export async function renameTrip(id: string, name: string) {
   if (error) throw error;
 }
 
-/** Deletes the trip for everyone (days, places and votes cascade). Organisers only; RLS enforces it. */
+/**
+ * Deletes the trip for everyone (days, places and votes cascade). Organisers only; RLS enforces it.
+ * Its photos go first, since storage only lets an organiser of an existing trip remove them.
+ */
 export async function deleteTrip(id: string) {
+  await removeTripPhotos(id);
   const { data, error } = await supabase.from('trips').delete().eq('id', id).select('id');
   if (error) throw error;
   // RLS hides rows you can't delete instead of erroring, so an empty result means nothing happened.

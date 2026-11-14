@@ -174,6 +174,19 @@ describe('deleteTrip', () => {
     expect([...photoState.files]).toEqual(['file:///docs/huddle/trips/other/places/d2.jpg']);
   });
 
+  it("removes the trip's uploaded photos before the trip", async () => {
+    queueResult('storage:list', { data: [{ name: 'd1.jpg' }] });
+    queueResult('trips', { data: [{ id: TRIP_ID }] });
+    await deleteTrip(TRIP_ID);
+    expect(storageCallsFor('remove')[0].args[0]).toEqual([`${TRIP_ID}/d1.jpg`]);
+  });
+
+  it('keeps the trip when its photos cannot be removed', async () => {
+    queueResult('storage:list', { error: { message: 'offline' } });
+    await expect(deleteTrip(TRIP_ID)).rejects.toEqual({ message: 'offline' });
+    expect(queriesFor('trips')).toHaveLength(0);
+  });
+
   it('throws when nothing was deleted (not the organiser)', async () => {
     queueResult('trips', { data: [] });
     await expect(deleteTrip(TRIP_ID)).rejects.toThrow('Not deleted');

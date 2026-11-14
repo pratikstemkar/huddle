@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 
+import { deleteLocalTrip, removeTripPhotos } from './place-photo';
 import { supabase } from './supabase';
 
 /** What deleting my account does to one of my trips (from `account_deletion_preview()`). */
@@ -33,12 +34,29 @@ export function useDeletionPreview() {
   return { trips, error, refresh };
 }
 
+const DELETE_FAILED = "Couldn't delete your account. Check your connection and try again.";
+
 /**
  * Deletes the signed-in account, then forgets the session on this device. The server-side session is
  * already gone with the user, so the sign-out is local only. Signing out sends the app back to sign-in.
+ *
+ * The trips that go with the account (nobody else is in them) lose their photos first: the database
+ * can't remove storage files, and once those trips are gone nobody could.
  */
 export async function deleteMyAccount() {
+  const { data, error: previewError } = await supabase.rpc('account_deletion_preview');
+  if (previewError) throw new Error(DELETE_FAILED);
+  try {
+    for (const t of (data as TripOutcome[] | null) ?? []) {
+      if (t.outcome === 'deleted') {
+        await removeTripPhotos(t.trip_id);
+        deleteLocalTrip(t.trip_id);
+      }
+    }
+  } catch {
+    throw new Error(DELETE_FAILED);
+  }
   const { error } = await supabase.rpc('delete_my_account');
-  if (error) throw new Error("Couldn't delete your account. Check your connection and try again.");
+  if (error) throw new Error(DELETE_FAILED);
   await supabase.auth.signOut({ scope: 'local' });
 }
