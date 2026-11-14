@@ -6,9 +6,16 @@ const SHEETS: { name: string; detents: number[] }[] = [
   { name: 'suggest', detents: [0.9, 1] },
   { name: 'settings', detents: [0.75, 1] },
   { name: 'lock', detents: [0.9, 1] },
+  { name: 'invite', detents: [0.9, 1] },
+  { name: 'plan-item', detents: [0.75, 1] },
+  { name: 'expense', detents: [0.9, 1] },
+  { name: 'settle', detents: [0.75, 1] },
 ];
 
-const FULL_SCREEN: { name: string; presentation: 'fullScreenModal' | 'card' }[] = [];
+const FULL_SCREEN: { name: string; presentation: 'fullScreenModal' | 'card' }[] = [
+  { name: 'locked', presentation: 'fullScreenModal' },
+  { name: 'photo/[photoId]', presentation: 'fullScreenModal' },
+];
 
 export const unstable_settings = { anchor: '(tabs)' };
 
