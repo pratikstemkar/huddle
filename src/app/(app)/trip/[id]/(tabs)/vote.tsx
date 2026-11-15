@@ -12,13 +12,15 @@ import { PlacesPanel } from '@/components/vote/places-panel';
 import { useAuth } from '@/lib/auth';
 import { useTrip } from '@/lib/trips';
 import { space } from '@/theme/tokens';
+import { useTripId } from '@/components/nav/trip-id';
 
 type Seg = 'places' | 'dates';
 
 const toSeg = (s: string | undefined): Seg => (s === 'dates' ? 'dates' : 'places');
 
 export default function VoteTab() {
-  const { id, seg: segParam } = useLocalSearchParams<{ id: string; seg?: string }>();
+  const id = useTripId();
+  const { seg: segParam } = useLocalSearchParams<{ seg?: string }>();
   const { session } = useAuth();
   const me = session?.user.id;
   const { trip, loading, error, refresh } = useTrip(id, me);

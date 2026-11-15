@@ -23,7 +23,7 @@ describe('Pip', () => {
 
   it('idles by default, decorative unless labelled', async () => {
     await render(<Pip />);
-    expect(pip('idle').props.accessibilityElementsHidden).toBe(true);
+    expect(pip('idle').props['aria-hidden']).toBe(true);
     expect(tree()).toContain(SCARF);
     expect(tree()).not.toContain(FLIP_R_UP);
 

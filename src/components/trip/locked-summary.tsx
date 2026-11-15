@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   rightText: { textAlign: 'right' },
   going: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, borderTopWidth: 1, paddingTop: space.s14 },
   goingText: { flexShrink: 1, textAlign: 'right' },
-  buttons: { flexDirection: 'row', gap: space.s10 },
-  flex: { flex: 1, paddingHorizontal: space.md },
+  buttons: { gap: space.s10 },
+  flex: { alignSelf: 'stretch' },
   center: { textAlign: 'center' },
 });

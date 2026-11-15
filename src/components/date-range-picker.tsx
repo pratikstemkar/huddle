@@ -84,7 +84,7 @@ export function DateRangePicker({ value, onChange }: Props) {
         </Pressable>
       </View>
 
-      <View style={styles.row} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <View style={styles.row} aria-hidden>
         {WEEKDAYS.map((w, i) => (
           <Text key={i} variant="badge" tone="secondary" style={styles.weekday}>
             {w}

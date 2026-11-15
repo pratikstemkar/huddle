@@ -1,4 +1,4 @@
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,9 +20,10 @@ import { tripDates } from '@/lib/trip-status';
 import { useTrip } from '@/lib/trips';
 import { MAX_CONTENT_WIDTH, navClearance, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
+import { useTripId } from '@/components/nav/trip-id';
 
 export default function PhotosTab() {
-  const { id = '' } = useLocalSearchParams<{ id: string }>();
+  const id = useTripId() ?? '';
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();

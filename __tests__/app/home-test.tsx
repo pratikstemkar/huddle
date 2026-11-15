@@ -175,12 +175,13 @@ describe('Home', () => {
       expect(message).toContain('invite/goa2027x');
     });
 
-    it('says how far away a dated trip is when nudging', async () => {
+    it('does not nudge anyone to mark days when the dates are fixed', async () => {
       const fixed = { ...planning, fixed_start: addDays(now, 12), fixed_end: addDays(now, 15) };
       mockTrips.trips = [fixed];
-      mockTrips.summaries = new Map([['t1', summary('t1', { members: 5, marked: 3 })]]);
+      mockTrips.summaries = new Map([['t1', summary('t1', { members: 5, marked: 3, i_voted: true })]]);
       await render(<Home />);
-      expect(screen.getByText('Goa in March is 12 days away and 2 friends still need to pick dates.')).toBeTruthy();
+      expect(screen.queryByText('Nudge them')).toBeNull();
+      expect(screen.getByText('Goa in March is 12 days away. Start packing.')).toBeTruthy();
     });
 
     it('copies the nudge on web without a share sheet', async () => {

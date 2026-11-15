@@ -1,4 +1,3 @@
-import { useLocalSearchParams } from 'expo-router';
 import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
 import { StyleSheet } from 'react-native';
 
@@ -6,6 +5,7 @@ import { PillTabBar, type PillTab } from '@/components/nav/pill-tab-bar';
 import { PipActionProvider, usePipAction } from '@/components/nav/pip-action';
 import { PipButton } from '@/components/nav/pip-button';
 import { useTheme } from '@/theme/use-theme';
+import { useTripId } from '@/components/nav/trip-id';
 
 const TABS: PillTab[] = [
   { name: 'index', label: 'Trip', icon: 'trip' },
@@ -22,7 +22,7 @@ function AskPip() {
 
 export default function TripTabsLayout() {
   const { colors } = useTheme();
-  const { id = '' } = useLocalSearchParams<{ id: string }>();
+  const id = useTripId() ?? '';
   return (
     <PipActionProvider>
       <Tabs style={[styles.root, { backgroundColor: colors.bg }]}>

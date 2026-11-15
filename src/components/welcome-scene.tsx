@@ -80,7 +80,7 @@ export function WelcomeScene({ children, pipMood = 'hello', scarf, tail, pipLabe
       <StatusBar style="light" />
       <ScrollView contentContainerStyle={styles.scroll} bounces={false} keyboardShouldPersistTaps="handled">
         <View style={[styles.sky, { paddingTop: insets.top, minHeight: PIP_HEIGHT + space.sm + insets.top }]}>
-          <View style={[styles.clouds, { top: 120 + insets.top }]} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <View style={[styles.clouds, { top: 120 + insets.top }]} pointerEvents="none" aria-hidden>
             <Cloud width={100} height={40} top={0} duration={14000} offset={0} span={width} reduced={reduced} />
             <Cloud width={70} height={28} top={70} duration={20000} offset={0.4} span={width} reduced={reduced} />
           </View>

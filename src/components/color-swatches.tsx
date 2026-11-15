@@ -30,6 +30,6 @@ export function ColorSwatches({ value, onChange }: { value: TripColor | null; on
 }
 
 const styles = StyleSheet.create({
-  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s10 },
-  swatch: { width: 56, height: 56, borderRadius: 28, borderWidth: 4 },
+  swatches: { flexDirection: 'row', gap: space.s10 },
+  swatch: { flex: 1, maxWidth: 56, aspectRatio: 1, borderRadius: 999, borderWidth: 4 },
 });

@@ -261,8 +261,7 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Back to this month"
-            accessibilityElementsHidden={index === 0}
-            importantForAccessibility={index === 0 ? 'no-hide-descendants' : 'auto'}
+            aria-hidden={index === 0}
             disabled={index === 0}
             onPress={() => goTo(0)}
             // The chip is drawn 32 tall; the slop takes the touch area to 44.
@@ -280,7 +279,7 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
         {arrow(1)}
       </View>
 
-      <View style={styles.row} importantForAccessibility="no-hide-descendants">
+      <View style={styles.row} aria-hidden>
         {WEEKDAYS.map((w, i) => (
           <View key={i} style={styles.head}>
             <Text variant="caption" tone="muted">

@@ -36,8 +36,7 @@ export function Avatar({ name, url, color, fallbackColor = tripTints.iris, size 
         source={{ uri: url }}
         style={[box, ringStyle, style] as never}
         contentFit="cover"
-        accessibilityElementsHidden
-        importantForAccessibility="no"
+        aria-hidden
       />
     );
   }
@@ -46,8 +45,7 @@ export function Avatar({ name, url, color, fallbackColor = tripTints.iris, size 
   return (
     <View
       style={[styles.initial, box, { backgroundColor: bg }, ringStyle, style]}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants">
+      aria-hidden>
       <RNText maxFontSizeMultiplier={1.2} style={{ color: INK, fontWeight: '600', fontSize, lineHeight: Math.round(fontSize * 1.25) }}>
         {name.trim().charAt(0).toUpperCase() || '?'}
       </RNText>

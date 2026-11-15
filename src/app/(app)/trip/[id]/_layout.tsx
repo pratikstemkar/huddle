@@ -1,5 +1,6 @@
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 
+import { TripIdProvider } from '@/components/nav/trip-id';
 import { useTheme } from '@/theme/use-theme';
 
 const SHEETS: { name: string; detents: number[] }[] = [
@@ -21,27 +22,30 @@ export const unstable_settings = { anchor: '(tabs)' };
 
 export default function TripLayout() {
   const { colors } = useTheme();
+  const { id } = useLocalSearchParams<{ id: string }>();
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="days" />
-      <Stack.Screen name="places" />
-      {SHEETS.map((s) => (
-        <Stack.Screen
-          key={s.name}
-          name={s.name}
-          options={{
-            presentation: 'formSheet',
-            sheetAllowedDetents: s.detents,
-            sheetCornerRadius: 28,
-            sheetGrabberVisible: true,
-            contentStyle: { backgroundColor: colors.bg },
-          }}
-        />
-      ))}
-      {FULL_SCREEN.map((s) => (
-        <Stack.Screen key={s.name} name={s.name} options={{ presentation: s.presentation, contentStyle: { backgroundColor: colors.bg } }} />
-      ))}
-    </Stack>
+    <TripIdProvider id={id}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="days" />
+        <Stack.Screen name="places" />
+        {SHEETS.map((s) => (
+          <Stack.Screen
+            key={s.name}
+            name={s.name}
+            options={{
+              presentation: 'formSheet',
+              sheetAllowedDetents: s.detents,
+              sheetCornerRadius: 28,
+              sheetGrabberVisible: true,
+              contentStyle: { backgroundColor: colors.bg },
+            }}
+          />
+        ))}
+        {FULL_SCREEN.map((s) => (
+          <Stack.Screen key={s.name} name={s.name} options={{ presentation: s.presentation, contentStyle: { backgroundColor: colors.bg } }} />
+        ))}
+      </Stack>
+    </TripIdProvider>
   );
 }

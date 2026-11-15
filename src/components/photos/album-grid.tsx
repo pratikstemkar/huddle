@@ -18,7 +18,7 @@ export function PhotoTile({ photo, height, caption, onPress }: TileProps) {
   const { colors } = useTheme();
   return (
     <Pressable
-      accessibilityRole="imagebutton"
+      accessibilityRole="button"
       accessibilityLabel={`Photo, ${caption}`}
       accessibilityHint="Opens the photo"
       onPress={onPress}

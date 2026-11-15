@@ -1,4 +1,4 @@
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -27,6 +27,7 @@ import { photosCardText, planCardText, splitCardText, useTripStats } from '@/lib
 import { inviteLink, nudgeMessage, planMessage, useTrip, type TripDetail } from '@/lib/trips';
 import { radius, space, toTripColor, tripColors, tripTints, type TintArea } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
+import { useTripId } from '@/components/nav/trip-id';
 
 function goBack() {
   if (router.canGoBack()) router.back();
@@ -155,7 +156,7 @@ function voteSub(trip: TripDetail) {
 }
 
 export default function TripScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const id = useTripId();
   const { session } = useAuth();
   const me = session?.user.id;
   const { trip, loading, error, refresh } = useTrip(id, me);

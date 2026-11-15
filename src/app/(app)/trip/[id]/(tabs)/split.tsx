@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
@@ -21,11 +21,12 @@ import { splitFeed, undoSettlement, useSplit } from '@/lib/split';
 import { useTrip } from '@/lib/trips';
 import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
+import { useTripId } from '@/components/nav/trip-id';
 
 const LIVE_TABLES = ['expenses', 'settlements', 'trip_members'] as const;
 
 export default function SplitTab() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const id = useTripId();
   const { session } = useAuth();
   const me = session?.user.id;
   const { colors } = useTheme();

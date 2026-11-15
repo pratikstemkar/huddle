@@ -31,8 +31,7 @@ export function Icon({ name, size = 22, color, strokeWidth, testID }: Props) {
       strokeWidth={def.filled ? undefined : (strokeWidth ?? def.strokeWidth ?? 2)}
       strokeLinecap="round"
       strokeLinejoin="round"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      aria-hidden
       pointerEvents="none">
       {def.shapes.map((s, i) => {
         if (s.t === 'path') return <Path key={i} d={s.d} fill={s.fill} />;

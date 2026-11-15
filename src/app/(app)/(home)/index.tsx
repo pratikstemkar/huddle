@@ -48,15 +48,10 @@ function homeHero(trips: Trip[], summaries: Map<string, TripSummary>, today: Day
   if (trips.length === 0) return { kind: 'empty' };
   for (const trip of trips) {
     const s = summaries.get(trip.id);
-    if (trip.status !== 'planning' || !s || s.members < 2) continue;
+    if (trip.status !== 'planning' || !s || s.members < 2 || (trip.fixed_start && trip.fixed_end)) continue;
     const k = s.members - s.marked;
     if (k <= 0) continue;
-    const cd = countdown(tripDates(trip), today);
-    const text =
-      cd?.kind === 'upcoming'
-        ? `${trip.name} is ${days(cd.days)} away and ${k} ${k === 1 ? 'friend still needs' : 'friends still need'} to pick dates.`
-        : `${k} of ${s.members} still need to mark their days for ${trip.name}.`;
-    return { kind: 'nudge', trip, text };
+    return { kind: 'nudge', trip, text: `${k} of ${s.members} still need to mark their days for ${trip.name}.` };
   }
   for (const trip of trips) {
     const s = summaries.get(trip.id);
@@ -223,7 +218,7 @@ function TripCard({
           styles.card,
           { backgroundColor: colors.card, borderColor: colors.line, transform: [{ scale: pressed && !reduced ? 0.98 : 1 }] },
         ]}>
-        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <View aria-hidden>
           <TripTile trip={trip} cover={cover} today={today} />
         </View>
         <View style={styles.cardBody}>

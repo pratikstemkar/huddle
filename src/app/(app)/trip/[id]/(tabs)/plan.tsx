@@ -1,4 +1,4 @@
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
@@ -20,6 +20,7 @@ import { tripDates } from '@/lib/trip-status';
 import { useTrip } from '@/lib/trips';
 import { MIN_TOUCH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
+import { useTripId } from '@/components/nav/trip-id';
 
 const LIVE_TABLES = ['itinerary_items', 'trips', 'trip_members'] as const;
 
@@ -35,7 +36,7 @@ function Header({ line }: { line: string }) {
 }
 
 export default function PlanTab() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const id = useTripId();
   const { session } = useAuth();
   const myId = session?.user.id;
   const { colors } = useTheme();

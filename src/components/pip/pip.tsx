@@ -217,8 +217,7 @@ export function Pip({
       accessible={!!accessibilityLabel}
       accessibilityRole={accessibilityLabel ? 'image' : undefined}
       accessibilityLabel={accessibilityLabel}
-      accessibilityElementsHidden={!accessibilityLabel}
-      importantForAccessibility={accessibilityLabel ? 'yes' : 'no-hide-descendants'}
+      aria-hidden={!accessibilityLabel}
       pointerEvents="none"
       testID={`pip-${current}`}
       style={[{ width: frame.width, height: frame.height }, style]}>

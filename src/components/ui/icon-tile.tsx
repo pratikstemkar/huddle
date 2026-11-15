@@ -24,8 +24,7 @@ export function IconTile({ area, icon, size = 'md', background, children, style 
   const lg = size === 'lg';
   return (
     <View
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      aria-hidden
       style={[lg ? styles.lg : styles.md, { backgroundColor: background ?? colors.tint[area] }, style]}>
       {children ?? (icon ? <Icon name={icon} size={lg ? 28 : 22} color={colors.text} /> : null)}
     </View>

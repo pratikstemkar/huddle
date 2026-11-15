@@ -50,7 +50,7 @@ export function Confetti() {
   const reduced = useReducedMotion();
   const { colors } = useTheme();
   return (
-    <View pointerEvents="none" style={styles.layer} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View pointerEvents="none" style={styles.layer} aria-hidden>
       {PIECES.map((p, i) => (
         <Bit key={i} piece={p} still={reduced} ink={colors.onBeak} />
       ))}
