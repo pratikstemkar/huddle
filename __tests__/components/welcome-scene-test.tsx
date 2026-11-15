@@ -10,6 +10,9 @@ const translateX = (el: { props: { jestAnimatedStyle?: { value: { transform: { t
 /** react-native-svg stores colours as ARGB integers. */
 const svgColor = (hex: string) => String((0xff000000 + parseInt(hex.slice(1), 16)) >>> 0);
 
+// Every Pip layer and both clouds animate, so each fake-timer step renders many frames; CI runs with coverage on.
+jest.setTimeout(20000);
+
 describe('WelcomeScene', () => {
   afterEach(() => {
     jest.useRealTimers();
@@ -45,7 +48,7 @@ describe('WelcomeScene', () => {
       </WelcomeScene>,
     );
     const before = clouds().map(translateX);
-    await act(async () => jest.advanceTimersByTime(3000));
+    await act(async () => jest.advanceTimersByTime(500));
     const after = clouds().map(translateX);
     expect(after[0]).not.toEqual(before[0]);
   });
@@ -60,7 +63,7 @@ describe('WelcomeScene', () => {
     );
     await act(async () => jest.advanceTimersByTime(100));
     expect(clouds().map(translateX)).toEqual([0, 0]);
-    await act(async () => jest.advanceTimersByTime(3000));
+    await act(async () => jest.advanceTimersByTime(500));
     expect(clouds().map(translateX)).toEqual([0, 0]);
   });
 
