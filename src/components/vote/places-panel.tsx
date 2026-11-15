@@ -26,8 +26,8 @@ type Props = {
 /** "Back as many places as you like." plus who is still to vote; or who won once voting has closed. */
 export function placesPipLine(trip: TripDetail, list: Destination[], me: string | undefined): string | null {
   if (trip.status === 'locked') {
-    const won = list.find((d) => d.id === trip.locked_destination_id) ?? list[0];
-    return won ? `Voting's closed. ${won.title} won.` : null;
+    const won = list.find((d) => d.id === trip.locked_destination_id);
+    return won ? `Voting's closed. ${won.title} won.` : "Voting's closed. The chosen place is no longer available.";
   }
   if (list.length === 0) return null;
   const voted = new Set(list.flatMap((d) => d.voters));

@@ -98,7 +98,7 @@ describe('Plan item sheet', () => {
     it('is closed while the trip has no dates', async () => {
       mockState = tripState(trip());
       await render(<PlanItemSheet />);
-      expect(screen.getByText('The plan opens once the dates are locked. Pick them in Vote.')).toBeTruthy();
+      expect(screen.getByText('The plan opens once the trip has dates. Pick them in Vote.')).toBeTruthy();
       router.canGoBack.mockReturnValue(false);
       await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
       expect(router.replace).toHaveBeenCalledWith({ pathname: '/trip/[id]/plan', params: { id: TRIP_ID } });

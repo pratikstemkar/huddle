@@ -67,8 +67,9 @@ export default function DeleteAccount() {
         <Pip mood="hmm" size={76} />
       </View>
       <Text variant="body" tone="secondary" style={{ marginTop: space.md }}>
-        This can’t be undone. Your profile, the days you marked, your votes and your trip memberships are deleted straight away. Places you
-        suggested stay in their trips without your name.
+        This can’t be undone. Your profile, the days you marked, your votes and your trip memberships are deleted straight away. Your trip
+        photos are removed. Places, plans and expenses you added stay in their trips without your name, and anything still owed to or by
+        you is written off.
       </Text>
 
       <Card style={styles.trips}>

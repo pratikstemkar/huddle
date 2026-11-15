@@ -280,7 +280,7 @@ describe('Trip screen', () => {
         await render(<TripScreen />);
         await fireEvent.press(screen.getByRole('button', { name: 'Nudge' }));
         expect(setString).toHaveBeenCalledWith(expect.stringContaining('Quick nudge'));
-        expect(screen.getByText('Copied!')).toBeTruthy();
+        expect(screen.getByText('Copied')).toBeTruthy();
       });
     });
 
@@ -368,11 +368,11 @@ describe('Trip screen', () => {
         await render(<TripScreen />);
         await fireEvent.press(screen.getByRole('button', { name: 'Share plan' }));
         expect(setString).toHaveBeenCalledWith(expect.stringContaining('a place to be decided'));
-        expect(screen.getByText('Copied!')).toBeTruthy();
+        expect(screen.getByText('Copied')).toBeTruthy();
         await act(async () => {
           jest.advanceTimersByTime(1800);
         });
-        expect(screen.queryByText('Copied!')).toBeNull();
+        expect(screen.queryByText('Copied')).toBeNull();
       });
     });
 
@@ -381,7 +381,7 @@ describe('Trip screen', () => {
       await withoutWebShare(async () => {
         await render(<TripScreen />);
         await fireEvent.press(screen.getByRole('button', { name: 'Share plan' }));
-        expect(screen.queryByText('Copied!')).toBeNull();
+        expect(screen.queryByText('Copied')).toBeNull();
       });
     });
 

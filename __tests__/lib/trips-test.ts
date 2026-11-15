@@ -415,7 +415,7 @@ describe('useTrips', () => {
     await act(() => result.current.refresh());
     await act(() => result.current.refresh());
     expect(result.current.trips).toEqual([{ id: TRIP_ID }]);
-    expect(result.current.error).toBe("Couldn't load your trips. Pull to retry.");
+    expect(result.current.error).toBe("Couldn't load your trips. Check your connection and try again.");
   });
 });
 

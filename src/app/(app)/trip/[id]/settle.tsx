@@ -1,10 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { Pip } from '@/components/pip/pip';
-import { nameMap } from '@/components/split/people';
+import { useMoneyNames } from '@/components/split/people';
 import { closeSheet, SheetHeader } from '@/components/split/sheet-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -13,11 +13,13 @@ import { Screen } from '@/components/ui/screen';
 import { useAuth } from '@/lib/auth';
 import { amountInput, currencySymbol, formatMoney, parseAmount } from '@/lib/money';
 import { recordSettlement, useSplit, type Transfer } from '@/lib/split';
-import { useTrip } from '@/lib/trips';
+import { useTrip, type TripMember } from '@/lib/trips';
 import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 type Line = { key: string; transfer: Transfer; text: string; action: string; name: string; iOwe: boolean };
+
+const NO_MEMBERS: TripMember[] = [];
 
 export default function SettleSheet() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -25,7 +27,7 @@ export default function SettleSheet() {
   const me = session?.user.id;
   const { colors } = useTheme();
   const { trip, loading: tripLoading, refresh: refreshTrip } = useTrip(id, me);
-  const { lines: mine, loading: splitLoading, error: splitError, refresh: refreshSplit } = useSplit(id, me);
+  const { lines: mine, expenses, settlements, loading: splitLoading, error: splitError, refresh: refreshSplit } = useSplit(id, me);
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export default function SettleSheet() {
     }, [refreshTrip, refreshSplit]),
   );
 
-  const names = useMemo(() => nameMap(trip?.members ?? []), [trip?.members]);
+  const names = useMoneyNames(trip?.members ?? NO_MEMBERS, expenses, settlements);
 
   if ((tripLoading && !trip) || splitLoading) {
     return (

@@ -152,9 +152,9 @@ describe('Home', () => {
 
   it('shows the loading error', async () => {
     mockTrips.trips = [planning];
-    mockTrips.error = "Couldn't load your trips. Pull to retry.";
+    mockTrips.error = "Couldn't load your trips. Check your connection and try again.";
     await render(<Home />);
-    expect(screen.getByText("Couldn't load your trips. Pull to retry.")).toBeTruthy();
+    expect(screen.getByText("Couldn't load your trips. Check your connection and try again.")).toBeTruthy();
   });
 
   describe('Pip hero', () => {

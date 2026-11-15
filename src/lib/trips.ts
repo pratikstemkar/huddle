@@ -148,7 +148,7 @@ export function useTrips() {
       supabase.rpc('trip_summaries'),
       supabase.from('trip_stats').select('trip_id, photo_count'),
     ]);
-    setError(error ? "Couldn't load your trips. Pull to retry." : null);
+    setError(error ? "Couldn't load your trips. Check your connection and try again." : null);
     if (data) setTrips(data as Trip[]);
     // Summaries and photo counts only feed chips and Pip's line; on failure the cards keep the last ones.
     if (!summaryRes.error && summaryRes.data) {

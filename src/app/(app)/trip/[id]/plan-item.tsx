@@ -89,7 +89,7 @@ export default function PlanItemSheet() {
       : editing && !canEdit
         ? 'Only the person who added this, or an organiser, can change it.'
         : !editing && days.length === 0
-          ? 'The plan opens once the dates are locked. Pick them in Vote.'
+          ? 'The plan opens once the trip has dates. Pick them in Vote.'
           : null;
   if (blocked || !trip) {
     return (

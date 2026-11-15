@@ -313,7 +313,7 @@ export default function TripScreen() {
       ) : null}
       {copied ? (
         <Text variant="caption" tone="secondary" accessibilityLiveRegion="polite" style={styles.centerText}>
-          Copied!
+          Copied
         </Text>
       ) : null}
 

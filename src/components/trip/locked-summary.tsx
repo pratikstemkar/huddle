@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { PlacePhoto } from '@/components/place-photo';
@@ -26,9 +27,11 @@ export function LockedSummary({ trip }: { trip: TripDetail }) {
   const n = trip.members.length;
 
   const sharePlan = () => share(planMessage(trip.name, dates, place?.title ?? 'a place to be decided'));
+  const [calendarError, setCalendarError] = useState(false);
   const addToCalendar = () => {
     if (!start || !end) return;
-    addTripToCalendar({ id: trip.id, name: trip.name, start, end, place: place?.title }).catch(() => {});
+    setCalendarError(false);
+    addTripToCalendar({ id: trip.id, name: trip.name, start, end, place: place?.title }).catch(() => setCalendarError(true));
   };
 
   return (
@@ -97,7 +100,12 @@ export function LockedSummary({ trip }: { trip: TripDetail }) {
         </View>
         {copied ? (
           <Text variant="caption" tone="secondary" accessibilityLiveRegion="polite" style={styles.center}>
-            Copied!
+            Copied
+          </Text>
+        ) : null}
+        {calendarError ? (
+          <Text variant="caption" tone="danger" accessibilityLiveRegion="polite" style={styles.center}>
+            Couldn&apos;t add it to your calendar. Try again.
           </Text>
         ) : null}
       </View>

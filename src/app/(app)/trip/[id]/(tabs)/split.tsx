@@ -7,7 +7,7 @@ import { useRegisterPipAction } from '@/components/nav/pip-action';
 import { Pip } from '@/components/pip/pip';
 import { BalanceCard } from '@/components/split/balance-card';
 import { MyLines } from '@/components/split/my-lines';
-import { confirmAction, nameMap } from '@/components/split/people';
+import { confirmAction, useMoneyNames } from '@/components/split/people';
 import { SplitFeed } from '@/components/split/split-feed';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -18,12 +18,14 @@ import { useAuth } from '@/lib/auth';
 import { formatMoney } from '@/lib/money';
 import { useTripLive } from '@/lib/realtime';
 import { splitFeed, undoSettlement, useSplit } from '@/lib/split';
-import { useTrip } from '@/lib/trips';
+import { useTrip, type TripMember } from '@/lib/trips';
 import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 import { useTripId } from '@/components/nav/trip-id';
 
 const LIVE_TABLES = ['expenses', 'settlements', 'trip_members'] as const;
+
+const NO_MEMBERS: TripMember[] = [];
 
 export default function SplitTab() {
   const id = useTripId();
@@ -63,7 +65,7 @@ export default function SplitTab() {
     prev.current = { net, settlements: settlementCount };
   }, [net, settlementCount, split.loading]);
 
-  const names = useMemo(() => nameMap(trip?.members ?? []), [trip?.members]);
+  const names = useMoneyNames(trip?.members ?? NO_MEMBERS, split.expenses, split.settlements);
   const feed = useMemo(() => splitFeed(split.expenses, split.settlements), [split.expenses, split.settlements]);
 
   if ((tripLoading && !trip) || split.loading) {

@@ -1,6 +1,8 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
 import type { Category, Expense, Settlement } from '@/lib/split';
+import { supabase } from '@/lib/supabase';
 import type { TripMember } from '@/lib/trips';
 import type { IconName } from '@/components/ui/icon';
 import type { TintArea } from '@/theme/tokens';
@@ -8,6 +10,45 @@ import type { TintArea } from '@/theme/tokens';
 /** First names by user id, so rows read "Arjun paid" rather than a full name. */
 export function nameMap(members: TripMember[]): Map<string, string> {
   return new Map(members.map((m) => [m.user_id, m.display_name.trim().split(/\s+/)[0] || 'Someone']));
+}
+
+/**
+ * First names for everyone in the trip's money: current members, plus people who left but still paid,
+ * owe or were paid. Members can read those profiles, so leavers keep their names instead of "Someone".
+ */
+export function useMoneyNames(members: TripMember[], expenses: Expense[], settlements: Settlement[]): Map<string, string> {
+  const base = useMemo(() => nameMap(members), [members]);
+  const missing = useMemo(() => {
+    const ids = new Set<string>();
+    for (const e of expenses) {
+      if (e.paid_by) ids.add(e.paid_by);
+      for (const s of e.shares) if (s.user_id) ids.add(s.user_id);
+    }
+    for (const x of settlements) {
+      if (x.from_user) ids.add(x.from_user);
+      if (x.to_user) ids.add(x.to_user);
+    }
+    return [...ids].filter((id) => !base.has(id)).sort();
+  }, [base, expenses, settlements]);
+  const key = missing.join(',');
+  const [extra, setExtra] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    if (!key) return;
+    let live = true;
+    supabase
+      .from('profiles')
+      .select('id, display_name')
+      .in('id', key.split(','))
+      .then(({ data }) => {
+        if (live && data) setExtra(new Map(data.map((p) => [p.id as string, String(p.display_name ?? '').trim().split(/\s+/)[0] || 'Someone'])));
+      });
+    return () => {
+      live = false;
+    };
+  }, [key]);
+
+  return useMemo(() => (extra.size ? new Map([...extra, ...base]) : base), [base, extra]);
 }
 
 /** "You" for me, a first name for a member, "Someone" for a deleted account or someone we can't see. */

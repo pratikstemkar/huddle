@@ -62,7 +62,7 @@ describe('Plan tab', () => {
   it('shows the Hmm state with a Vote button when the trip has no dates', async () => {
     mockState = tripState(trip());
     await render(<PlanTab />);
-    expect(screen.getByText('The plan opens once the dates are locked. Pick them in Vote.')).toBeTruthy();
+    expect(screen.getByText('The plan opens once the trip has dates. Pick them in Vote.')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Vote' }));
     expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[id]/vote', params: { id: TRIP_ID, seg: 'dates' } });
   });

@@ -432,7 +432,7 @@ export default function TripSettings() {
 
       <Section title="Danger zone">
         <Text variant="caption" tone="secondary">
-          You run this trip, so you can&apos;t leave it. Deleting removes the trip, days, places and votes for everyone. This can&apos;t be undone.
+          You run this trip, so you can&apos;t leave it. Deleting removes the trip and everything in it for everyone: days, places, votes, plans, expenses and photos. This can&apos;t be undone.
         </Text>
         {confirmDelete ? (
           <View style={styles.confirm}>

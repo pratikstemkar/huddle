@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -52,9 +52,11 @@ export default function LockedScreen() {
   const cd = start && end ? countdownShort(countdown({ start, end }, today())) : null;
   const n = trip?.members.length ?? 0;
 
+  const [calendarError, setCalendarError] = useState(false);
   const addToCalendar = () => {
     if (!trip || !start || !end) return;
-    addTripToCalendar({ id: trip.id, name: trip.name, start, end, place: place?.title }).catch(() => {});
+    setCalendarError(false);
+    addTripToCalendar({ id: trip.id, name: trip.name, start, end, place: place?.title }).catch(() => setCalendarError(true));
   };
 
   const ground = { backgroundColor: colors.beak };
@@ -126,6 +128,11 @@ export default function LockedScreen() {
           <View style={styles.actions}>
             <Button label="Start planning the days" variant="ink" onPress={startPlanning} />
             <Button label="Add to calendar" variant="outlineInk" onPress={addToCalendar} />
+            {calendarError ? (
+              <Text variant="caption" tone="danger" accessibilityLiveRegion="polite" style={{ textAlign: 'center' }}>
+                Couldn&apos;t add it to your calendar. Try again.
+              </Text>
+            ) : null}
             <Button label="Close" variant="ghost" onPress={close} />
           </View>
         </View>

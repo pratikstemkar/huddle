@@ -106,7 +106,7 @@ export default function PlanTab() {
         <Card style={styles.hmm}>
           <Pip mood="hmm" size={110} />
           <Text variant="body" tone="secondary" style={styles.centerText}>
-            The plan opens once the dates are locked. Pick them in Vote.
+            The plan opens once the trip has dates. Pick them in Vote.
           </Text>
           <Button label="Vote" size="md" onPress={openVote} accessibilityHint="Opens the dates vote" />
         </Card>
