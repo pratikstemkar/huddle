@@ -1,20 +1,30 @@
 # Live updates
 
-Trip detail (`/trip/[id]`), `/trip/[id]/days` and `/trip/[id]/places` reload about 250 ms after anyone in the trip marks or clears a day, suggests or removes a place, votes, un-votes or joins (`useTripLive` in `src/lib/realtime.ts`). It also reloads after a dropped connection returns and when a native app comes back to the foreground.
+`useTripLive` (`src/lib/realtime.ts`) reloads a screen about 250 ms after a change in the trip, after a dropped connection returns, and when a native app comes back to the foreground. Inserts are filtered by trip; deletes of `votes`, `destinations`, `itinerary_items`, `expenses`, `settlements` and `trip_photos` can't be, so a delete in any trip triggers a (harmless) reload.
+
+| Screen | Tables it listens to |
+|---|---|
+| Trip tab, Vote tab (both segments), settings, lock sheet | all: availability, day_counts, destinations, votes, trip_members, trips, itinerary_items, expenses, settlements, trip_photos |
+| Plan tab | itinerary_items, trips, trip_members |
+| Split tab | expenses, settlements, trip_members |
+| Photos tab, photo viewer | trip_photos, trip_members, trips |
+| Invite panel (sheet and new-trip step 2) | trip_members, trips |
+| Celebration screen | trips, trip_members, destinations |
 
 ## Driving it
 
-One browser origin shares one session, so sign in as Aarav in the browser and act as Meera through the API (password sign-in at `/auth/v1/token`, then `POST`/`DELETE` on `/rest/v1/destinations|votes|availability` with her token).
+One browser origin shares one session, so sign in as Aarav in the browser and act as Meera through the API (password sign-in at `/auth/v1/token`, then `POST`/`DELETE` on `/rest/v1/…` with her token, or `/rest/v1/rpc/save_expense`).
 
-1. Open "Goa in March" as Aarav, stay on trip detail.
-2. Meera suggests a place → it appears under **Where** within ~2s, no reload.
-3. Meera votes → count goes `0` → `1`. Meera marks days → `1 of 2 has marked their free days`.
-4. Meera clears her days and removes the place → both disappear.
-5. Prefix every test row with this checkout's `PREFIX` and delete it after.
+1. Use a `PREFIX` trip that Aarav organises and Meera has joined. Stay on the Trip tab.
+2. Meera suggests a place → the Vote tile changes within ~2s, no reload. Meera votes → the tile reads `<place> leads, 1 of 2 voted`.
+3. Meera marks days → the hero's `<k> of 2 marked` goes up.
+4. Open the invite sheet, have Kabir join → he appears with `Just joined`.
+5. On the Split tab, Meera adds an expense with `save_expense` → it appears in the feed and the balance card changes.
+6. Meera deletes what she added → it disappears.
+7. Delete every test row after (cleanup by `PREFIX`).
 
 ## Gotchas
 
-- The local DB needs `20261113000000_live_members.sql` applied (`bunx supabase migration up`) for live member joins.
-- Deletes can't be filtered by trip, so votes/destinations deletes in other trips also cause a (harmless) reload.
+- The shared local DB needs the redesign migrations for the new tables to be in the `supabase_realtime` publication; see SKILL.md.
 
-Last proven: 2026-11-11 (suggest, vote, days, and deletes as Meera seen live by Aarav). Not covered: live member join, reconnect catch-up, native foreground reload.
+Last proven: not yet on the redesigned screens (last run on the old UI: 2026-11-11, suggest, vote, days and deletes).
