@@ -7,7 +7,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,27 +26,20 @@ const PIP_HEIGHT = (PIP_SIZE * 124) / 120;
 type CloudProps = { width: number; height: number; top: number; duration: number; offset: number; span: number; reduced: boolean };
 
 function Cloud({ width, height, top, duration, offset, span, reduced }: CloudProps) {
-  const progress = useSharedValue(reduced ? 0 : offset);
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    if (reduced) {
-      cancelAnimation(progress);
-      progress.set(0);
-      return;
-    }
-    progress.set(offset);
-    progress.set(
-      withSequence(
-        withTiming(1, { duration: duration * (1 - offset), easing: Easing.linear }),
-        withRepeat(withSequence(withTiming(0, { duration: 0 }), withTiming(1, { duration, easing: Easing.linear })), -1, false),
-      ),
-    );
+    cancelAnimation(progress);
+    progress.set(0);
+    if (reduced) return;
+    progress.set(withRepeat(withTiming(1, { duration, easing: Easing.linear }), -1, false));
     return () => cancelAnimation(progress);
-  }, [reduced, duration, offset, progress]);
+  }, [reduced, duration, progress]);
 
-  const style = useAnimatedStyle(() => ({
-    transform: [{ translateX: reduced ? 0 : -140 + progress.value * (span + 210) }],
-  }));
+  const style = useAnimatedStyle(() => {
+    const p = (progress.value + offset) % 1;
+    return { transform: [{ translateX: reduced ? 0 : -140 + p * (span + 210) }] };
+  });
 
   return (
     <Animated.View testID="welcome-cloud" style={[styles.cloud, { top, width, height }, style]}>
