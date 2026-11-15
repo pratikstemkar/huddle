@@ -1,4 +1,9 @@
-import { BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold, useFonts } from '@expo-google-fonts/bricolage-grotesque';
+import {
+  BricolageGrotesque_600SemiBold,
+  BricolageGrotesque_700Bold,
+  BricolageGrotesque_800ExtraBold,
+  useFonts,
+} from '@expo-google-fonts/bricolage-grotesque';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -14,7 +19,7 @@ SplashScreen.preventAutoHideAsync();
 function RootStack() {
   const { session, loading } = useAuth();
   const { scheme, colors } = useTheme();
-  const [fontsLoaded] = useFonts({ BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold });
+  const [fontsLoaded] = useFonts({ BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold });
   const ready = fontsLoaded && !loading;
 
   useEffect(() => {
@@ -26,7 +31,7 @@ function RootStack() {
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
   const navTheme = {
     ...base,
-    colors: { ...base.colors, background: colors.bg, card: colors.bg, text: colors.text, primary: colors.accent, border: colors.line },
+    colors: { ...base.colors, background: colors.bg, card: colors.bg, text: colors.text, primary: colors.iris, border: colors.line },
   };
 
   return (

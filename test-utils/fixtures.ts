@@ -8,8 +8,8 @@ export const MEMBER = 'member-id';
 export const TRIP_ID = 'aaaaaaaa-0000-0000-0000-000000000001';
 
 export const members: TripMember[] = [
-  { user_id: ORGANISER, role: 'organiser', display_name: 'Aarav', avatar_url: null, avatar_color: null },
-  { user_id: MEMBER, role: 'member', display_name: 'Meera', avatar_url: null, avatar_color: 'plum' },
+  { user_id: ORGANISER, role: 'organiser', display_name: 'Aarav', avatar_url: null, avatar_color: null, joined_at: '2027-01-01T00:00:00Z' },
+  { user_id: MEMBER, role: 'member', display_name: 'Meera', avatar_url: null, avatar_color: 'iris', joined_at: '2027-01-02T00:00:00Z' },
 ];
 
 export function destination(overrides: Partial<Destination> = {}): Destination {
@@ -35,19 +35,23 @@ export function trip(overrides: Partial<TripDetail> = {}): TripDetail {
   return {
     id: TRIP_ID,
     name: 'Goa in March',
-    color: 'sunset',
+    color: 'coral',
     status: 'planning',
     invite_code: 'goa2027',
     created_at: '2027-01-01T00:00:00Z',
     created_by: ORGANISER,
     locked_start: null,
     locked_end: null,
+    fixed_start: null,
+    fixed_end: null,
     locked_destination_id: null,
     show_who_marked: true,
+    currency: 'INR',
     members,
     destinations: [],
     availabilityCount: 0,
     bestDays: [],
+    iMarked: false,
     ...overrides,
   };
 }

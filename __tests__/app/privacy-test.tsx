@@ -12,7 +12,7 @@ describe('Privacy policy', () => {
     await render(<PrivacyPolicy />);
     expect(screen.getByText('Privacy policy')).toBeTruthy();
     expect(screen.getByText(/^Last updated /)).toBeTruthy();
-    for (const s of PRIVACY_SECTIONS) expect(screen.getByText(s.title)).toBeTruthy();
+    for (const s of PRIVACY_SECTIONS) expect(screen.getByRole('header', { name: s.title })).toBeTruthy();
     expect(screen.getByText(/Your profile → Delete account/)).toBeTruthy();
     expect(screen.getByText(new RegExp(PRIVACY_CONTACT.replace('.', '\\.')))).toBeTruthy();
   });
@@ -24,5 +24,11 @@ describe('Privacy policy', () => {
     router.canGoBack.mockReturnValue(false);
     await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
     expect(router.replace).toHaveBeenCalledWith('/');
+  });
+
+  it('has a back button that closes the page too', async () => {
+    await render(<PrivacyPolicy />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(router.back).toHaveBeenCalled();
   });
 });

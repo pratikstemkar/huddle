@@ -1,22 +1,48 @@
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { useCallback, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Platform, StyleSheet, Switch, View } from 'react-native';
 
+import { ColorSwatches } from '@/components/color-swatches';
+import { DateRangePicker } from '@/components/date-range-picker';
+import { OptionCard } from '@/components/trip/option-card';
+import { SheetHeader } from '@/components/trip/sheet-header';
+import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
+import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { useTripLive } from '@/lib/realtime';
-import { deleteTrip, leaveTrip, removeMember, renameTrip, setShowWhoMarked, unlockTrip, useTrip } from '@/lib/trips';
-import { MIN_TOUCH, radius, space, tripColors } from '@/theme/tokens';
+import { balanceNote, useSplit } from '@/lib/split';
+import { deleteTrip, leaveTrip, removeMember, renameTrip, setShowWhoMarked, unlockTrip, updateTrip, useTrip } from '@/lib/trips';
+import { radius, space, toTripColor, type TripColor } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.section}>
+      <Text variant="calloutStrong" accessibilityRole="header">
+        {title}
+      </Text>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.line }]}>{children}</View>
+    </View>
+  );
+}
+
+type Range = { start: string; end: string };
 
 export default function TripSettings() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
+  const me = session?.user.id;
   const { colors } = useTheme();
-  const { trip, loading, refresh } = useTrip(id, session?.user.id);
+  const { trip, loading, refresh } = useTrip(id, me);
+  const split = useSplit(id, me);
+  const refreshSplit = split.refresh;
 
   // null until the organiser types, so live updates to the name never overwrite their edit.
   const [draft, setDraft] = useState<string | null>(null);
@@ -33,13 +59,24 @@ export default function TripSettings() {
   const [removing, setRemoving] = useState<string | null>(null);
   // The switch's value while a change is saving; null shows the saved setting.
   const [showWho, setShowWho] = useState<boolean | null>(null);
+  // The colour while it saves; null shows the saved one.
+  const [color, setColor] = useState<TripColor | null>(null);
+  // How dates are chosen, once the organiser picks a card; null follows the trip.
+  const [datesMode, setDatesMode] = useState<'vote' | 'fixed' | null>(null);
+  const [range, setRange] = useState<Range | null>(null);
+  const [savingDates, setSavingDates] = useState(false);
+
+  const reload = useCallback(() => {
+    refresh();
+    refreshSplit();
+  }, [refresh, refreshSplit]);
 
   useFocusEffect(
     useCallback(() => {
-      refresh();
-    }, [refresh]),
+      reload();
+    }, [reload]),
   );
-  useTripLive(id, refresh);
+  useTripLive(id, reload);
 
   const close = () => {
     if (router.canGoBack()) router.back();
@@ -49,28 +86,34 @@ export default function TripSettings() {
   if (loading && !trip) {
     return (
       <Screen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={colors.accent} accessibilityLabel="Loading settings" />
+        <ActivityIndicator color={colors.iris} accessibilityLabel="Loading settings" />
       </Screen>
     );
   }
 
-  const isOrganiser = !!trip && trip.members.some((m) => m.user_id === session?.user.id && m.role === 'organiser');
-
   if (!trip) {
     return (
-      <Screen footer={<Button label="Close" onPress={close} />}>
-        <Text variant="title">Trip settings</Text>
-        <Text variant="body" tone="secondary" style={{ marginTop: space.md }}>
+      <Screen contentStyle={styles.content}>
+        <SheetHeader title="Trip settings" onClose={close} />
+        <Text variant="body" tone="secondary">
           This trip doesn&apos;t exist, or you&apos;re not a member of it.
         </Text>
       </Screen>
     );
   }
 
+  const isOrganiser = trip.members.some((m) => m.user_id === me && m.role === 'organiser');
+  const noteFor = (userId: string, name?: string) => balanceNote(split.balances.get(userId) ?? 0, trip.currency, name);
+  const errorText = error ? (
+    <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
+      {error}
+    </Text>
+  ) : null;
+
   const leave = async () => {
     setLeaving(true);
     try {
-      await leaveTrip(trip.id, session!.user.id);
+      await leaveTrip(trip.id, me!);
       router.dismissAll();
       router.replace('/');
     } catch {
@@ -83,40 +126,44 @@ export default function TripSettings() {
 
   // Organisers can't leave (nobody would be left to run the trip); they delete it instead.
   if (!isOrganiser) {
+    const organiser = trip.members.find((m) => m.role === 'organiser')?.display_name ?? 'the organiser';
+    const myNote = me ? noteFor(me) : null;
     return (
-      <Screen footer={<Button label="Close" variant="secondary" onPress={close} />}>
-        <Text variant="title" style={{ marginBottom: space.xl }}>
-          Trip settings
-        </Text>
-        <View style={[styles.danger, { borderColor: colors.line, backgroundColor: colors.card }]}>
-          <Text variant="caption" tone="muted">
+      <Screen contentStyle={styles.content}>
+        <SheetHeader title="Trip settings" onClose={close} />
+        <SpeechCard>Only {organiser} can change this trip.</SpeechCard>
+        <Section title="Leave">
+          <Text variant="caption" tone="secondary">
             Leaving removes your free days and votes. You can rejoin later with the invite code.
           </Text>
-          {error ? (
-            <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
-              {error}
-            </Text>
-          ) : null}
+          {errorText}
           {confirmLeave ? (
-            <View style={{ gap: space.sm }}>
+            <View style={styles.confirm}>
               <Text variant="bodyStrong" tone="danger" accessibilityLiveRegion="polite">
                 Leave &quot;{trip.name}&quot;?
               </Text>
+              {myNote ? (
+                <Text variant="caption" tone="secondary">
+                  {myNote}
+                </Text>
+              ) : null}
               <Button label="Yes, leave trip" loading={leaving} color={colors.danger} onPress={leave} />
               <Button label="Stay" variant="ghost" onPress={() => setConfirmLeave(false)} />
             </View>
           ) : (
-            <Button label="Leave trip" variant="secondary" onPress={() => setConfirmLeave(true)} />
+            <Button label="Leave trip" variant="outline" onPress={() => setConfirmLeave(true)} />
           )}
-        </View>
+        </Section>
       </Screen>
     );
   }
 
-  const fill = tripColors[trip.color] ?? tripColors.sunset;
   const name = draft ?? trip.name;
   const trimmed = name.trim();
   const dirty = trimmed !== trip.name;
+  const savedFixed = trip.fixed_start && trip.fixed_end ? { start: trip.fixed_start, end: trip.fixed_end } : null;
+  const mode = datesMode ?? (savedFixed ? 'fixed' : 'vote');
+  const shownRange = range ?? savedFixed;
 
   const save = async () => {
     if (!trimmed) {
@@ -133,6 +180,40 @@ export default function TripSettings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const changeColor = async (c: TripColor) => {
+    setColor(c);
+    setError(null);
+    try {
+      await updateTrip(trip.id, { color: c });
+      await refresh();
+    } catch {
+      setError("Couldn't change the colour. Check your connection and try again.");
+    } finally {
+      setColor(null);
+    }
+  };
+
+  const saveDates = async (next: Range | null) => {
+    setSavingDates(true);
+    setError(null);
+    try {
+      await updateTrip(trip.id, { fixed_start: next?.start ?? null, fixed_end: next?.end ?? null });
+      setRange(null);
+      setDatesMode(null);
+      await refresh();
+    } catch {
+      setError("Couldn't change the dates. Check your connection and try again.");
+    } finally {
+      setSavingDates(false);
+    }
+  };
+
+  const pickVote = () => {
+    setDatesMode('vote');
+    setRange(null);
+    if (savedFixed) saveDates(null);
   };
 
   const destroy = async () => {
@@ -190,99 +271,151 @@ export default function TripSettings() {
     }
   };
 
-  // Organisers can remove members, but not themselves or other organisers.
-  const removable = trip.members.filter((m) => m.role === 'member');
+  const shownWho = showWho ?? trip.show_who_marked;
 
   return (
-    <Screen footer={<Button label="Save name" color={fill} loading={saving} onPress={save} />}>
-      <Text variant="title" style={{ marginBottom: space.xl }}>
-        Trip settings
-      </Text>
+    <Screen contentStyle={styles.content}>
+      <SheetHeader title="Trip settings" onClose={close} />
+      {errorText}
 
-      <Text variant="label" style={styles.label}>
-        Trip name
-      </Text>
-      <TextInput
-        value={name}
-        onChangeText={(t) => {
-          setDraft(t);
-          if (error) setError(null);
-        }}
-        accessibilityLabel="Trip name"
-        placeholderTextColor={colors.textMuted}
-        returnKeyType="done"
-        onSubmitEditing={() => dirty && save()}
-        maxLength={60}
-        style={[styles.input, { backgroundColor: colors.card, borderColor: error ? colors.danger : colors.line, color: colors.text }]}
-      />
-      {error ? (
-        <Text variant="caption" tone="danger" accessibilityLiveRegion="polite" style={{ marginTop: space.xs }}>
-          {error}
-        </Text>
+      <Section title="Trip">
+        <Input
+          label="Trip name"
+          value={name}
+          onChangeText={(t) => {
+            setDraft(t);
+            if (error) setError(null);
+          }}
+          returnKeyType="done"
+          onSubmitEditing={() => dirty && save()}
+          maxLength={60}
+        />
+        <Text variant="calloutStrong">Colour</Text>
+        <ColorSwatches value={color ?? toTripColor(trip.color)} onChange={changeColor} />
+        <Button label="Save name" loading={saving} onPress={save} />
+      </Section>
+
+      {trip.status === 'planning' ? (
+        <Section title="Dates">
+          <View accessibilityRole="radiogroup" style={styles.options}>
+            <OptionCard
+              icon="vote"
+              area="vote"
+              title="Let the group vote"
+              sub="Everyone marks the days they're free"
+              selected={mode === 'vote'}
+              onPress={pickVote}
+            />
+            <OptionCard
+              icon="plan"
+              area="plan"
+              title="I already know"
+              sub="Set the dates yourself"
+              selected={mode === 'fixed'}
+              onPress={() => setDatesMode('fixed')}
+            />
+          </View>
+          {mode === 'fixed' ? (
+            <>
+              <DateRangePicker value={shownRange} onChange={setRange} />
+              {range ? <Button label="Save dates" size="md" loading={savingDates} onPress={() => saveDates(range)} /> : null}
+            </>
+          ) : null}
+        </Section>
       ) : null}
 
-      {trip.status === 'locked' ? (
-        <>
-          <Text variant="label" style={[styles.label, { marginTop: space.xxl }]}>
-            Plan
-          </Text>
-          <View style={[styles.danger, { borderColor: colors.line, backgroundColor: colors.card }]}>
-            <Text variant="caption" tone="muted">
+      <Section title="Plan">
+        {trip.status === 'locked' ? (
+          <>
+            <Text variant="caption" tone="secondary">
               Locked in by mistake, or plans changed? Unlocking clears the dates and place so everyone can mark days and vote again. Days, places and votes are kept.
             </Text>
             {confirmUnlock ? (
-              <View style={{ gap: space.sm }}>
+              <View style={styles.confirm}>
                 <Text variant="bodyStrong" accessibilityLiveRegion="polite">
                   Unlock &quot;{trip.name}&quot; and re-plan?
                 </Text>
-                <Button label="Yes, unlock" loading={unlocking} color={fill} onPress={unlock} />
+                <Button label="Yes, unlock" loading={unlocking} onPress={unlock} />
                 <Button label="Keep it locked" variant="ghost" onPress={() => setConfirmUnlock(false)} />
               </View>
             ) : (
-              <Button label="Unlock and re-plan" variant="secondary" onPress={() => setConfirmUnlock(true)} />
+              <Button label="Unlock and re-plan" variant="outline" onPress={() => setConfirmUnlock(true)} />
             )}
-          </View>
-        </>
-      ) : null}
+          </>
+        ) : (
+          <>
+            <Text variant="caption" tone="secondary">
+              Pick the dates and the place. Everyone sees the final plan and voting stops.
+            </Text>
+            <Button
+              label="Lock in the plan"
+              variant="outline"
+              onPress={() => router.push({ pathname: '/trip/[id]/lock', params: { id: trip.id } })}
+            />
+          </>
+        )}
+      </Section>
 
-      <Text variant="label" style={[styles.label, { marginTop: space.xxl }]}>
-        Privacy
-      </Text>
-      <View style={[styles.danger, { borderColor: colors.line, backgroundColor: colors.card }]}>
-        <View style={styles.memberRow}>
-          <Text variant="body" style={{ flex: 1 }}>
+      <Section title="Privacy">
+        <View style={styles.row}>
+          <Text variant="body" style={styles.flex}>
             Show who marked each day
           </Text>
           <Switch
-            value={showWho ?? trip.show_who_marked}
+            value={shownWho}
             onValueChange={toggleShowWho}
             disabled={showWho !== null}
             accessibilityLabel="Show who marked each day"
-            trackColor={{ true: fill, false: colors.line }}
+            trackColor={{ true: colors.iris, false: colors.lineStrong }}
           />
         </View>
-        <Text variant="caption" tone="muted">
-          {(showWho ?? trip.show_who_marked)
+        <Text variant="caption" tone="secondary">
+          {shownWho
             ? 'Everyone can see whose days are whose.'
             : "Everyone sees only how many people are free each day, not who. Each person still sees their own days."}
         </Text>
-      </View>
+      </Section>
 
-      {removable.length ? (
-        <>
-          <Text variant="label" style={[styles.label, { marginTop: space.xxl }]}>
-            Members
-          </Text>
-          <View style={[styles.danger, { borderColor: colors.line, backgroundColor: colors.card }]}>
-            <Text variant="caption" tone="muted">
-              Removing someone clears their free days and votes. Places they suggested stay.
-            </Text>
-            {removable.map((m) =>
-              confirmRemove === m.user_id ? (
-                <View key={m.user_id} style={{ gap: space.sm }}>
+      <Section title="People">
+        <Text variant="caption" tone="secondary">
+          Removing someone clears their free days and votes. Places they suggested stay.
+        </Text>
+        {trip.members.map((m, i) => {
+          const isMe = m.user_id === me;
+          const note = confirmRemove === m.user_id ? noteFor(m.user_id, m.display_name) : null;
+          return (
+            <View key={m.user_id} style={[styles.person, i > 0 && { borderTopWidth: 1, borderTopColor: colors.line }]}>
+              <View style={styles.row}>
+                <Avatar name={m.display_name} url={m.avatar_url} color={m.avatar_color} size={40} />
+                <Text variant="label" style={styles.flex} numberOfLines={1}>
+                  {m.display_name}
+                  {isMe ? ' (you)' : ''}
+                </Text>
+                {m.role === 'organiser' ? (
+                  <Badge label="Organiser" />
+                ) : confirmRemove === m.user_id ? null : (
+                  <Button
+                    label="Remove"
+                    accessibilityLabel={`Remove ${m.display_name}`}
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => {
+                      setConfirmRemove(m.user_id);
+                      if (error) setError(null);
+                    }}
+                  />
+                )}
+              </View>
+              {confirmRemove === m.user_id ? (
+                <View style={styles.confirm}>
                   <Text variant="bodyStrong" tone="danger" accessibilityLiveRegion="polite">
                     Remove {m.display_name} from the trip?
                   </Text>
+                  {note ? (
+                    <Text variant="caption" tone="secondary">
+                      {note}
+                    </Text>
+                  ) : null}
                   <Button
                     label={`Yes, remove ${m.display_name}`}
                     loading={removing === m.user_id}
@@ -291,36 +424,18 @@ export default function TripSettings() {
                   />
                   <Button label="Cancel" variant="ghost" onPress={() => setConfirmRemove(null)} />
                 </View>
-              ) : (
-                <View key={m.user_id} style={styles.memberRow}>
-                  <Text variant="body" style={{ flex: 1 }} numberOfLines={1}>
-                    {m.display_name}
-                  </Text>
-                  <Button
-                    label="Remove"
-                    accessibilityLabel={`Remove ${m.display_name}`}
-                    variant="ghost"
-                    onPress={() => {
-                      setConfirmRemove(m.user_id);
-                      if (error) setError(null);
-                    }}
-                  />
-                </View>
-              ),
-            )}
-          </View>
-        </>
-      ) : null}
+              ) : null}
+            </View>
+          );
+        })}
+      </Section>
 
-      <Text variant="label" style={[styles.label, { marginTop: space.xxl }]}>
-        Danger zone
-      </Text>
-      <View style={[styles.danger, { borderColor: colors.line, backgroundColor: colors.card }]}>
-        <Text variant="caption" tone="muted">
-          You run this trip, so you can&apos;t leave it. Deleting removes the trip, days, places and votes for everyone. This can&apos;t be undone.
+      <Section title="Danger zone">
+        <Text variant="caption" tone="secondary">
+          You run this trip, so you can&apos;t leave it. Deleting removes the trip and everything in it for everyone: days, places, votes, plans, expenses and photos. This can&apos;t be undone.
         </Text>
         {confirmDelete ? (
-          <View style={{ gap: space.sm }}>
+          <View style={styles.confirm}>
             <Text variant="bodyStrong" tone="danger" accessibilityLiveRegion="polite">
               Delete &quot;{trip.name}&quot; for everyone?
             </Text>
@@ -328,17 +443,21 @@ export default function TripSettings() {
             <Button label="Keep trip" variant="ghost" onPress={() => setConfirmDelete(false)} />
           </View>
         ) : (
-          <Button label="Delete trip" variant="secondary" onPress={() => setConfirmDelete(true)} />
+          <Button label="Delete trip" variant="outline" onPress={() => setConfirmDelete(true)} />
         )}
-      </View>
+      </Section>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  label: { marginBottom: space.sm },
-  input: { minHeight: MIN_TOUCH + 4, borderRadius: radius.md, borderWidth: 1, paddingHorizontal: space.lg, fontSize: 17 },
-  memberRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  danger: { borderRadius: radius.lg, borderWidth: 1, padding: space.lg, gap: space.md },
+  content: { gap: space.s20 },
+  section: { gap: space.sm },
+  card: { borderRadius: radius.card, borderWidth: 1, padding: space.lg, gap: space.md },
+  options: { gap: space.s10 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  flex: { flex: 1 },
+  person: { gap: space.md, paddingVertical: space.s10 },
+  confirm: { gap: space.sm },
 });

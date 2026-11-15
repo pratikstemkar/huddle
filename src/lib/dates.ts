@@ -90,3 +90,21 @@ export function nightsBetween(start: Day, end: Day) {
 export function formatTripDates(start: Day, end: Day) {
   return end === start ? formatDay(start) : `${formatDay(start)} – ${formatDay(end)}`;
 }
+
+/** The date columns a trip carries. */
+export type TripDateFields = {
+  locked_start: Day | null;
+  locked_end: Day | null;
+  fixed_start?: Day | null;
+  fixed_end?: Day | null;
+};
+
+/**
+ * The trip's dates: the locked dates, else the dates the organiser fixed up front, else null.
+ * Exported from trip-status.ts as `tripDates`; it lives here so lib files can share it without a cycle.
+ */
+export function tripDateRange(trip: TripDateFields): { start: Day; end: Day } | null {
+  if (trip.locked_start && trip.locked_end) return { start: trip.locked_start, end: trip.locked_end };
+  if (trip.fixed_start && trip.fixed_end) return { start: trip.fixed_start, end: trip.fixed_end };
+  return null;
+}

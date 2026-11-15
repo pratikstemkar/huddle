@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react-native';
 
 import { deleteMyAccount, describeOutcome, useDeletionPreview, type TripOutcome } from '@/lib/account';
 import { photoState } from '../../test-utils/photo-mocks';
-import { queueResult, rpcCalls, storageCallsFor, supabase } from '../../test-utils/supabase-mock';
+import { queriesFor, queueResult, rpcCalls, storageCallsFor, supabase } from '../../test-utils/supabase-mock';
 
 const trip = (outcome: TripOutcome['outcome'], new_organiser: string | null = null): TripOutcome => ({
   trip_id: 't1',
@@ -62,7 +62,11 @@ describe('deleteMyAccount', () => {
     photoState.files.add('file:///docs/huddle/trips/solo/places/p1.jpg');
     photoState.files.add('file:///docs/huddle/trips/shared/places/p2.jpg');
     await deleteMyAccount();
-    expect(storageCallsFor('list').map((c) => c.args[0])).toEqual(['solo']);
+    // Both buckets of the deleted trip; nothing for the trips that stay.
+    expect(storageCallsFor('list').map((c) => [c.bucket, c.args[0]])).toEqual([
+      ['place-photos', 'solo'],
+      ['trip-photos', 'solo'],
+    ]);
     expect(storageCallsFor('remove')[0].args[0]).toEqual(['solo/p1.jpg']);
     expect([...photoState.files]).toEqual(['file:///docs/huddle/trips/shared/places/p2.jpg']);
     expect(rpcCalls.map((c) => c.name)).toEqual(['account_deletion_preview', 'delete_my_account']);
@@ -74,6 +78,43 @@ describe('deleteMyAccount', () => {
     await expect(deleteMyAccount()).rejects.toThrow("Couldn't delete your account. Check your connection and try again.");
     expect(rpcCalls.map((c) => c.name)).toEqual(['account_deletion_preview']);
     expect(supabase.auth.signOut).not.toHaveBeenCalled();
+  });
+
+  it('removes my album photos in every trip before deleting the account', async () => {
+    supabase.auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'me' } } }, error: null });
+    queueResult('trip_photos', { data: [{ path: 't2/a.jpg', thumb_path: 't2/a-thumb.jpg' }] });
+    await deleteMyAccount();
+    expect(queriesFor('trip_photos')[0].ops).toEqual([
+      ['select', ['path, thumb_path']],
+      ['eq', ['uploaded_by', 'me']],
+      ['order', ['id']],
+      ['range', [0, 999]],
+    ]);
+    expect(storageCallsFor('remove')).toEqual([{ bucket: 'trip-photos', method: 'remove', args: [['t2/a.jpg', 't2/a-thumb.jpg']] }]);
+    expect(rpcCalls.map((c) => c.name)).toEqual(['account_deletion_preview', 'delete_my_account']);
+  });
+
+  it('pages through more than a thousand album photos', async () => {
+    supabase.auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'me' } } }, error: null });
+    const rows = (n: number, from = 0) => Array.from({ length: n }, (_, i) => ({ path: `t/${from + i}.jpg`, thumb_path: `t/${from + i}-thumb.jpg` }));
+    queueResult('trip_photos', { data: rows(1000) }, { data: rows(1, 1000) });
+    await deleteMyAccount();
+    expect(queriesFor('trip_photos').map((q) => q.ops[3])).toEqual([
+      ['range', [0, 999]],
+      ['range', [1000, 1999]],
+    ]);
+    expect(storageCallsFor('remove').map((c) => (c.args[0] as string[]).length)).toEqual([1000, 1000, 2]);
+  });
+
+  it('keeps the account when my album photos cannot be listed or removed', async () => {
+    supabase.auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'me' } } }, error: null });
+    queueResult('trip_photos', { error: { message: 'offline' } });
+    await expect(deleteMyAccount()).rejects.toThrow("Couldn't delete your account. Check your connection and try again.");
+
+    queueResult('trip_photos', { data: [{ path: 't2/a.jpg', thumb_path: 't2/a-thumb.jpg' }] });
+    queueResult('storage:remove', { error: { message: 'offline' } });
+    await expect(deleteMyAccount()).rejects.toThrow("Couldn't delete your account. Check your connection and try again.");
+    expect(rpcCalls.map((c) => c.name)).toEqual(['account_deletion_preview', 'account_deletion_preview']);
   });
 
   it('keeps the account when its trips cannot be checked', async () => {

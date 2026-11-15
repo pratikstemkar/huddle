@@ -7,7 +7,10 @@
  */
 
 export const photoState = {
-  pickerResult: { canceled: true, assets: null } as { canceled: boolean; assets: { uri: string; width: number; height: number }[] | null },
+  pickerResult: { canceled: true, assets: null } as {
+    canceled: boolean;
+    assets: { uri: string; width: number; height: number; exif?: Record<string, unknown> | null }[] | null;
+  },
   cameraGranted: true,
   decodedSize: { width: 4000, height: 3000 },
   /** Every manipulator action, e.g. ['crop', {...}], ['resize', {...}], ['save', {...}]. */
@@ -16,6 +19,8 @@ export const photoState = {
   files: new Set<string>(),
   /** Make the next decode fail. */
   failDecode: false,
+  /** What was written to each file with `File.write`, by URI. */
+  written: new Map<string, string | Uint8Array | ArrayBuffer>(),
 };
 
 export function resetPhotoMocks() {
@@ -25,6 +30,7 @@ export function resetPhotoMocks() {
   photoState.actions = [];
   photoState.files = new Set();
   photoState.failDecode = false;
+  photoState.written = new Map();
 }
 
 export const imagePicker = {
@@ -52,7 +58,8 @@ function context(size: { width: number; height: number }) {
         ...current,
         saveAsync: async (options: unknown) => {
           photoState.actions.push(['save', options]);
-          return { uri: 'file:///cache/prepared.jpg', ...current };
+          const n = photoState.actions.filter(([a]) => a === 'save').length;
+          return { uri: n === 1 ? 'file:///cache/prepared.jpg' : `file:///cache/prepared-${n}.jpg`, ...current };
         },
       };
       return ref;
@@ -106,6 +113,13 @@ class FakeFile {
   }
   delete() {
     photoState.files.delete(this.uri);
+  }
+  create() {
+    photoState.files.add(this.uri);
+  }
+  async write(content: string | Uint8Array | ArrayBuffer) {
+    photoState.files.add(this.uri);
+    photoState.written.set(this.uri, content);
   }
   async arrayBuffer() {
     return new ArrayBuffer(8);

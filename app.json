@@ -8,13 +8,13 @@
     "scheme": "huddle",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.huddle.app",
       "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FFF6EC",
+        "backgroundColor": "#5257E8",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -31,11 +31,11 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FFF6EC",
+          "backgroundColor": "#F4F5FB",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76,
           "dark": {
-            "backgroundColor": "#15111A"
+            "backgroundColor": "#10121F"
           }
         }
       ],

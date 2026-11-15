@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { formatRange } from '@/lib/dates';
@@ -62,9 +63,28 @@ describe('Lock the trip', () => {
     expect(screen.getByRole('radio', { name: 'Palolem, 2 votes' }).props.accessibilityState).toEqual({ selected: true });
     expect(screen.getByRole('radio', { name: 'Old Goa, 1 vote' })).toBeTruthy();
 
+    expect(screen.getByText('Leading')).toBeTruthy();
+
     await fireEvent.press(screen.getByRole('button', { name: 'Lock in the plan' }));
     expect(lockTrip).toHaveBeenCalledWith(TRIP_ID, '2027-03-12', '2027-03-14', 'd1');
-    expect(router.back).toHaveBeenCalled();
+    expect(Haptics.notificationAsync).toHaveBeenCalled();
+    expect(router.replace).toHaveBeenCalledWith({ pathname: '/trip/[id]/locked', params: { id: TRIP_ID } });
+  });
+
+  it('prefills fixed dates and hides the best-day cards', async () => {
+    lockTrip.mockResolvedValue(undefined);
+    mockState = tripState(trip({ bestDays: best, destinations: places, fixed_start: '2027-05-01', fixed_end: '2027-05-04' }));
+    await render(<LockTrip />);
+    expect(screen.getByLabelText('Start date').props.value).toBe('2027-05-01');
+    expect(screen.getByLabelText('End date').props.value).toBe('2027-05-04');
+    expect(screen.queryByRole('radio', { name: `${formatRange('2027-03-12', '2027-03-14')}, 2 of 2 free` })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Lock in the plan' }));
+    expect(lockTrip).toHaveBeenCalledWith(TRIP_ID, '2027-05-01', '2027-05-04', 'd1');
+  });
+
+  it('reminds the organiser it can be unlocked later', async () => {
+    await render(<LockTrip />);
+    expect(screen.getByText('Pip says You can unlock it later in trip settings if plans change.')).toBeTruthy();
   });
 
   it('locks a different range and place', async () => {
@@ -117,6 +137,6 @@ describe('Lock the trip', () => {
     await render(<LockTrip />);
     await fireEvent.press(screen.getByRole('button', { name: 'Lock in the plan' }));
     expect(await screen.findByText("Couldn't lock the trip. Check your connection and try again.")).toBeTruthy();
-    expect(router.back).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
   });
 });

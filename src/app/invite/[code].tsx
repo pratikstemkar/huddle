@@ -3,12 +3,12 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
-import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
+import { WelcomeScene } from '@/components/welcome-scene';
 import { useAuth } from '@/lib/auth';
 import { savePendingInvite, takePendingInvite } from '@/lib/pending-invite';
 import { invitePreview, type InvitePreview } from '@/lib/trips';
-import { radius, space, tripColors } from '@/theme/tokens';
+import { space, toTripColor, tripColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 
 /**
@@ -47,58 +47,54 @@ function SignedOutInvite({ code }: { code: string }) {
   const loading = state === 'loading';
   const unknown = state === 'unknown';
   const preview = typeof state === 'object' ? state : null;
+  const signIn = () => router.replace('/sign-in');
 
   return (
-    <Screen
-      footer={
-        unknown ? (
-          <Button label="Go to Huddle" variant="secondary" onPress={() => router.replace('/sign-in')} />
-        ) : (
-          <Button label="Sign in to join" onPress={() => router.replace('/sign-in')} />
-        )
-      }>
-      <Text variant="heading" tone="accent">
-        huddle
-      </Text>
-
-      <View style={styles.body}>
-        {loading ? (
-          <ActivityIndicator color={colors.accent} accessibilityLabel="Loading the invite" />
-        ) : unknown ? (
-          <>
+    <WelcomeScene
+      pipMood={loading || unknown ? 'hmm' : 'hello'}
+      pipLabel={loading || unknown ? 'Pip the penguin, thinking' : 'Pip the penguin waving hello'}
+      scarf={preview ? tripColors[toTripColor(preview.color)] : undefined}
+      tail={colors.beak}>
+      {loading ? (
+        <View style={styles.loading}>
+          <ActivityIndicator color={colors.iris} accessibilityLabel="Loading the invite" />
+        </View>
+      ) : unknown ? (
+        <>
+          <View style={styles.copy}>
             <Text variant="title">This invite doesn’t work</Text>
-            <Text variant="body" tone="secondary">
+            <Text variant="bodyLg" tone="secondary">
               The link may be mistyped, or the trip was deleted. Ask your friend to send it again.
             </Text>
-          </>
-        ) : (
-          <>
-            <Text variant="body" tone="secondary">
+          </View>
+          <Button label="Go to Huddle" variant="outline" onPress={signIn} />
+        </>
+      ) : (
+        <>
+          <View style={styles.copy}>
+            <Text variant="callout" tone="secondary">
               You’re invited to
             </Text>
+            <Text variant="title" numberOfLines={2}>
+              {preview ? preview.name : 'a trip on Huddle'}
+            </Text>
             {preview ? (
-              <View style={[styles.card, { backgroundColor: tripColors[preview.color] ?? tripColors.sunset }]}>
-                <Text variant="title" tone="onColor" numberOfLines={2}>
-                  {preview.name}
-                </Text>
-                <Text variant="caption" tone="onColor">
-                  {preview.members === 1 ? '1 person is going' : `${preview.members} people are going`}
-                </Text>
-              </View>
-            ) : (
-              <Text variant="title">a trip on Huddle</Text>
-            )}
-            <Text variant="body" tone="secondary">
+              <Text variant="bodyStrong" tone="iris">
+                {preview.members === 1 ? '1 person is going' : `${preview.members} people are going`}
+              </Text>
+            ) : null}
+            <Text variant="callout" tone="secondary">
               Sign in and you’ll go straight to joining it. Mark when you’re free and vote on where to go.
             </Text>
-          </>
-        )}
-      </View>
-    </Screen>
+          </View>
+          <Button label="Sign in to join" variant="ink" onPress={signIn} />
+        </>
+      )}
+    </WelcomeScene>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, justifyContent: 'center', gap: space.md },
-  card: { borderRadius: radius.lg, padding: space.xl, gap: space.xs, minHeight: 140, justifyContent: 'flex-end' },
+  copy: { gap: space.sm },
+  loading: { minHeight: 120, alignItems: 'center', justifyContent: 'center' },
 });

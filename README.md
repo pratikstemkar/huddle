@@ -71,7 +71,7 @@ Got a dream destination? Add it with a short note, a link (an Instagram reel, a 
 
 ### Vote on your favourites
 
-Everyone votes for the places they like. The **top 3** show up right on the trip page, so you always know what's winning.
+Everyone votes for as many places as they like. The **leader** shows right on the trip page, so you always know what's winning.
 
 ### See changes as they happen
 
@@ -92,4 +92,4 @@ See everyone who has joined the trip at a glance.
 
 ### Looks great day and night
 
-Huddle has a warm, sunset-inspired look and switches to **dark mode** automatically when your phone does.
+Huddle has a bright look with Pip the penguin as your guide, and switches to **dark mode** automatically when your phone does.

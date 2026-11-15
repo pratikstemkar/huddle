@@ -4,6 +4,7 @@ import { router } from '../../test-utils/expo-router-mock';
 import { sessionFor } from '../../test-utils/fixtures';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
+jest.mock('expo-constants', () => ({ __esModule: true, default: { expoConfig: { version: '1.0.1' } } }));
 
 const mockSignOut = jest.fn();
 let mockSession: unknown;
@@ -20,7 +21,7 @@ jest.mock('@/lib/profile', () => ({
 }));
 
 const { updateProfile } = require('@/lib/profile') as { updateProfile: jest.Mock };
-const ProfileScreen = require('@/app/(app)/profile').default as () => React.JSX.Element;
+const ProfileScreen = require('@/app/(app)/(home)/profile').default as () => React.JSX.Element;
 
 const me = { id: 'u1', display_name: 'Aarav Shah', avatar_url: null, avatar_color: null };
 
@@ -37,16 +38,25 @@ describe('Profile', () => {
     expect(mockState.refresh).toHaveBeenCalled();
   });
 
-  it('saves a new name and colour, then closes', async () => {
+  it('shows who I am signed in as and the app version', async () => {
+    await render(<ProfileScreen />);
+    expect(screen.getByText('You')).toBeTruthy();
+    expect(screen.getByText('Signed in as aarav@dev.test')).toBeTruthy();
+    expect(screen.getByText('Huddle 1.0.1')).toBeTruthy();
+  });
+
+  it('saves a new name and colour, and stays on the tab', async () => {
     updateProfile.mockResolvedValue(undefined);
     await render(<ProfileScreen />);
     const input = screen.getByLabelText('Your name');
     expect(input.props.value).toBe('Aarav Shah');
     await fireEvent.changeText(input, '  Aarav  ');
-    await fireEvent.press(screen.getByRole('radio', { name: 'Plum' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Blush' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Save profile' }));
-    expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Aarav', avatar_color: 'plum' });
-    expect(router.back).toHaveBeenCalled();
+    expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Aarav', avatar_color: 'blush' });
+    expect(await screen.findByText('Saved')).toBeTruthy();
+    expect(mockState.refresh).toHaveBeenCalledTimes(2);
+    expect(router.back).not.toHaveBeenCalled();
   });
 
   it('caps the name at 40 characters', async () => {
@@ -67,23 +77,22 @@ describe('Profile', () => {
     await render(<ProfileScreen />);
     await fireEvent.press(screen.getByRole('button', { name: 'Save profile' }));
     expect(await screen.findByText("Couldn't save your profile. Check your connection and try again.")).toBeTruthy();
-    expect(router.back).not.toHaveBeenCalled();
+    expect(screen.queryByText('Saved')).toBeNull();
   });
 
   it('can swap a sign-in photo for my initial', async () => {
     mockState.profile = { ...me, avatar_url: 'https://photo.png' };
     updateProfile.mockResolvedValue(undefined);
     await render(<ProfileScreen />);
-    expect(screen.queryByRole('radio', { name: 'Sky' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: 'Mint' })).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Use my initial instead' }));
-    await fireEvent.press(screen.getByRole('radio', { name: 'Sky' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Mint' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Save profile' }));
-    expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Aarav Shah', avatar_color: 'sky', avatar_url: null });
+    expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Aarav Shah', avatar_color: 'mint', avatar_url: null });
   });
 
   it('signs out', async () => {
     await render(<ProfileScreen />);
-    expect(screen.getByText('Signed in as aarav@dev.test')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
     expect(mockSignOut).toHaveBeenCalled();
   });

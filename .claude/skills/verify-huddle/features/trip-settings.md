@@ -1,24 +1,35 @@
-# Trip settings: rename or delete (organiser)
+# Trip settings (organiser)
 
-On a trip the organiser sees a `Trip settings` (⋯) button in the hero, next to the status pill. It opens `/trip/[id]/settings` (form sheet): a `Trip name` field with `Save name`, and a danger zone with `Delete trip`. Members don't see the button; opening the URL directly shows "Only the organiser can change this trip."
+The `Trip settings` row at the bottom of the Trip tab opens `/trip/[id]/settings` ("Trip settings" sheet). Organisers get these sections:
+
+- **Trip:** `Trip name` (max 60) with `Save name`, and Colour radios (`Iris` … `Coral`) that save as soon as one is tapped.
+- **Dates** (planning trips only): `Let the group vote` / `I already know` with the date range picker and `Save dates` ([fixed-dates](fixed-dates.md)).
+- **Plan:** `Lock in the plan` ([lock-trip](lock-trip.md)), or on a locked trip `Unlock and re-plan` ([unlock-trip](unlock-trip.md)).
+- **Privacy:** `Show who marked each day` ([hide-who-marked](hide-who-marked.md)).
+- **People:** every member with `(you)`, an `Organiser` badge or `Remove <name>` ([remove-member](remove-member.md)).
+- **Danger zone:** `Delete trip` → `Delete "<name>" for everyone?` → `Yes, delete forever` (or `Keep trip`).
+
+Members get "Only <organiser> can change this trip." and a Leave section ([leave-trip](leave-trip.md)).
 
 ## Sub-features
 
-- Rename: saves, closes the sheet, the trip hero shows the new name. Empty → "Give your trip a name first."
-- Delete is two steps: `Delete trip` → `Yes, delete forever` (or `Keep trip`). On success you land on `/`, and the trip is gone from the list.
+- Rename: saves and closes the sheet; the Trip tab shows the new name. Empty → "Give your trip a name first."
+- Colour: the swatch changes at once; a failure shows "Couldn't change the colour. Check your connection and try again."
+- Delete: removes the trip's place photos and album files from storage first (`removeTripPhotos`), then the trip (days, places, votes, plans, expenses, settlements and album rows cascade). You land on `/` and the trip is gone.
 - Anyone else looking at the trip when it is deleted is sent to `/` (live, via `useTripLive`).
+- Opening the URL for a trip you're not in: "This trip doesn't exist, or you're not a member of it."
 
 ## Driving it
 
-1. Sign in as Aarav, `New trip`, name it `<PREFIX>settings`, open it from the list.
-2. `Trip settings` → `Trip name` → select all, type `<PREFIX>renamed` → `Save name` → trip hero shows the new name.
-3. `Trip settings` → `Delete trip` → `Yes, delete forever` → URL `/`.
-4. `db.mjs trips aarav@dev.test` no longer lists it.
+1. Sign in as Aarav, create `<PREFIX>settings` ([create-trip](create-trip.md)) and `Go to the trip`.
+2. `Trip settings` → triple-click `Trip name`, type `<PREFIX>renamed` → `Save name` → the Trip tab shows the new name.
+3. `Trip settings` → `Coral` → the radio is selected; `db.mjs trips aarav@dev.test` shows `color: "coral"`.
+4. `Delete trip` → `Yes, delete forever` → URL `/`; `db.mjs trips aarav@dev.test` no longer lists it.
 
 ## Gotchas
 
+- The Danger zone text still says deleting removes "the trip, days, places and votes"; plans, expenses and photos go too.
 - `.env.local` may point at a LAN IP, which `db.mjs` refuses. Run it with `EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321`.
-- Stacked screens (trip page + settings) each subscribe to realtime; `useTripLive` gives every subscription its own channel name, otherwise supabase-js throws "cannot add postgres_changes callbacks after subscribe()".
 - RLS hides rows you can't delete instead of erroring, so `deleteTrip` checks that a row came back.
 
-Last proven: 2026-11-11 (Aarav rename + delete, DB rows).
+Last proven: not yet on the redesigned sheet (last run on the old UI: 2026-11-11).

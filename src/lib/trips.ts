@@ -18,7 +18,25 @@ export type Trip = {
   created_at: string;
   locked_start: string | null;
   locked_end: string | null;
+  /** Dates the organiser set up front instead of a vote; both or neither. Locking keeps them as a default. */
+  fixed_start: string | null;
+  fixed_end: string | null;
 };
+
+/** The numbers behind a home card's chip and Pip line, from `trip_summaries()`. Never names. */
+export type TripSummary = {
+  trip_id: string;
+  members: number;
+  /** How many members have marked at least one free day. */
+  marked: number;
+  i_marked: boolean;
+  /** How many members have voted for at least one place. */
+  voters: number;
+  i_voted: boolean;
+  places: number;
+};
+
+const TRIP_COLUMNS = 'id, name, color, status, invite_code, created_at, locked_start, locked_end, fixed_start, fixed_end';
 
 /** The trip's cover picture on the home screen: the locked place's photo, else the most-voted place's. */
 export type TripCover = { tripId: string; path: string | null; url: string };
@@ -27,8 +45,12 @@ type CoverRow = { trip_id: string; image_path: string | null; image_url: string 
 
 // NOTE: direct Supabase calls for now. The offline-first local store replaces these in a later step.
 
-export async function createTrip(name: string, color: TripColor) {
-  const { data, error } = await supabase.from('trips').insert({ name, color }).select().single();
+/** Creates a trip (I become its organiser). `fixed` sets the dates up front instead of a vote. */
+export async function createTrip(name: string, color: TripColor, fixed?: { start: string; end: string } | null) {
+  const row: { name: string; color: TripColor; fixed_start?: string; fixed_end?: string } = fixed
+    ? { name, color, fixed_start: fixed.start, fixed_end: fixed.end }
+    : { name, color };
+  const { data, error } = await supabase.from('trips').insert(row).select().single();
   if (error) throw error;
   return data as Trip;
 }
@@ -67,6 +89,30 @@ export async function invitePreview(code: string): Promise<InvitePreview | null>
   return row ?? null;
 }
 
+/**
+ * The invite code in whatever was pasted: the code from an invite link (`…/invite/<code>`, including
+ * `huddle://invite/<code>`), otherwise the trimmed text.
+ */
+export function parseInviteCode(input: string): string {
+  const trimmed = input.trim();
+  const m = trimmed.match(/invite\/([^/?#\s]+)/i);
+  if (!m) return trimmed;
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    return m[1];
+  }
+}
+
+export type NudgeKind = 'days' | 'vote';
+
+/** The message behind "Nudge them". Counts only, never names, so it can't leak hidden marking. */
+export function nudgeMessage(tripName: string, kind: NudgeKind, link: string) {
+  return kind === 'days'
+    ? `Quick nudge: mark the days you're free for "${tripName}" on Huddle: ${link}`
+    : `Quick nudge: vote on where to go for "${tripName}" on Huddle: ${link}`;
+}
+
 export function inviteMessage(tripName: string, code: string) {
   return `Join "${tripName}" on Huddle! Use code ${code}, or open ${inviteLink(code)}`;
 }
@@ -90,26 +136,34 @@ export async function resolveCovers(rows: CoverRow[]): Promise<Map<string, TripC
 export function useTrips() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [covers, setCovers] = useState<Map<string, TripCover>>(new Map());
+  const [summaries, setSummaries] = useState<Map<string, TripSummary>>(new Map());
+  const [photoCounts, setPhotoCounts] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [{ data, error }, coverRes] = await Promise.all([
-      supabase
-        .from('trips')
-        .select('id, name, color, status, invite_code, created_at, locked_start, locked_end')
-        .order('created_at', { ascending: false }),
+    const [{ data, error }, coverRes, summaryRes, statsRes] = await Promise.all([
+      supabase.from('trips').select(TRIP_COLUMNS).order('created_at', { ascending: false }),
       supabase.from('trip_covers').select('trip_id, image_path, image_url'),
+      supabase.rpc('trip_summaries'),
+      supabase.from('trip_stats').select('trip_id, photo_count'),
     ]);
-    setError(error ? "Couldn't load your trips. Pull to retry." : null);
+    setError(error ? "Couldn't load your trips. Check your connection and try again." : null);
     if (data) setTrips(data as Trip[]);
+    // Summaries and photo counts only feed chips and Pip's line; on failure the cards keep the last ones.
+    if (!summaryRes.error && summaryRes.data) {
+      setSummaries(new Map((summaryRes.data as TripSummary[]).map((r) => [r.trip_id, r])));
+    }
+    if (!statsRes.error && statsRes.data) {
+      setPhotoCounts(new Map((statsRes.data as { trip_id: string; photo_count: number }[]).map((r) => [r.trip_id, Number(r.photo_count)])));
+    }
     // Covers are decoration: if they fail to load, the cards keep their trip colour.
     if (!coverRes.error) setCovers(await resolveCovers((coverRes.data ?? []) as CoverRow[]));
     setLoading(false);
   }, []);
 
   // Callers trigger `refresh` (e.g. via useFocusEffect) so the list reloads when a screen regains focus.
-  return { trips, covers, loading, error, refresh };
+  return { trips, covers, summaries, photoCounts, loading, error, refresh };
 }
 
 export type TripMember = {
@@ -118,6 +172,7 @@ export type TripMember = {
   display_name: string;
   avatar_url: string | null;
   avatar_color: TripColor | null;
+  joined_at: string;
 };
 
 export type TripDetail = Trip & {
@@ -126,6 +181,8 @@ export type TripDetail = Trip & {
   locked_destination_id: string | null;
   /** Whether members can see who marked each day. Off means counts only. */
   show_who_marked: boolean;
+  /** ISO 4217 code for the trip's money, e.g. 'INR'. */
+  currency: string;
   members: TripMember[];
   /** Ranked: most votes first. */
   destinations: Destination[];
@@ -133,11 +190,14 @@ export type TripDetail = Trip & {
   availabilityCount: number;
   /** The days that suit the most people, best first. */
   bestDays: BestRange[];
+  /** Whether I've marked at least one free day (false when no `myId` was given). */
+  iMarked: boolean;
 };
 
 type MemberRow = {
   user_id: string;
   role: TripMember['role'];
+  joined_at: string;
   profiles: { display_name: string; avatar_url: string | null; avatar_color: TripColor | null } | null;
 };
 
@@ -156,21 +216,29 @@ export function useTrip(id: string | undefined, myId?: string) {
       setLoading(false);
       return;
     }
-    const [tripRes, membersRes, destRes, votesRes, countsRes, markedRes] = await Promise.all([
+    const [tripRes, membersRes, destRes, votesRes, countsRes, markedRes, mineRes] = await Promise.all([
       supabase
         .from('trips')
-        .select('id, name, color, status, invite_code, created_at, created_by, locked_start, locked_end, locked_destination_id, show_who_marked')
+        .select(`${TRIP_COLUMNS}, created_by, locked_destination_id, show_who_marked, currency`)
         .eq('id', id)
         .maybeSingle(),
-      supabase.from('trip_members').select('user_id, role, profiles(display_name, avatar_url, avatar_color)').eq('trip_id', id).order('joined_at'),
+      supabase
+        .from('trip_members')
+        .select('user_id, role, joined_at, profiles(display_name, avatar_url, avatar_color)')
+        .eq('trip_id', id)
+        .order('joined_at'),
       supabase.from('destinations').select(DESTINATION_COLUMNS).eq('trip_id', id),
       supabase.from('votes').select('destination_id, user_id').eq('trip_id', id),
       // Counts and a headcount rather than rows, so this works when the trip hides who marked what.
       supabase.from('day_counts').select('day, free').eq('trip_id', id),
       supabase.rpc('marked_member_count', { t: id }),
+      // Only my own rows: whether I've marked anything, which is visible whatever the trip's setting.
+      myId
+        ? supabase.from('availability').select('day').eq('trip_id', id).eq('user_id', myId).limit(1)
+        : Promise.resolve({ data: [] as { day: string }[], error: null }),
     ]);
 
-    const failed = tripRes.error ?? membersRes.error ?? destRes.error ?? votesRes.error ?? countsRes.error ?? markedRes.error;
+    const failed = tripRes.error ?? membersRes.error ?? destRes.error ?? votesRes.error ?? countsRes.error ?? markedRes.error ?? mineRes.error;
     setError(failed ? "Couldn't load this trip. Check your connection and try again." : null);
 
     if (!failed) {
@@ -183,6 +251,7 @@ export function useTrip(id: string | undefined, myId?: string) {
         const members = ((membersRes.data ?? []) as unknown as MemberRow[]).map((m) => ({
           user_id: m.user_id,
           role: m.role,
+          joined_at: m.joined_at,
           display_name: m.profiles?.display_name ?? 'Traveller',
           avatar_url: m.profiles?.avatar_url ?? null,
           avatar_color: m.profiles?.avatar_color ?? null,
@@ -190,11 +259,12 @@ export function useTrip(id: string | undefined, myId?: string) {
         members.sort((a, b) => Number(b.role === 'organiser') - Number(a.role === 'organiser'));
         const places = await withPhotos((destRes.data ?? []) as DestinationRow[]);
         setTrip({
-          ...(tripRes.data as Omit<TripDetail, 'members' | 'destinations' | 'availabilityCount' | 'bestDays'>),
+          ...(tripRes.data as Omit<TripDetail, 'members' | 'destinations' | 'availabilityCount' | 'bestDays' | 'iMarked'>),
           members,
           destinations: rankDestinations(places, votesRes.data ?? [], myId),
           availabilityCount: Number(markedRes.data ?? 0),
           bestDays: bestRanges(counts, today()),
+          iMarked: (mineRes.data?.length ?? 0) > 0,
         });
       }
     }
@@ -211,9 +281,19 @@ export async function setShowWhoMarked(id: string, show: boolean) {
   if (!data?.length) throw new Error('Not changed');
 }
 
-export async function renameTrip(id: string, name: string) {
-  const { error } = await supabase.from('trips').update({ name }).eq('id', id);
+export type TripPatch = Partial<{ name: string; color: TripColor; fixed_start: string | null; fixed_end: string | null }>;
+
+/**
+ * Changes a trip's name, colour or fixed dates (organisers only; RLS enforces it). Pass both fixed dates,
+ * or both as null to go back to letting the group vote.
+ */
+export async function updateTrip(id: string, patch: TripPatch) {
+  const { error } = await supabase.from('trips').update(patch).eq('id', id);
   if (error) throw error;
+}
+
+export async function renameTrip(id: string, name: string) {
+  await updateTrip(id, { name });
 }
 
 /**
@@ -254,4 +334,17 @@ export async function removeMember(tripId: string, userId: string) {
   const { data, error } = await supabase.from('trip_members').delete().eq('trip_id', tripId).eq('user_id', userId).select('user_id');
   if (error) throw error;
   if (!data?.length) throw new Error('Not removed');
+}
+
+/** The name of the place with the most votes (earliest suggested wins a tie), or null when nobody has voted. */
+export async function leadingPlaceName(tripId: string): Promise<string | null> {
+  const [destRes, votesRes] = await Promise.all([
+    supabase.from('destinations').select('id, title, created_at').eq('trip_id', tripId),
+    supabase.from('votes').select('destination_id, user_id').eq('trip_id', tripId),
+  ]);
+  if (destRes.error || votesRes.error || !destRes.data?.length) return null;
+  // Ranking only reads id and created_at, so the slim rows rank the same as full ones.
+  const rows = destRes.data as unknown as DestinationRow[];
+  const [top] = rankDestinations(rows, (votesRes.data ?? []) as { destination_id: string; user_id: string }[], undefined);
+  return top && top.voteCount > 0 ? top.title : null;
 }

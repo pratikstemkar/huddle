@@ -39,10 +39,10 @@ Enable both in your hosted Supabase project under Authentication → Providers, 
 
 ## Layout
 
-- `src/app` Expo Router routes only: `sign-in`, `(app)/index` (home), `(app)/new-trip`, `(app)/join`, `(app)/trip/[id]/…` (detail, days, places, suggest, lock, settings)
-- `src/theme` Sunset club tokens (light and dark), `useTheme`, `useReducedMotion`
-- `src/components` UI building blocks; base components in `src/components/ui`
-- `src/lib` Supabase client, auth (Google, Apple, dev), trips, availability, realtime
+- `src/app` Expo Router routes only: `sign-in`, `invite/[code]`, `privacy`, the home tabs `(app)/(home)/` (`index` Trips, `join` Invites, `profile` You), `(app)/new-trip`, `(app)/delete-account`, and `(app)/trip/[id]/`: the tabs `(tabs)/` (`index` Trip, `vote`, `plan`, `split`, `photos`) plus the sheets and pages `invite`, `suggest`, `lock`, `locked`, `settings`, `plan-item`, `expense`, `settle`, `photo/[photoId]` (`days` and `places` only redirect to `vote`)
+- `src/theme` Huddle design tokens (light and dark, five trip colours), `useTheme`, `useReducedMotion`
+- `src/components` UI building blocks; base components in `src/components/ui`, Pip in `src/components/pip`, the tab bars in `src/components/nav`
+- `src/lib` Supabase client, auth (Google, Apple, dev), trips, availability, realtime, itinerary, split and money, trip photos, calendar, trip status and stats
 - `supabase/` schema with row-level security, seed users
 - `__tests__/` Jest tests mirroring `src/`; `test-utils/` holds the fake Supabase client and fixtures
 

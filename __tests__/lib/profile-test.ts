@@ -5,7 +5,7 @@ import { queriesFor, queueResult } from '../../test-utils/supabase-mock';
 
 describe('useMyProfile', () => {
   it('loads my profile row', async () => {
-    const row = { id: 'me', display_name: 'Aarav', avatar_url: null, avatar_color: 'plum' };
+    const row = { id: 'me', display_name: 'Aarav', avatar_url: null, avatar_color: 'iris' };
     queueResult('profiles', { data: row });
     const { result } = await renderHook(() => useMyProfile('me'));
     expect(result.current.loading).toBe(true);
@@ -38,9 +38,9 @@ describe('useMyProfile', () => {
 describe('updateProfile', () => {
   it('updates my row', async () => {
     queueResult('profiles', { data: [{ id: 'me' }] });
-    await updateProfile('me', { display_name: 'Ravi', avatar_color: 'sky' });
+    await updateProfile('me', { display_name: 'Ravi', avatar_color: 'mint' });
     expect(queriesFor('profiles')[0].ops).toEqual([
-      ['update', [{ display_name: 'Ravi', avatar_color: 'sky' }]],
+      ['update', [{ display_name: 'Ravi', avatar_color: 'mint' }]],
       ['eq', ['id', 'me']],
       ['select', ['id']],
     ]);

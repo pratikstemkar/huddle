@@ -1,7 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+
+import { formatDay, today } from '@/lib/dates';
 
 import { router, setParams } from '../../test-utils/expo-router-mock';
 import { MEMBER, ORGANISER, TRIP_ID, sessionFor, trip, tripState } from '../../test-utils/fixtures';
+import { queueResult } from '../../test-utils/supabase-mock';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
 
@@ -18,12 +21,43 @@ jest.mock('@/lib/trips', () => ({
   unlockTrip: jest.fn(),
   removeMember: jest.fn(),
   setShowWhoMarked: jest.fn(),
+  updateTrip: jest.fn(),
 }));
 
-const { renameTrip, deleteTrip, leaveTrip, unlockTrip, removeMember, setShowWhoMarked } = require('@/lib/trips') as Record<
-  'renameTrip' | 'deleteTrip' | 'leaveTrip' | 'unlockTrip' | 'removeMember' | 'setShowWhoMarked',
+const { renameTrip, deleteTrip, leaveTrip, unlockTrip, removeMember, setShowWhoMarked, updateTrip } = require('@/lib/trips') as Record<
+  'renameTrip' | 'deleteTrip' | 'leaveTrip' | 'unlockTrip' | 'removeMember' | 'setShowWhoMarked' | 'updateTrip',
   jest.Mock
 >;
+
+/** Meera owes Aarav ₹600: one ₹1,200 dinner, split two ways. Queued a few times for repeat loads. */
+function queueDebt() {
+  const expense = {
+    id: 'e1',
+    trip_id: TRIP_ID,
+    title: 'Dinner',
+    category: 'food',
+    amount_minor: 120000,
+    paid_by: ORGANISER,
+    created_by: ORGANISER,
+    created_at: '2027-01-03T00:00:00Z',
+    expense_shares: [
+      { user_id: ORGANISER, share_minor: 60000 },
+      { user_id: MEMBER, share_minor: 60000 },
+    ],
+  };
+  for (let i = 0; i < 4; i++) {
+    queueResult('expenses', { data: [expense] });
+    queueResult('settlements', { data: [] });
+  }
+}
+
+/** The 10th and 12th of next month, so they're never in the past. */
+function nextMonthDays() {
+  const now = new Date(`${today()}T00:00:00Z`);
+  const day = (d: number) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, d)).toISOString().slice(0, 10);
+  return [day(10), day(12)];
+}
+const dayLabel = (day: string) => formatDay(day, { weekday: 'long', day: 'numeric', month: 'long' });
 const { useTripLive } = require('@/lib/realtime') as { useTripLive: jest.Mock };
 const TripSettings = require('@/app/(app)/trip/[id]/settings').default as () => React.JSX.Element;
 
@@ -37,7 +71,10 @@ describe('Trip settings', () => {
   it('loads on focus and follows live updates', async () => {
     await render(<TripSettings />);
     expect(mockState.refresh).toHaveBeenCalled();
-    expect(useTripLive).toHaveBeenCalledWith(TRIP_ID, mockState.refresh);
+    expect(useTripLive).toHaveBeenCalledWith(TRIP_ID, expect.any(Function));
+    mockState.refresh.mockClear();
+    await act(async () => useTripLive.mock.calls[0][1]());
+    expect(mockState.refresh).toHaveBeenCalled();
   });
 
   it('shows a spinner while loading', async () => {
@@ -93,6 +130,69 @@ describe('Trip settings', () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Save name' }));
       expect(await screen.findByText("Couldn't rename the trip. Check your connection and try again.")).toBeTruthy();
       expect(router.back).not.toHaveBeenCalled();
+    });
+
+    it('changes the colour', async () => {
+      updateTrip.mockResolvedValue(undefined);
+      await render(<TripSettings />);
+      expect(screen.getByRole('radio', { name: 'Coral' }).props.accessibilityState).toEqual({ selected: true });
+      await fireEvent.press(screen.getByRole('radio', { name: 'Mint' }));
+      expect(updateTrip).toHaveBeenCalledWith(TRIP_ID, { color: 'mint' });
+      expect(mockState.refresh).toHaveBeenCalled();
+    });
+
+    it('shows an error when the colour change fails', async () => {
+      updateTrip.mockRejectedValue(new Error('offline'));
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('radio', { name: 'Mint' }));
+      expect(await screen.findByText("Couldn't change the colour. Check your connection and try again.")).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Coral' }).props.accessibilityState).toEqual({ selected: true });
+    });
+
+    it('sets fixed dates with the range picker', async () => {
+      updateTrip.mockResolvedValue(undefined);
+      const [start, end] = nextMonthDays();
+      await render(<TripSettings />);
+      expect(screen.getByRole('radio', { name: "Let the group vote, Everyone marks the days they're free" }).props.accessibilityState).toEqual({
+        selected: true,
+      });
+      await fireEvent.press(screen.getByRole('radio', { name: 'I already know, Set the dates yourself' }));
+      expect(screen.queryByRole('button', { name: 'Save dates' })).toBeNull();
+      await fireEvent.press(screen.getByRole('button', { name: 'Next month' }));
+      await fireEvent.press(screen.getByRole('button', { name: dayLabel(start) }));
+      await fireEvent.press(screen.getByRole('button', { name: dayLabel(end) }));
+      await fireEvent.press(screen.getByRole('button', { name: 'Save dates' }));
+      expect(updateTrip).toHaveBeenCalledWith(TRIP_ID, { fixed_start: start, fixed_end: end });
+      expect(mockState.refresh).toHaveBeenCalled();
+    });
+
+    it('goes back to a group vote by clearing the fixed dates', async () => {
+      updateTrip.mockResolvedValue(undefined);
+      mockState = tripState(trip({ fixed_start: '2027-05-01', fixed_end: '2027-05-03' }));
+      await render(<TripSettings />);
+      expect(screen.getByRole('radio', { name: 'I already know, Set the dates yourself' }).props.accessibilityState).toEqual({ selected: true });
+      await fireEvent.press(screen.getByRole('radio', { name: "Let the group vote, Everyone marks the days they're free" }));
+      expect(updateTrip).toHaveBeenCalledWith(TRIP_ID, { fixed_start: null, fixed_end: null });
+    });
+
+    it('shows an error when changing the dates fails', async () => {
+      updateTrip.mockRejectedValue(new Error('offline'));
+      mockState = tripState(trip({ fixed_start: '2027-05-01', fixed_end: '2027-05-03' }));
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('radio', { name: "Let the group vote, Everyone marks the days they're free" }));
+      expect(await screen.findByText("Couldn't change the dates. Check your connection and try again.")).toBeTruthy();
+    });
+
+    it('hides the dates once the trip is locked', async () => {
+      mockState = tripState(trip({ status: 'locked' }));
+      await render(<TripSettings />);
+      expect(screen.queryByRole('radio', { name: 'I already know, Set the dates yourself' })).toBeNull();
+    });
+
+    it('opens the lock sheet while planning', async () => {
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Lock in the plan' }));
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[id]/lock', params: { id: TRIP_ID } });
     });
 
     it("can't leave, only delete", async () => {
@@ -194,10 +294,19 @@ describe('Trip settings', () => {
       expect(screen.queryByRole('button', { name: 'Remove Aarav' })).toBeNull();
     });
 
-    it('hides the section when there is nobody to remove', async () => {
-      mockState = tripState(trip({ members: [{ user_id: ORGANISER, role: 'organiser', display_name: 'Aarav', avatar_url: null, avatar_color: null }] }));
+    it('lists just the organiser when there is nobody to remove', async () => {
+      mockState = tripState(trip({ members: [{ user_id: ORGANISER, role: 'organiser', joined_at: '2027-01-01T00:00:00Z', display_name: 'Aarav', avatar_url: null, avatar_color: null }] }));
       await render(<TripSettings />);
-      expect(screen.queryByText('Members')).toBeNull();
+      expect(screen.getByText('Aarav (you)')).toBeTruthy();
+      expect(screen.getByText('Organiser')).toBeTruthy();
+      expect(screen.queryByRole('button', { name: /^Remove/ })).toBeNull();
+    });
+
+    it("says what someone still owes before removing them", async () => {
+      queueDebt();
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Remove Meera' }));
+      expect(await screen.findByText(/^Meera still owes ₹\s?600\. It stays on the trip's Split\.$/)).toBeTruthy();
     });
 
     it('asks first, then removes and reloads', async () => {
@@ -242,6 +351,18 @@ describe('Trip settings', () => {
       expect(screen.queryByRole('button', { name: /^Remove/ })).toBeNull();
       expect(screen.queryByLabelText('Trip name')).toBeNull();
       expect(screen.queryByRole('button', { name: 'Delete trip' })).toBeNull();
+    });
+
+    it('says only the organiser can change the trip', async () => {
+      await render(<TripSettings />);
+      expect(screen.getByText('Pip says Only Aarav can change this trip.')).toBeTruthy();
+    });
+
+    it('mentions what I still owe when leaving', async () => {
+      queueDebt();
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Leave trip' }));
+      expect(await screen.findByText(/^You still owe ₹\s?600\. It stays on the trip's Split\.$/)).toBeTruthy();
     });
 
     it('asks before leaving, and can stay', async () => {

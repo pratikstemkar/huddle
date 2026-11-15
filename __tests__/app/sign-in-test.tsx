@@ -57,14 +57,17 @@ describe('Sign in screen', () => {
 
   it('shows the pitch and the sign-in options', async () => {
     await render(<SignIn />);
-    expect(screen.getByText('Plan the trip, not the group chat.')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Huddle' })).toBeTruthy();
+    expect(screen.getByText(/Plan trips with your people\./)).toBeTruthy();
+    expect(screen.getByRole('image', { name: 'Pip the penguin waving hello' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy();
     expect(screen.queryByText('Supabase isn’t set up yet')).toBeNull();
   });
 
   it('links to the privacy policy', async () => {
     await render(<SignIn />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Privacy policy' }));
+    expect(screen.getByText(/By continuing you agree to the/)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('link', { name: 'privacy policy' }));
     expect(router.push).toHaveBeenCalledWith('/privacy');
   });
 
@@ -78,7 +81,8 @@ describe('Sign in screen', () => {
     mockAuth.signInWithGoogle.mockRejectedValueOnce(new Error('Popup closed'));
     await render(<SignIn />);
     await fireEvent.press(screen.getByRole('button', { name: 'Continue with Google' }));
-    expect(await screen.findByText('Popup closed')).toBeTruthy();
+    const message = await screen.findByText('Popup closed');
+    expect(message.props.accessibilityLiveRegion).toBe('polite');
     await fireEvent.press(screen.getByRole('button', { name: 'Continue with Google' }));
     await waitFor(() => expect(screen.queryByText('Popup closed')).toBeNull());
   });

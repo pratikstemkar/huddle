@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
-import { queueResult } from '../../test-utils/supabase-mock';
+import { queueResult, supabase } from '../../test-utils/supabase-mock';
 import { router, setParams } from '../../test-utils/expo-router-mock';
 
 jest.mock('expo-router', () => ({
@@ -30,13 +30,33 @@ describe('Invite link', () => {
     expect(screen.getByText('Redirect {"pathname":"/join","params":{"code":"goa2027"}}')).toBeTruthy();
   });
 
+  it('sends signed-in people home when the link has no code', async () => {
+    mockSession = { user: { id: 'u1' } };
+    setParams({});
+    await render(<Invite />);
+    expect(screen.getByText('Redirect "/"')).toBeTruthy();
+  });
+
+  it('shows a thinking Pip and a spinner while the invite loads', async () => {
+    (supabase.rpc as jest.Mock).mockReturnValueOnce(new Promise(() => {}));
+    setParams({ code: 'goa2027' });
+    await render(<Invite />);
+    expect(screen.getByLabelText('Loading the invite')).toBeTruthy();
+    expect(screen.getByRole('image', { name: 'Pip the penguin, thinking' })).toBeTruthy();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
   it('shows signed-out visitors the trip and keeps the code for after sign-in', async () => {
-    queueResult('rpc:invite_preview', { data: [{ name: 'Goa in March', color: 'sunset', members: 2 }] });
+    queueResult('rpc:invite_preview', { data: [{ name: 'Goa in March', color: 'coral', members: 2 }] });
     setParams({ code: ' goa2027 ' });
     await render(<Invite />);
 
     expect(await screen.findByText('Goa in March')).toBeTruthy();
+    expect(screen.getByText('You’re invited to')).toBeTruthy();
     expect(screen.getByText('2 people are going')).toBeTruthy();
+    expect(screen.getByRole('image', { name: 'Pip the penguin waving hello' })).toBeTruthy();
+    // Pip's scarf takes the trip colour (coral); react-native-svg stores it as an ARGB integer.
+    expect(JSON.stringify(screen.toJSON())).toContain(String((0xff000000 + 0xff8a4c) >>> 0));
     expect(await AsyncStorage.getItem('huddle.pendingInvite')).toBe('goa2027');
 
     await fireEvent.press(screen.getByRole('button', { name: 'Sign in to join' }));
@@ -50,7 +70,8 @@ describe('Invite link', () => {
 
     expect(await screen.findByText('This invite doesn’t work')).toBeTruthy();
     await waitFor(async () => expect(await AsyncStorage.getItem('huddle.pendingInvite')).toBeNull());
-    expect(screen.getByRole('button', { name: 'Go to Huddle' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Go to Huddle' }));
+    expect(router.replace).toHaveBeenCalledWith('/sign-in');
   });
 
   it('still lets them sign in when the preview cannot load', async () => {
@@ -59,6 +80,7 @@ describe('Invite link', () => {
     await render(<Invite />);
 
     expect(await screen.findByText('a trip on Huddle')).toBeTruthy();
+    expect(screen.queryByText(/people are going/)).toBeNull();
     expect(await AsyncStorage.getItem('huddle.pendingInvite')).toBe('goa2027');
     expect(screen.getByRole('button', { name: 'Sign in to join' })).toBeTruthy();
   });

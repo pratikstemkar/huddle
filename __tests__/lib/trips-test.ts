@@ -9,11 +9,14 @@ import {
   joinTrip,
   leaveTrip,
   lockTrip,
+  nudgeMessage,
+  parseInviteCode,
   planMessage,
   removeMember,
   renameTrip,
   setShowWhoMarked,
   unlockTrip,
+  updateTrip,
   useTrip,
   useTrips,
 } from '@/lib/trips';
@@ -29,17 +32,23 @@ const TRIP_ID = 'aaaaaaaa-0000-0000-0000-000000000001';
 describe('createTrip', () => {
   it('inserts the trip and returns the new row', async () => {
     queueResult('trips', { data: { id: TRIP_ID, name: 'Goa' } });
-    await expect(createTrip('Goa', 'sunset')).resolves.toEqual({ id: TRIP_ID, name: 'Goa' });
+    await expect(createTrip('Goa', 'coral')).resolves.toEqual({ id: TRIP_ID, name: 'Goa' });
     expect(queriesFor('trips')[0].ops).toEqual([
-      ['insert', [{ name: 'Goa', color: 'sunset' }]],
+      ['insert', [{ name: 'Goa', color: 'coral' }]],
       ['select', []],
       ['single', []],
     ]);
   });
 
+  it('sets fixed dates when the organiser already knows them', async () => {
+    queueResult('trips', { data: { id: TRIP_ID } });
+    await createTrip('Goa', 'iris', { start: '2027-03-12', end: '2027-03-14' });
+    expect(queriesFor('trips')[0].ops[0]).toEqual(['insert', [{ name: 'Goa', color: 'iris', fixed_start: '2027-03-12', fixed_end: '2027-03-14' }]]);
+  });
+
   it('throws the database error', async () => {
     queueResult('trips', { error: { message: 'too long' } });
-    await expect(createTrip('x', 'sky')).rejects.toEqual({ message: 'too long' });
+    await expect(createTrip('x', 'mint')).rejects.toEqual({ message: 'too long' });
   });
 });
 
@@ -63,8 +72,8 @@ describe('joinTrip', () => {
 
 describe('invitePreview', () => {
   it('returns the trip a code points to', async () => {
-    queueResult('rpc:invite_preview', { data: [{ name: 'Goa in March', color: 'sunset', members: 2 }] });
-    await expect(invitePreview('goa2027')).resolves.toEqual({ name: 'Goa in March', color: 'sunset', members: 2 });
+    queueResult('rpc:invite_preview', { data: [{ name: 'Goa in March', color: 'coral', members: 2 }] });
+    await expect(invitePreview('goa2027')).resolves.toEqual({ name: 'Goa in March', color: 'coral', members: 2 });
     expect(rpcCalls).toContainEqual({ name: 'invite_preview', args: { code: 'goa2027' } });
   });
 
@@ -133,6 +142,54 @@ describe('renameTrip', () => {
   });
 });
 
+describe('updateTrip', () => {
+  it('updates only the fields given', async () => {
+    await updateTrip(TRIP_ID, { color: 'mint', fixed_start: '2027-03-12', fixed_end: '2027-03-14' });
+    expect(queriesFor('trips')[0].ops).toEqual([
+      ['update', [{ color: 'mint', fixed_start: '2027-03-12', fixed_end: '2027-03-14' }]],
+      ['eq', ['id', TRIP_ID]],
+    ]);
+  });
+
+  it('clears fixed dates to let the group vote again', async () => {
+    await updateTrip(TRIP_ID, { fixed_start: null, fixed_end: null });
+    expect(queriesFor('trips')[0].ops[0]).toEqual(['update', [{ fixed_start: null, fixed_end: null }]]);
+  });
+
+  it('throws the database error', async () => {
+    queueResult('trips', { error: { message: 'check violation' } });
+    await expect(updateTrip(TRIP_ID, { name: 'x' })).rejects.toEqual({ message: 'check violation' });
+  });
+});
+
+describe('parseInviteCode', () => {
+  it.each([
+    ['goa2027', 'goa2027'],
+    ['  goa2027 \n', 'goa2027'],
+    ['https://huddle.example.app/invite/goa2027', 'goa2027'],
+    ['http://localhost:8091/invite/goa2027?ref=x#top', 'goa2027'],
+    ['huddle://invite/goa2027', 'goa2027'],
+    ['Join "Goa" on Huddle! Use code goa2027, or open https://h.app/invite/goa2027', 'goa2027'],
+    ['https://h.app/invite/a%20b', 'a b'],
+    ['https://h.app/invite/%E0%A4%A', '%E0%A4%A'],
+    ['', ''],
+  ])('reads %p as %p', (input, code) => {
+    expect(parseInviteCode(input)).toBe(code);
+  });
+});
+
+describe('nudgeMessage', () => {
+  it('asks people to mark their days', () => {
+    expect(nudgeMessage('Goa', 'days', 'https://h.app/invite/goa2027')).toBe(
+      'Quick nudge: mark the days you\'re free for "Goa" on Huddle: https://h.app/invite/goa2027',
+    );
+  });
+
+  it('asks people to vote', () => {
+    expect(nudgeMessage('Goa', 'vote', 'https://h.app/invite/goa2027')).toBe('Quick nudge: vote on where to go for "Goa" on Huddle: https://h.app/invite/goa2027');
+  });
+});
+
 describe('setShowWhoMarked', () => {
   it('updates the trip setting', async () => {
     queueResult('trips', { data: [{ id: TRIP_ID }] });
@@ -174,11 +231,20 @@ describe('deleteTrip', () => {
     expect([...photoState.files]).toEqual(['file:///docs/huddle/trips/other/places/d2.jpg']);
   });
 
-  it("removes the trip's uploaded photos before the trip", async () => {
-    queueResult('storage:list', { data: [{ name: 'd1.jpg' }] });
+  it("removes the trip's place photos and album before the trip", async () => {
+    queueResult('storage:list', { data: [{ name: 'd1.jpg' }] }, { data: [{ name: 'p1.jpg' }, { name: 'p1-thumb.jpg' }] });
     queueResult('trips', { data: [{ id: TRIP_ID }] });
     await deleteTrip(TRIP_ID);
-    expect(storageCallsFor('remove')[0].args[0]).toEqual([`${TRIP_ID}/d1.jpg`]);
+    expect(storageCallsFor('remove').map((c) => [c.bucket, c.args[0]])).toEqual([
+      ['place-photos', [`${TRIP_ID}/d1.jpg`]],
+      ['trip-photos', [`${TRIP_ID}/p1.jpg`, `${TRIP_ID}/p1-thumb.jpg`]],
+    ]);
+  });
+
+  it('keeps the trip when its album cannot be removed', async () => {
+    queueResult('storage:list', { data: [] }, { error: { message: 'offline' } });
+    await expect(deleteTrip(TRIP_ID)).rejects.toEqual({ message: 'offline' });
+    expect(queriesFor('trips')).toHaveLength(0);
   });
 
   it('keeps the trip when its photos cannot be removed', async () => {
@@ -304,6 +370,36 @@ describe('useTrips', () => {
     expect(storageCallsFor('createSignedUrls')[0].args[0]).toEqual(['t1/a.jpg', 't3/gone.jpg']);
   });
 
+  it('selects the fixed dates', async () => {
+    const { result } = await renderHook(() => useTrips());
+    await act(() => result.current.refresh());
+    expect(queriesFor('trips')[0].ops[0]).toEqual(['select', ['id, name, color, status, invite_code, created_at, locked_start, locked_end, fixed_start, fixed_end']]);
+  });
+
+  it('loads the summaries and photo counts behind each card', async () => {
+    queueResult('trips', { data: [{ id: 't1' }] });
+    const summary = { trip_id: 't1', members: 3, marked: 1, i_marked: true, voters: 2, i_voted: false, places: 2 };
+    queueResult('rpc:trip_summaries', { data: [summary] });
+    queueResult('trip_stats', { data: [{ trip_id: 't1', photo_count: 12 }] });
+    const { result } = await renderHook(() => useTrips());
+    await act(() => result.current.refresh());
+    expect(result.current.summaries.get('t1')).toEqual(summary);
+    expect(result.current.photoCounts.get('t1')).toBe(12);
+    expect(queriesFor('trip_stats')[0].ops).toEqual([['select', ['trip_id, photo_count']]]);
+  });
+
+  it('keeps the last summaries and counts when they fail to load', async () => {
+    queueResult('trips', { data: [{ id: 't1' }] }, { data: [{ id: 't1' }] });
+    queueResult('rpc:trip_summaries', { data: [{ trip_id: 't1', members: 2 }] }, { error: { message: 'offline' } });
+    queueResult('trip_stats', { data: [{ trip_id: 't1', photo_count: 3 }] }, { error: { message: 'offline' } });
+    const { result } = await renderHook(() => useTrips());
+    await act(() => result.current.refresh());
+    await act(() => result.current.refresh());
+    expect(result.current.error).toBeNull();
+    expect(result.current.summaries.get('t1')).toEqual({ trip_id: 't1', members: 2 });
+    expect(result.current.photoCounts.get('t1')).toBe(3);
+  });
+
   it('still shows the trips when covers fail to load', async () => {
     queueResult('trips', { data: [{ id: 't1' }] });
     queueResult('trip_covers', { error: { message: 'offline' } });
@@ -319,7 +415,7 @@ describe('useTrips', () => {
     await act(() => result.current.refresh());
     await act(() => result.current.refresh());
     expect(result.current.trips).toEqual([{ id: TRIP_ID }]);
-    expect(result.current.error).toBe("Couldn't load your trips. Pull to retry.");
+    expect(result.current.error).toBe("Couldn't load your trips. Check your connection and try again.");
   });
 });
 
@@ -334,9 +430,9 @@ describe('useTrip', () => {
       'trip_members',
       overrides.trip_members ?? {
         data: [
-          { user_id: 'm1', role: 'member', profiles: { display_name: 'Meera', avatar_url: null, avatar_color: 'plum' } },
-          { user_id: 'org', role: 'organiser', profiles: { display_name: 'Aarav', avatar_url: 'https://a.png', avatar_color: null } },
-          { user_id: 'm2', role: 'member', profiles: null },
+          { user_id: 'm1', role: 'member', joined_at: '2027-01-02', profiles: { display_name: 'Meera', avatar_url: null, avatar_color: 'iris' } },
+          { user_id: 'org', role: 'organiser', joined_at: '2027-01-01', profiles: { display_name: 'Aarav', avatar_url: 'https://a.png', avatar_color: null } },
+          { user_id: 'm2', role: 'member', joined_at: '2027-01-03', profiles: null },
         ],
       },
     );
@@ -373,9 +469,9 @@ describe('useTrip', () => {
     expect(result.current.error).toBeNull();
     expect(t.name).toBe('Goa');
     expect(t.members).toEqual([
-      { user_id: 'org', role: 'organiser', display_name: 'Aarav', avatar_url: 'https://a.png', avatar_color: null },
-      { user_id: 'm1', role: 'member', display_name: 'Meera', avatar_url: null, avatar_color: 'plum' },
-      { user_id: 'm2', role: 'member', display_name: 'Traveller', avatar_url: null, avatar_color: null },
+      { user_id: 'org', role: 'organiser', joined_at: '2027-01-01', display_name: 'Aarav', avatar_url: 'https://a.png', avatar_color: null },
+      { user_id: 'm1', role: 'member', joined_at: '2027-01-02', display_name: 'Meera', avatar_url: null, avatar_color: 'iris' },
+      { user_id: 'm2', role: 'member', joined_at: '2027-01-03', display_name: 'Traveller', avatar_url: null, avatar_color: null },
     ]);
     expect(t.destinations.map((d) => [d.id, d.iVoted])).toEqual([
       ['d2', true],
@@ -384,12 +480,56 @@ describe('useTrip', () => {
     expect(t.availabilityCount).toBe(2);
     expect(t.bestDays).toEqual([{ start: '2027-03-10', end: '2027-03-10', free: 2 }]);
     // Counts and a headcount, never other people's rows, so this works when names are hidden.
-    expect(queriesFor('availability')).toHaveLength(0);
+    // The only availability query is for my own rows.
+    expect(queriesFor('availability').map((q) => q.ops)).toEqual([
+      [
+        ['select', ['day']],
+        ['eq', ['trip_id', TRIP_ID]],
+        ['eq', ['user_id', 'me']],
+        ['limit', [1]],
+      ],
+    ]);
     expect(queriesFor('day_counts')[0].ops).toEqual([
       ['select', ['day, free']],
       ['eq', ['trip_id', TRIP_ID]],
     ]);
     expect(rpcCalls).toContainEqual({ name: 'marked_member_count', args: { t: TRIP_ID } });
+    expect(t.iMarked).toBe(false);
+  });
+
+  it('selects the fixed dates, currency and join times', async () => {
+    queueTrip();
+    const { result } = await renderHook(() => useTrip(TRIP_ID, 'me'));
+    await act(() => result.current.refresh());
+    expect(queriesFor('trips')[0].ops[0]).toEqual([
+      'select',
+      ['id, name, color, status, invite_code, created_at, locked_start, locked_end, fixed_start, fixed_end, created_by, locked_destination_id, show_who_marked, currency'],
+    ]);
+    expect(queriesFor('trip_members')[0].ops[0]).toEqual(['select', ['user_id, role, joined_at, profiles(display_name, avatar_url, avatar_color)']]);
+  });
+
+  it('knows when I have marked a day', async () => {
+    queueTrip();
+    queueResult('availability', { data: [{ day: '2027-03-10' }] });
+    const { result } = await renderHook(() => useTrip(TRIP_ID, 'me'));
+    await act(() => result.current.refresh());
+    expect(result.current.trip!.iMarked).toBe(true);
+  });
+
+  it("doesn't look for my days without my id", async () => {
+    queueTrip();
+    const { result } = await renderHook(() => useTrip(TRIP_ID));
+    await act(() => result.current.refresh());
+    expect(queriesFor('availability')).toHaveLength(0);
+    expect(result.current.trip!.iMarked).toBe(false);
+  });
+
+  it('shows an error when my days fail to load', async () => {
+    queueTrip();
+    queueResult('availability', { error: { message: 'offline' } });
+    const { result } = await renderHook(() => useTrip(TRIP_ID, 'me'));
+    await act(() => result.current.refresh());
+    expect(result.current.error).toBe("Couldn't load this trip. Check your connection and try again.");
   });
 
   it('shows an error when the headcount fails', async () => {
