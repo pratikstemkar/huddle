@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, render, screen, waitFor } from '@testing-library/react-native';
 import { AccessibilityInfo, Text } from 'react-native';
 
 import { WelcomeScene } from '@/components/welcome-scene';
@@ -55,15 +55,13 @@ describe('WelcomeScene', () => {
 
   it('holds the clouds still under reduced motion', async () => {
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
-    jest.useFakeTimers();
     await render(
       <WelcomeScene>
         <Text>x</Text>
       </WelcomeScene>,
     );
-    await act(async () => jest.advanceTimersByTime(100));
-    expect(clouds().map(translateX)).toEqual([0, 0]);
-    await act(async () => jest.advanceTimersByTime(500));
+    await waitFor(() => expect(clouds().map(translateX)).toEqual([0, 0]));
+    await act(() => new Promise((resolve) => setTimeout(resolve, 300)));
     expect(clouds().map(translateX)).toEqual([0, 0]);
   });
 
