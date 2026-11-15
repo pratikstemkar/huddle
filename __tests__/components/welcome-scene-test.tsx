@@ -40,19 +40,6 @@ describe('WelcomeScene', () => {
     expect(JSON.stringify(screen.toJSON())).toContain(CLOUD);
   });
 
-  it('drifts the clouds', async () => {
-    jest.useFakeTimers();
-    await render(
-      <WelcomeScene>
-        <Text>x</Text>
-      </WelcomeScene>,
-    );
-    const before = clouds().map(translateX);
-    await act(async () => jest.advanceTimersByTime(500));
-    const after = clouds().map(translateX);
-    expect(after[0]).not.toEqual(before[0]);
-  });
-
   it('holds the clouds still under reduced motion', async () => {
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
     await render(
@@ -73,5 +60,21 @@ describe('WelcomeScene', () => {
     );
     expect(screen.getByRole('image', { name: 'Pip thinking' })).toBeTruthy();
     expect(JSON.stringify(screen.toJSON())).toContain(svgColor('#3CC5A5'));
+  });
+
+  // Runs last: its endless animations live on fake timers, so it unmounts before timers go back to real ones.
+  it('drifts the clouds', async () => {
+    jest.useFakeTimers();
+    const { unmount } = await render(
+      <WelcomeScene>
+        <Text>x</Text>
+      </WelcomeScene>,
+    );
+    const before = clouds().map(translateX);
+    await act(async () => jest.advanceTimersByTime(500));
+    const after = clouds().map(translateX);
+    expect(after[0]).not.toEqual(before[0]);
+    await unmount();
+    jest.clearAllTimers();
   });
 });
