@@ -155,9 +155,24 @@ describe('Tab bars', () => {
 
   it('starts a new trip from the Pip button on the main tabs', async () => {
     await renderRouter(routes, { initialUrl: '/' });
-    await fireEvent.press(screen.getByRole('button', { name: 'Pip: start a new trip' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'New trip' }));
     expect(await screen.findByText('New trip screen')).toBeTruthy();
     expect(screen).toHavePathname('/new-trip');
+  });
+
+  it('tells people what the Pip button does with a bubble and a + badge', async () => {
+    await renderRouter(routes, { initialUrl: '/' });
+    expect(screen.getByTestId('pip-hint', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByText('New trip', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it("shows the focused trip screen's Pip label in the bubble", async () => {
+    await renderRouter(routes, { initialUrl: '/trip/abc' });
+    expect(screen.queryByTestId('pip-hint', { includeHiddenElements: true })).toBeNull();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Vote' }));
+    expect(await screen.findByText('Vote screen')).toBeTruthy();
+    expect(screen.getByTestId('pip-hint', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByText('Suggest a place', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('shows the trip tabs and moves between them', async () => {

@@ -2,7 +2,9 @@ import * as Haptics from 'expo-haptics';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
+import { PipHint } from '@/components/nav/pip-hint';
 import { Pip } from '@/components/pip/pip';
+import { Icon } from '@/components/ui/icon';
 import { NAV_HEIGHT, shadow, springs } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
@@ -11,10 +13,14 @@ type Props = {
   accessibilityHint?: string;
   /** Nothing to do: Pip just bobs. */
   onPress?: () => void;
+  /** Says what the button does in a bubble that pops up and fades; also marks the button with a "+". */
+  hint?: string;
+  /** Change it to show the bubble again, e.g. the current path. */
+  hintKey?: string;
 };
 
 /** The round beak-yellow Pip button at the end of the tab bar. */
-export function PipButton({ accessibilityLabel, accessibilityHint, onPress }: Props) {
+export function PipButton({ accessibilityLabel, accessibilityHint, onPress, hint, hintKey }: Props) {
   const { colors, scheme } = useTheme();
   const reduced = useReducedMotion();
   const bob = useSharedValue(0);
@@ -38,11 +44,18 @@ export function PipButton({ accessibilityLabel, accessibilityHint, onPress }: Pr
           <Pip crop="peek" size={56} />
         </Animated.View>
       </Pressable>
+      {hint ? (
+        <View pointerEvents="none" style={[styles.badge, { backgroundColor: colors.ink, borderColor: colors.beak }]}>
+          <Icon name="plus" size={12} color={colors.onInk} />
+        </View>
+      ) : null}
+      {hint ? <PipHint label={hint} replayKey={hintKey} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  badge: { position: 'absolute', top: -2, right: -2, width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   shadow: { width: NAV_HEIGHT, height: NAV_HEIGHT, borderRadius: NAV_HEIGHT / 2, flexShrink: 0 },
   button: {
     width: NAV_HEIGHT,

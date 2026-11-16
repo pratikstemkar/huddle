@@ -1,9 +1,11 @@
-import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
+import { usePathname } from 'expo-router';
+import { TabList, Tabs, TabTrigger } from 'expo-router/ui';
 import { StyleSheet } from 'react-native';
 
 import { PillTabBar, type PillTab } from '@/components/nav/pill-tab-bar';
 import { PipActionProvider, usePipAction } from '@/components/nav/pip-action';
 import { PipButton } from '@/components/nav/pip-button';
+import { SlidingTabSlot } from '@/components/nav/sliding-tab-slot';
 import { useTheme } from '@/theme/use-theme';
 import { useTripId } from '@/components/nav/trip-id';
 
@@ -17,7 +19,8 @@ const TABS: PillTab[] = [
 
 function AskPip() {
   const { action } = usePipAction();
-  return <PipButton accessibilityLabel="Ask Pip" accessibilityHint={action?.label} onPress={action?.onPress} />;
+  const pathname = usePathname();
+  return <PipButton accessibilityLabel="Ask Pip" accessibilityHint={action?.label} hint={action?.label} hintKey={pathname} onPress={action?.onPress} />;
 }
 
 export default function TripTabsLayout() {
@@ -26,7 +29,7 @@ export default function TripTabsLayout() {
   return (
     <PipActionProvider>
       <Tabs style={[styles.root, { backgroundColor: colors.bg }]}>
-        <TabSlot />
+        <SlidingTabSlot />
         <PillTabBar accessibilityLabel="Trip" tabs={TABS} trailing={<AskPip />} />
         <TabList style={styles.hidden}>
           <TabTrigger name="index" href={{ pathname: '/trip/[id]', params: { id } }} />
