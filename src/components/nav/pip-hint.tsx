@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
@@ -8,18 +8,27 @@ import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
 const SHOW_MS = 4000;
 
+/** One of these, at random, each time the bubble pops up; never the same line twice in a row. */
+function pickLine(lines: readonly string[], not?: string) {
+  const options = lines.length > 1 ? lines.filter((l) => l !== not) : lines;
+  return options[Math.floor(Math.random() * options.length)];
+}
+
 type Props = {
-  /** What the Pip button does, e.g. "New trip". */
-  label: string;
+  /** Lines Pip may say; each should make clear what the button does, e.g. "New trip". */
+  labels: readonly string[];
   /** Change it to pop the bubble up again (a new tab, a new screen). */
   replayKey?: string;
 };
 
 /** A speech bubble above the Pip button: pops in, stays a few seconds, then fades. */
-export function PipHint({ label, replayKey }: Props) {
+export function PipHint({ labels, replayKey }: Props) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const shown = useSharedValue(0);
+  const [{ key, label }, setLine] = useState(() => ({ key: replayKey, label: pickLine(labels) }));
+  // A new key (tab change) means a new line.
+  if (key !== replayKey) setLine({ key: replayKey, label: pickLine(labels, label) });
 
   useEffect(() => {
     if (reduced) {
@@ -27,7 +36,7 @@ export function PipHint({ label, replayKey }: Props) {
       return;
     }
     shown.set(withSequence(withSpring(1, springs.bouncy), withDelay(SHOW_MS, withTiming(0, { duration: 250 }))));
-  }, [label, replayKey, reduced, shown]);
+  }, [label, key, reduced, shown]);
 
   const style = useAnimatedStyle(() => ({
     opacity: Math.min(1, shown.get()),

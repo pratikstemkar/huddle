@@ -163,7 +163,8 @@ describe('Tab bars', () => {
   it('tells people what the Pip button does with a bubble and a + badge', async () => {
     await renderRouter(routes, { initialUrl: '/' });
     expect(screen.getByTestId('pip-hint', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByText('New trip', { includeHiddenElements: true })).toBeTruthy();
+    const lines = ['New trip', 'Plan a new trip?', 'Where to next?', 'Start a trip with your gang', 'Got a trip in mind?', 'Tap me to plan a trip'];
+    expect(lines.some((l) => screen.queryByText(l, { includeHiddenElements: true }))).toBe(true);
   });
 
   it('shows the trip tabs and moves between them', async () => {

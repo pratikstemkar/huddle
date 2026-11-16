@@ -13,14 +13,14 @@ type Props = {
   accessibilityHint?: string;
   /** Nothing to do: Pip just bobs. */
   onPress?: () => void;
-  /** Says what the button does in a bubble that pops up and fades; also marks the button with a "+". */
-  hint?: string;
+  /** Lines Pip says in a bubble that pops up and fades, one picked at random each time; also marks the button with a "+". */
+  hints?: readonly string[];
   /** Change it to show the bubble again, e.g. the current path. */
   hintKey?: string;
 };
 
 /** The round beak-yellow Pip button at the end of the tab bar. */
-export function PipButton({ accessibilityLabel, accessibilityHint, onPress, hint, hintKey }: Props) {
+export function PipButton({ accessibilityLabel, accessibilityHint, onPress, hints, hintKey }: Props) {
   const { colors, scheme } = useTheme();
   const reduced = useReducedMotion();
   const bob = useSharedValue(0);
@@ -44,12 +44,12 @@ export function PipButton({ accessibilityLabel, accessibilityHint, onPress, hint
           <Pip crop="peek" size={56} />
         </Animated.View>
       </Pressable>
-      {hint ? (
+      {hints?.length ? (
         <View pointerEvents="none" style={[styles.badge, { backgroundColor: colors.ink, borderColor: colors.beak }]}>
           <Icon name="plus" size={12} color={colors.onInk} />
         </View>
       ) : null}
-      {hint ? <PipHint label={hint} replayKey={hintKey} /> : null}
+      {hints?.length ? <PipHint labels={hints} replayKey={hintKey} /> : null}
     </View>
   );
 }

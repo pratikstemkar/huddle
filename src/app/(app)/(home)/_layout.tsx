@@ -13,6 +13,9 @@ const TABS: PillTab[] = [
   { name: 'profile', label: 'You', icon: 'you' },
 ];
 
+/** Pip's bubble lines: all of them say the button starts a trip. */
+const PIP_LINES = ['New trip', 'Plan a new trip?', 'Where to next?', 'Start a trip with your gang', 'Got a trip in mind?', 'Tap me to plan a trip'];
+
 export default function HomeTabsLayout() {
   const { colors } = useTheme();
   const pathname = usePathname();
@@ -26,7 +29,7 @@ export default function HomeTabsLayout() {
           <PipButton
             accessibilityLabel="New trip"
             accessibilityHint="Pip: start a new trip"
-            hint="New trip"
+            hints={PIP_LINES}
             hintKey={pathname}
             onPress={() => router.push('/new-trip')}
           />

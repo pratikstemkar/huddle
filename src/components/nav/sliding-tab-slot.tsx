@@ -88,7 +88,8 @@ export function SlidingTabSlot() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, position: 'relative', height: '100%', overflow: 'hidden' },
+  // Absolute, so the screen sliding out and the one sliding in overlap instead of stacking.
+  screen: { ...StyleSheet.absoluteFill, overflow: 'hidden' },
   hidden: { display: 'none' },
   fill: { flex: 1 },
 });
