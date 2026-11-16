@@ -155,9 +155,16 @@ describe('Tab bars', () => {
 
   it('starts a new trip from the Pip button on the main tabs', async () => {
     await renderRouter(routes, { initialUrl: '/' });
-    await fireEvent.press(screen.getByRole('button', { name: 'Pip: start a new trip' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'New trip' }));
     expect(await screen.findByText('New trip screen')).toBeTruthy();
     expect(screen).toHavePathname('/new-trip');
+  });
+
+  it('tells people what the Pip button does with a bubble and a + badge', async () => {
+    await renderRouter(routes, { initialUrl: '/' });
+    expect(screen.getByTestId('pip-hint', { includeHiddenElements: true })).toBeTruthy();
+    const lines = ['New trip', 'Plan a new trip?', 'Where to next?', 'Start a trip with your gang', 'Got a trip in mind?', 'Tap me to plan a trip'];
+    expect(lines.some((l) => screen.queryByText(l, { includeHiddenElements: true }))).toBe(true);
   });
 
   it('shows the trip tabs and moves between them', async () => {
@@ -169,17 +176,10 @@ describe('Tab bars', () => {
     expect(screen).toHavePathname('/trip/abc/plan');
   });
 
-  it("runs the focused tab's Pip action, and does nothing harmful without one", async () => {
+  it('keeps the Pip button off the trip tabs', async () => {
     await renderRouter(routes, { initialUrl: '/trip/abc' });
-    await fireEvent.press(screen.getByRole('button', { name: 'Ask Pip' }));
-    expect(askPip).not.toHaveBeenCalled();
-    expect(screen.getByText('Trip screen')).toBeTruthy();
-
-    await fireEvent.press(screen.getByRole('tab', { name: 'Vote' }));
-    expect(await screen.findByText('Vote screen')).toBeTruthy();
-    expect(screen).toHavePathname('/trip/abc/vote');
-    await fireEvent.press(screen.getByRole('button', { name: 'Ask Pip' }));
-    expect(askPip).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Ask Pip' })).toBeNull();
+    expect(screen.queryByTestId('pip-hint', { includeHiddenElements: true })).toBeNull();
   });
 
   it('opens trip sheets over the tabs', async () => {
