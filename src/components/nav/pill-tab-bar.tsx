@@ -2,12 +2,13 @@ import * as Haptics from 'expo-haptics';
 import { TabTrigger, type TabTriggerSlotProps } from 'expo-router/ui';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, {
+  Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { MAX_CONTENT_WIDTH, NAV_BOTTOM, NAV_HEIGHT, NAV_INSET, radius, shadow, space, springs } from '@/theme/tokens';
+import { MAX_CONTENT_WIDTH, NAV_BOTTOM, NAV_HEIGHT, NAV_INSET, radius, shadow, space } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
 export type PillTab = { name: string; label: string; icon: IconName };
@@ -80,9 +81,9 @@ export function PillTabBar({ tabs, trailing, accessibilityLabel }: Props) {
   useEffect(() => {
     if (slotWidth === 0) return;
     const target = PILL_PAD + focusedIndex * slotWidth;
-    // First measurement jumps; later changes spring, so quick taps reverse mid-slide.
+    // First measurement jumps; later changes glide without overshoot, so quick taps reverse cleanly.
     if (reduced || x.get() === 0) x.set(target);
-    else x.set(withSpring(target, springs.gentle));
+    else x.set(withTiming(target, { duration: 220, easing: Easing.out(Easing.cubic) }));
   }, [focusedIndex, slotWidth, reduced, x]);
 
   const highlight = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }] }));

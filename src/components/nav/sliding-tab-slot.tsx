@@ -6,7 +6,9 @@ import { Screen } from 'react-native-screens';
 
 import { useReducedMotion } from '@/theme/use-theme';
 
-const DURATION = 280;
+const DURATION = 240;
+/** How far a screen travels, as a share of the width: a short nudge plus fade, not a full-page swipe. */
+const TRAVEL = 0.25;
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
 
 /** Which tab is showing and which one it replaced; shared by all screens of one slot. */
@@ -23,10 +25,10 @@ type SlideProps = {
 
 /** One tab screen. Stays mounted and visible while it slides out, then hides like any inactive tab. */
 function SlideScreen({ index, isFocused, navRef, enterDir, children }: SlideProps) {
-  const { width } = useWindowDimensions();
+  const travel = useWindowDimensions().width * TRAVEL;
   const reduced = useReducedMotion();
   const [visible, setVisible] = useState(isFocused);
-  const x = useSharedValue(enterDir * width);
+  const x = useSharedValue(enterDir * travel);
 
   if (isFocused && !visible) setVisible(true);
 
@@ -35,7 +37,7 @@ function SlideScreen({ index, isFocused, navRef, enterDir, children }: SlideProp
   useLayoutEffect(() => {
     if (!isFocused || navRef.current.cur === index) return;
     navRef.current = { cur: index, prev: navRef.current.cur };
-    x.set(Math.sign(index - navRef.current.prev) * width);
+    x.set(Math.sign(index - navRef.current.prev) * travel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFocused]);
 
@@ -48,7 +50,7 @@ function SlideScreen({ index, isFocused, navRef, enterDir, children }: SlideProp
     } else {
       // No motion (reduced motion, or no direction) still goes through a timing so the hide happens in its callback.
       const instant = reduced || dir === 0;
-      x.set(withTiming(instant ? 0 : dir * width, { duration: instant ? 0 : DURATION, easing: EASE }, (done) => {
+      x.set(withTiming(instant ? 0 : dir * travel, { duration: instant ? 0 : DURATION, easing: EASE }, (done) => {
         if (done) runOnJS(setVisible)(false);
       }));
     }
@@ -56,7 +58,10 @@ function SlideScreen({ index, isFocused, navRef, enterDir, children }: SlideProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFocused]);
 
-  const style = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }] }));
+  const style = useAnimatedStyle(() => ({
+    opacity: 1 - Math.min(1, Math.abs(x.get()) / travel) * 0.85,
+    transform: [{ translateX: x.get() }],
+  }));
   return (
     <Screen enabled activityState={isFocused || visible ? 2 : 0} freezeOnBlur={false} style={[styles.screen, !(isFocused || visible) && styles.hidden]}>
       <Animated.View style={[styles.fill, style]}>{children}</Animated.View>

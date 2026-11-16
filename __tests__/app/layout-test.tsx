@@ -166,15 +166,6 @@ describe('Tab bars', () => {
     expect(screen.getByText('New trip', { includeHiddenElements: true })).toBeTruthy();
   });
 
-  it("shows the focused trip screen's Pip label in the bubble", async () => {
-    await renderRouter(routes, { initialUrl: '/trip/abc' });
-    expect(screen.queryByTestId('pip-hint', { includeHiddenElements: true })).toBeNull();
-    await fireEvent.press(screen.getByRole('tab', { name: 'Vote' }));
-    expect(await screen.findByText('Vote screen')).toBeTruthy();
-    expect(screen.getByTestId('pip-hint', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByText('Suggest a place', { includeHiddenElements: true })).toBeTruthy();
-  });
-
   it('shows the trip tabs and moves between them', async () => {
     await renderRouter(routes, { initialUrl: '/trip/abc' });
     expect(screen.getByText('Trip screen')).toBeTruthy();
@@ -184,17 +175,10 @@ describe('Tab bars', () => {
     expect(screen).toHavePathname('/trip/abc/plan');
   });
 
-  it("runs the focused tab's Pip action, and does nothing harmful without one", async () => {
+  it('keeps the Pip button off the trip tabs', async () => {
     await renderRouter(routes, { initialUrl: '/trip/abc' });
-    await fireEvent.press(screen.getByRole('button', { name: 'Ask Pip' }));
-    expect(askPip).not.toHaveBeenCalled();
-    expect(screen.getByText('Trip screen')).toBeTruthy();
-
-    await fireEvent.press(screen.getByRole('tab', { name: 'Vote' }));
-    expect(await screen.findByText('Vote screen')).toBeTruthy();
-    expect(screen).toHavePathname('/trip/abc/vote');
-    await fireEvent.press(screen.getByRole('button', { name: 'Ask Pip' }));
-    expect(askPip).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Ask Pip' })).toBeNull();
+    expect(screen.queryByTestId('pip-hint', { includeHiddenElements: true })).toBeNull();
   });
 
   it('opens trip sheets over the tabs', async () => {
