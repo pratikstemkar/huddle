@@ -1,0 +1,53 @@
+{
+	"brandHue": 238,
+	"mode": "light",
+	"frame": "white",
+	"outDir": "./screenshots",
+	"canvas": { "art": "gradient", "range": [1, 3] },
+	"panels": [
+		{
+			"template": "hero",
+			"headline": "Group trips, planned in one place",
+			"subline": "Dates, places and plans your whole group can see",
+			"screenshot": "./screens/01-trips.png",
+			"icon": "../../assets/images/icon.png",
+			"tilt": -5
+		},
+		{
+			"template": "device-framed",
+			"headline": "See the days <em>everyone</em> is free",
+			"subline": "The brighter the day, the more friends can make it",
+			"screenshot": "./screens/02-dates.png",
+			"callout": {
+				"crop": [0.045, 0.332, 0.91, 0.094],
+				"side": "right",
+				"y": 0.425,
+				"scale": 1.15
+			}
+		},
+		{
+			"template": "device-framed",
+			"headline": "Vote on where to go",
+			"subline": "Everyone suggests places, and the leader shows up top",
+			"screenshot": "./screens/03-places.png"
+		},
+		{
+			"template": "device-framed",
+			"headline": "Lock in the plan together",
+			"subline": "The organiser picks the winning dates and place",
+			"screenshot": "./screens/04-locked.png"
+		},
+		{
+			"template": "device-framed",
+			"headline": "Fill in each day of the trip",
+			"subline": "Times, places and notes in one shared plan",
+			"screenshot": "./screens/05-plan.png"
+		},
+		{
+			"template": "device-framed",
+			"headline": "Split costs and see who owes what",
+			"subline": "Add an expense and Huddle works out the rest",
+			"screenshot": "./screens/06-split.png"
+		}
+	]
+}

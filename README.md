@@ -3,30 +3,40 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/iPhone-coming%20soon-FF5A36?style=for-the-badge&logo=apple&logoColor=white" alt="iPhone: coming soon">
-  <img src="https://img.shields.io/badge/Android-coming%20soon-0FA3A3?style=for-the-badge&logo=android&logoColor=white" alt="Android: coming soon">
-  <img src="https://img.shields.io/badge/Web-coming%20soon-FFC531?style=for-the-badge&logo=googlechrome&logoColor=1B1420" alt="Web: coming soon">
+  <a href="https://github.com/pratikstemkar/huddle/releases/latest"><img src="https://img.shields.io/badge/Android-download%20the%20app-5257E8?style=for-the-badge&logo=android&logoColor=white" alt="Android: download the app"></a>
+  <img src="https://img.shields.io/badge/iPhone-coming%20soon-1B1420?style=for-the-badge&logo=apple&logoColor=white" alt="iPhone: coming soon">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/price-free%20forever-1B1420?style=flat-square" alt="Free forever">
-  <img src="https://img.shields.io/badge/open%20source-%E2%9D%A4-FF5A36?style=flat-square" alt="Open source">
-  <img src="https://img.shields.io/badge/ads-none-0FA3A3?style=flat-square" alt="No ads">
+  <img src="https://img.shields.io/badge/price-free-1B1420?style=flat-square" alt="Free">
+  <img src="https://img.shields.io/badge/ads-none-5257E8?style=flat-square" alt="No ads">
+</p>
+
+<p align="center">
+  <img src="docs/store/screenshots/01-hero.png" alt="Group trips, planned in one place" width="32%">
+  <img src="docs/store/screenshots/02-device-framed.png" alt="See the days everyone is free" width="32%">
+  <img src="docs/store/screenshots/03-device-framed.png" alt="Vote on where to go" width="32%">
+</p>
+<p align="center">
+  <img src="docs/store/screenshots/04-device-framed.png" alt="Lock in the plan together" width="32%">
+  <img src="docs/store/screenshots/05-device-framed.png" alt="Fill in each day of the trip" width="32%">
+  <img src="docs/store/screenshots/06-device-framed.png" alt="Split costs and see who owes what" width="32%">
 </p>
 
 ---
 
 ## Say goodbye to the group-chat chaos
 
-You know how it goes. Someone says *"we should all go on a trip!"* and everyone loves the idea. Then come 300 messages: who's free when, where should we go, did anyone see the link I sent, wait, which weekend did we pick again?
+Someone says *"we should all go on a trip!"* and everyone loves the idea. Then come 300 messages. Who's free when? Where should we go? Did anyone see the link I sent? Wait, which weekend did we pick?
 
-**Huddle fixes that.** It's one simple place where your group:
+**Huddle fixes that.** It's one place where your group:
 
-> **picks the dates** everyone can make,
-> **votes on where to go**, and
-> **locks in the plan** so nobody's left wondering.
+> **finds the dates** everyone can make,
+> **votes on where to go**,
+> **plans each day** of the trip, and
+> **splits the costs** without awkward maths.
 
-No spreadsheets. No endless polls. No scrolling back through the chat.
+No spreadsheets, no endless polls, no scrolling back through the chat.
 
 ---
 
@@ -37,7 +47,7 @@ No spreadsheets. No endless polls. No scrolling back through the chat.
     <td align="center" width="25%">
       <h1>1</h1>
       <h3>Start a trip</h3>
-      Give it a name like <i>"Goa with the gang"</i> and pick a colour you like.
+      Give it a name like <i>"Goa with the gang"</i> and pick a colour.
     </td>
     <td align="center" width="25%">
       <h1>2</h1>
@@ -46,8 +56,8 @@ No spreadsheets. No endless polls. No scrolling back through the chat.
     </td>
     <td align="center" width="25%">
       <h1>3</h1>
-      <h3>Plan together</h3>
-      Everyone taps the days they're free and suggests places to go. Then you all vote.
+      <h3>Decide together</h3>
+      Everyone taps the days they're free and suggests places. Then you all vote.
     </td>
     <td align="center" width="25%">
       <h1>4</h1>
@@ -59,37 +69,72 @@ No spreadsheets. No endless polls. No scrolling back through the chat.
 
 ---
 
-## Features
+## What you can do
 
 ### Find dates that work for everyone
 
-Tap the days you're free on a simple calendar. Switch to the **Everyone** view to see a colourful heat map: the brighter the day, the more friends are free. Huddle even shows the **best days** for the group, so you don't have to work it out yourself.
+Tap the days you're free on a simple calendar. Switch to **Everyone** to see the whole group at once: the brighter the day, the more friends can make it. Huddle points out the **best days** for you, so nobody has to count.
 
-### Suggest places to go
+### Suggest places and vote
 
-Got a dream destination? Add it with a short note, a link (an Instagram reel, a blog post, a hotel page) and a picture so everyone can see why it's a great idea.
+Add a place you'd love to go, with a short note, a link (an Instagram reel, a blog post, a hotel page) and a photo. Everyone votes for as many places as they like, and the **leader** sits at the top.
 
-### Vote on your favourites
+### Lock in the plan
 
-Everyone votes for as many places as they like. The **leader** shows right on the trip page, so you always know what's winning.
+When the group has decided, the organiser locks in the dates and the place. Everyone gets a trip summary to share, and you can add the trip to your calendar in one tap.
+
+### Plan each day
+
+Add what's happening on each day of the trip: sunrise at the beach at 6, lunch at 1. Everyone sees the same plan, and Huddle shows which days are still empty.
+
+### Split the costs
+
+Add what you spent and who it was for. Huddle works out who owes whom, and you can mark it settled once someone pays you back.
+
+### Share your photos
+
+Put everyone's trip photos in one shared album, sorted by day.
 
 ### See changes as they happen
 
-When a friend marks their days or casts a vote, you see it **instantly**. No refreshing, no "did you see my message?".
-
-### Lock in the final plan
-
-Once the group has spoken, the trip organiser locks in the dates and the destination. Huddle shows a neat **trip summary** you can share with everyone, and the dates appear on your trips list.
-
-### Know who's coming
-
-See everyone who has joined the trip at a glance.
+When a friend marks their days, votes or adds a plan, you see it straight away. No refreshing, no *"did you see my message?"*.
 
 ### Stay in control
 
-- Organisers can **rename** or **delete** a trip.
+- Organisers can **rename**, **re-plan** or **delete** a trip.
 - Plans changed? Anyone can **leave a trip** in one tap.
+- You can delete your account whenever you like.
 
-### Looks great day and night
+### Looks good day and night
 
-Huddle has a bright look with Pip the penguin as your guide, and switches to **dark mode** automatically when your phone does.
+Huddle has a bright, friendly look with Pip the penguin as your guide, and switches to **dark mode** when your phone does. Prefer one look all the time? Pick **Light** or **Dark** on the **You** tab.
+
+---
+
+## Get Huddle on your Android phone
+
+Huddle isn't on the Play Store yet, so you install it straight from this page. It takes about a minute.
+
+1. **On your Android phone**, open the [latest Huddle release](https://github.com/pratikstemkar/huddle/releases/latest).
+2. Scroll down to **Assets** and tap the file whose name ends in **`.apk`** (for example `huddle-1.1.0-….apk`). It will download.
+3. Open the downloaded file, from your notifications or your **Downloads** folder.
+4. If your phone says it can't install apps from this source, tap **Settings**, turn on **Allow from this source**, then go back. Phones ask this for any app that doesn't come from the Play Store.
+5. Tap **Install**, then **Open**.
+6. Sign in with Google and start your first trip.
+
+**Updates:** Huddle picks up most updates by itself the next time you open it. Now and then a bigger update comes out on the same releases page. Install it the same way and it replaces the old version. Your trips are kept.
+
+**iPhone:** coming soon.
+
+---
+
+## Questions
+
+**Does it cost anything?**
+No. Huddle is free and has no ads.
+
+**Do my friends need the app too?**
+Yes. Send them your trip's invite link or code and they can join once they have Huddle.
+
+**Who can see my trip?**
+Only the people in it. Anyone with your invite link can join, so share it with your group only.
