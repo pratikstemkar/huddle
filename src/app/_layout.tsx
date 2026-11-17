@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { useUpdateCheck } from '@/lib/use-update-check';
+import { ThemePreferenceProvider, useThemePreference } from '@/theme/theme-preference';
 import { useTheme } from '@/theme/use-theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -19,8 +20,9 @@ SplashScreen.preventAutoHideAsync();
 function RootStack() {
   const { session, loading } = useAuth();
   const { scheme, colors } = useTheme();
+  const { loaded: themeLoaded } = useThemePreference();
   const [fontsLoaded] = useFonts({ BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold });
-  const ready = fontsLoaded && !loading;
+  const ready = fontsLoaded && !loading && themeLoaded;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -58,9 +60,11 @@ export default function RootLayout() {
   useUpdateCheck();
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <RootStack />
-      </AuthProvider>
+      <ThemePreferenceProvider>
+        <AuthProvider>
+          <RootStack />
+        </AuthProvider>
+      </ThemePreferenceProvider>
     </GestureHandlerRootView>
   );
 }
