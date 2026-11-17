@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, useColorScheme } from 'react-native';
 
+import { resolveScheme, useThemePreference } from './theme-preference';
 import { palette, type Colors, type Scheme } from './tokens';
 
 export function useTheme(): { scheme: Scheme; colors: Colors } {
   // Web is a single-page app (no server rendering), so the system scheme is safe to read directly.
-  const scheme: Scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const system = useColorScheme();
+  const { preference } = useThemePreference();
+  const scheme = resolveScheme(preference, system);
   return { scheme, colors: palette[scheme] };
 }
 

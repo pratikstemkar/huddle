@@ -1,4 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, render, screen } from '@testing-library/react-native';
+
+import { ThemePreferenceProvider } from '@/theme/theme-preference';
 
 import { router } from '../../test-utils/expo-router-mock';
 import { sessionFor } from '../../test-utils/fixtures';
@@ -89,6 +92,19 @@ describe('Profile', () => {
     await fireEvent.press(screen.getByRole('radio', { name: 'Mint' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Save profile' }));
     expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Aarav Shah', avatar_color: 'mint', avatar_url: null });
+  });
+
+  it('switches the app theme and remembers it', async () => {
+    await AsyncStorage.clear();
+    await render(
+      <ThemePreferenceProvider>
+        <ProfileScreen />
+      </ThemePreferenceProvider>,
+    );
+    expect(await screen.findByRole('tab', { name: 'System', selected: true })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Dark' }));
+    expect(screen.getByRole('tab', { name: 'Dark', selected: true })).toBeTruthy();
+    expect(await AsyncStorage.getItem('huddle.theme')).toBe('dark');
   });
 
   it('signs out', async () => {

@@ -10,11 +10,19 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
+import { Segmented } from '@/components/ui/segmented';
 import { Text } from '@/components/ui/text';
 import { displayName, useAuth } from '@/lib/auth';
 import { MAX_NAME, updateProfile, useMyProfile } from '@/lib/profile';
+import { useThemePreference, type ThemePreference } from '@/theme/theme-preference';
 import { radius, space, toTripColor, tripTints, type TripColor } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
+
+const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
+  { value: 'system', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
 
 function Row({ label, onPress, danger, hint, last }: { label: string; onPress: () => void; danger?: boolean; hint?: string; last?: boolean }) {
   const { colors } = useTheme();
@@ -36,6 +44,7 @@ function Row({ label, onPress, danger, hint, last }: { label: string; onPress: (
 export default function ProfileScreen() {
   const { session, signOut } = useAuth();
   const { colors } = useTheme();
+  const { preference, setPreference } = useThemePreference();
   const userId = session?.user.id;
   const { profile, loading, refresh } = useMyProfile(userId);
 
@@ -154,6 +163,16 @@ export default function ProfileScreen() {
               Saved
             </Text>
           ) : null}
+        </View>
+
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.line }]}>
+          <View style={styles.group}>
+            <Text variant="calloutStrong">Appearance</Text>
+            <Segmented options={THEME_OPTIONS} value={preference} onChange={setPreference} />
+            <Text variant="caption" tone="secondary">
+              System follows your phone&apos;s light or dark setting.
+            </Text>
+          </View>
         </View>
 
         <View style={[styles.list, { backgroundColor: colors.card, borderColor: colors.line }]}>
