@@ -11,7 +11,7 @@ import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 import { GroupTile } from './group-tile';
 
-/** One group on the Groups tab: tap the top to open it, or start a trip with it from the button below. */
+/** One group on the Groups tab: tap the top to open it, or plan a hangout or start a trip with it from the buttons below. */
 export function GroupCard({ group }: { group: GroupCardData }) {
   const { colors } = useTheme();
   const sub = groupSub(group.members, group.trips);
@@ -45,20 +45,34 @@ export function GroupCard({ group }: { group: GroupCardData }) {
         </View>
         <Icon name="chevronRight" size={20} color={colors.textSecondary} />
       </Pressable>
-      <Button
-        label="Start a trip"
-        variant="secondary"
-        size="sm"
-        icon="trips"
-        accessibilityLabel={`Start a trip with ${group.name}`}
-        onPress={() => router.push({ pathname: '/new-trip', params: { group: group.id } })}
-      />
+      <View style={styles.actions}>
+        <Button
+          label="Hangout"
+          variant="secondary"
+          size="sm"
+          icon="coffee"
+          style={styles.action}
+          accessibilityLabel={`Plan a hangout with ${group.name}`}
+          onPress={() => router.push({ pathname: '/new-hangout', params: { group: group.id } })}
+        />
+        <Button
+          label="Trip"
+          variant="secondary"
+          size="sm"
+          icon="trips"
+          style={styles.action}
+          accessibilityLabel={`Start a trip with ${group.name}`}
+          onPress={() => router.push({ pathname: '/new-trip', params: { group: group.id } })}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: radius.card, padding: space.md, gap: space.s10 },
+  actions: { flexDirection: 'row', gap: space.sm },
+  action: { flex: 1 },
   top: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   body: { flex: 1, minWidth: 0, gap: space.xs },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },

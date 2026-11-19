@@ -11,6 +11,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
+import { hangoutStatusLine, useMyHangouts } from '@/lib/hangouts';
 import {
   groupInviteLink,
   peopleCount,
@@ -48,6 +49,8 @@ export default function GroupDetails() {
   const me = session?.user.id;
   const { colors } = useTheme();
   const { group, loading, error, refresh } = useGroup(id, me);
+  const { hangouts: myHangouts, refresh: refreshHangouts } = useMyHangouts();
+  const hangouts = myHangouts.filter((h) => h.group_id === id && h.status !== 'cancelled');
   const [open, setOpen] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -59,9 +62,13 @@ export default function GroupDetails() {
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh]),
+      refreshHangouts();
+    }, [refresh, refreshHangouts]),
   );
-  useGroupsLive(!!id, refresh);
+  useGroupsLive(!!id, () => {
+    refresh();
+    refreshHangouts();
+  });
 
   const run = async (fn: () => Promise<void>, after?: () => void) => {
     setBusy(true);
@@ -128,7 +135,36 @@ export default function GroupDetails() {
           </View>
         </View>
 
-        <Button label="Start a trip" icon="trips" onPress={() => router.push({ pathname: '/new-trip', params: { group: group.id } })} />
+        <View style={styles.startRow}>
+          <Button label="Plan a hangout" icon="coffee" style={styles.startButton} onPress={() => router.push({ pathname: '/new-hangout', params: { group: group.id } })} />
+          <Button label="Start a trip" icon="trips" variant="outline" style={styles.startButton} onPress={() => router.push({ pathname: '/new-trip', params: { group: group.id } })} />
+        </View>
+
+        {hangouts.length > 0 ? (
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.line }]}>
+            <Text variant="label" accessibilityRole="header">
+              Hangouts
+            </Text>
+            {hangouts.map((h) => (
+              <Pressable
+                key={h.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${h.name}, ${hangoutStatusLine(h)}`}
+                onPress={() => router.push({ pathname: '/hangout/[id]', params: { id: h.id } })}
+                style={styles.hangout}>
+                <View style={styles.memberText}>
+                  <Text variant="label" numberOfLines={1}>
+                    {h.name}
+                  </Text>
+                  <Text variant="caption" tone="secondary">
+                    {hangoutStatusLine(h)}
+                  </Text>
+                </View>
+                <Icon name="chevronRight" size={20} color={colors.textSecondary} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
 
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.line }]}>
           <View style={styles.cardHead}>
@@ -247,6 +283,9 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xl },
   centerText: { textAlign: 'center' },
+  startRow: { flexDirection: 'row', gap: space.sm },
+  startButton: { flex: 1 },
+  hangout: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: space.md },
   hero: { flexDirection: 'row', alignItems: 'center', gap: space.s14 },
   heroText: { flex: 1, minWidth: 0, gap: space.xxs },
   card: { borderWidth: 1, borderRadius: radius.card, paddingVertical: space.sm, paddingLeft: space.lg, paddingRight: space.sm },

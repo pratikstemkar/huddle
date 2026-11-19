@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/icon';
 import { IconButton } from '@/components/ui/icon-button';
 import { Text } from '@/components/ui/text';
 import { peopleCount, type GroupInvite } from '@/lib/groups';
+import type { HangoutListItem } from '@/lib/hangouts';
 import type { TripInvite } from '@/lib/trip-invites';
 import { onTripColor, radius, space, tripColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
@@ -54,6 +55,27 @@ export function TripInviteRow({ invite, busy, onJoin, onDecline }: { invite: Tri
       </View>
       <IconButton icon="close" accessibilityLabel={`Decline ${invite.trip_name}`} onPress={busy ? undefined : onDecline} />
       <Button label="Join" size="sm" loading={busy} accessibilityLabel={`Join ${invite.trip_name}`} onPress={onJoin} />
+    </View>
+  );
+}
+
+/** "Aarav asked when works for Dinner with the gang": open it to answer. */
+export function HangoutInviteRow({ hangout, onOpen }: { hangout: HangoutListItem; onOpen: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.beak }]}>
+      <View aria-hidden style={[styles.tripTile, { backgroundColor: colors.tint.plan }]}>
+        <Icon name="coffee" size={20} />
+      </View>
+      <View style={styles.body}>
+        <Text variant="callout" numberOfLines={2}>
+          <Text variant="calloutStrong">{hangout.from}</Text> {hangout.mode === 'find' ? 'asked when works for' : 'invited you to'} {hangout.name}
+        </Text>
+        <Text variant="caption" tone="secondary">
+          Hangout{hangout.group_name ? ` · ${hangout.group_name}` : ''}
+        </Text>
+      </View>
+      <Button label="Answer" size="sm" accessibilityLabel={`Answer: ${hangout.name}`} onPress={onOpen} />
     </View>
   );
 }
