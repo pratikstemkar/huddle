@@ -7,6 +7,7 @@ import { albumHeader, chipLabel, chipParam } from '@/components/photos/album-cop
 import { AlbumGrid, UploadTile } from '@/components/photos/album-grid';
 import { useAlbumUpload } from '@/components/photos/use-album-upload';
 import { useRegisterPipAction } from '@/components/nav/pip-action';
+import { TripBack } from '@/components/nav/trip-back';
 import { Pip } from '@/components/pip/pip';
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
@@ -121,6 +122,7 @@ export default function PhotosTab() {
         style={styles.column}
         contentContainerStyle={[styles.content, { paddingBottom: navClearance(insets) }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={pullToRefresh} tintColor={colors.irisText} colors={[colors.iris]} />}>
+        <TripBack />
         <View style={styles.header}>
           <View style={styles.titles}>
             <Text variant="callout" tone="secondary" numberOfLines={2}>

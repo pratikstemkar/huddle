@@ -2,6 +2,9 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Pressable } from 'react-native';
 import { Text } from 'react-native';
 
+jest.unmock('@/components/ui/confirm-sheet');
+jest.unmock('@/components/ui/toast');
+
 import { Button } from '@/components/ui/button';
 import { ConfirmProvider, useConfirm } from '@/components/ui/confirm-sheet';
 import { ErrorState } from '@/components/ui/error-state';

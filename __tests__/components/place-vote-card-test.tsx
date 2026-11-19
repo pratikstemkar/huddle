@@ -1,10 +1,11 @@
 import * as Haptics from 'expo-haptics';
-import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Alert, Linking, Platform, StyleSheet } from 'react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { Linking, Platform, StyleSheet } from 'react-native';
 
 import { PlaceVoteCard } from '@/components/vote/place-vote-card';
 import type { Destination } from '@/lib/destinations';
 import { palette } from '@/theme/tokens';
+import { mockConfirm } from '../../test-utils/ui-mocks';
 import { photoState } from '../../test-utils/photo-mocks';
 
 const { File } = jest.requireMock('expo-file-system') as typeof import('../../test-utils/photo-mocks').fileSystem;
@@ -173,43 +174,28 @@ describe('PlaceVoteCard', () => {
     expect(screen.queryByRole('button', { name: 'Remove Palolem Beach' })).toBeNull();
   });
 
-  it('confirms before removing on native', async () => {
-    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-    const { onRemove } = await renderCard({}, { canRemove: true });
+  it('confirms before removing', async () => {
+    const { onRemove, onVote } = await renderCard({}, { canRemove: true });
     await expand();
     await fireEvent.press(screen.getByRole('button', { name: 'Remove Palolem Beach' }));
-    expect(alert).toHaveBeenCalledWith('Remove "Palolem Beach"?', 'Its votes go too.', expect.any(Array));
-    expect(onRemove).not.toHaveBeenCalled();
-    const buttons = alert.mock.calls[0][2]!;
-    expect(buttons.map((b) => b.text)).toEqual(['Cancel', 'Remove']);
-    buttons[1].onPress!();
+    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ title: 'Remove "Palolem Beach"?', message: 'Its votes go too.', destructive: true }));
+    await act(async () => {});
     expect(onRemove).toHaveBeenCalled();
-  });
 
-  it('confirms with the browser dialog on web', async () => {
-    const confirm = jest.fn(() => true);
-    (window as unknown as { confirm: typeof confirm }).confirm = confirm;
+    (Haptics.selectionAsync as jest.Mock).mockClear();
     await withOS('web', async () => {
-      const { onRemove, onVote } = await renderCard({}, { canRemove: true });
-      await expand();
-      await fireEvent.press(screen.getByRole('button', { name: 'Remove Palolem Beach' }));
-      expect(confirm).toHaveBeenCalledWith('Remove "Palolem Beach"? Its votes go too.');
-      expect(onRemove).toHaveBeenCalled();
-
-      (Haptics.selectionAsync as jest.Mock).mockClear();
       await fireEvent.press(screen.getByRole('button', { name: 'Vote for Palolem Beach' }));
       expect(onVote).toHaveBeenCalled();
       expect(Haptics.selectionAsync).not.toHaveBeenCalled();
     });
   });
 
-  it('keeps the place when the web dialog is cancelled', async () => {
-    (window as unknown as { confirm: () => boolean }).confirm = () => false;
-    await withOS('web', async () => {
-      const { onRemove } = await renderCard({}, { canRemove: true });
-      await expand();
-      await fireEvent.press(screen.getByRole('button', { name: 'Remove Palolem Beach' }));
-      expect(onRemove).not.toHaveBeenCalled();
-    });
+  it('keeps the place when the confirm is cancelled', async () => {
+    mockConfirm.mockResolvedValueOnce(false);
+    const { onRemove } = await renderCard({}, { canRemove: true });
+    await expand();
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove Palolem Beach' }));
+    await act(async () => {});
+    expect(onRemove).not.toHaveBeenCalled();
   });
 });

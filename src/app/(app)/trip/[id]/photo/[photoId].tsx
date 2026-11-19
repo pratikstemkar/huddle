@@ -1,11 +1,12 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, View, useWindowDimensions, type FlatList } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, View, useWindowDimensions, type FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { parseChip, viewerCaption } from '@/components/photos/album-copy';
 import { PhotoPager } from '@/components/photos/photo-pager';
+import { useConfirm } from '@/components/ui/confirm-sheet';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
@@ -23,17 +24,6 @@ const CONTROL = 'rgba(255, 255, 255, 0.16)';
 function close(tripId: string) {
   if (router.canGoBack()) router.back();
   else router.replace({ pathname: '/trip/[id]/photos', params: { id: tripId } });
-}
-
-function confirmDelete(onConfirm: () => void) {
-  if (Platform.OS === 'web') {
-    if (typeof window !== 'undefined' && window.confirm("Delete this photo? It's removed for everyone on the trip.")) onConfirm();
-    return;
-  }
-  Alert.alert('Delete this photo?', "It's removed for everyone on the trip.", [
-    { text: 'Cancel', style: 'cancel' },
-    { text: 'Delete', style: 'destructive', onPress: onConfirm },
-  ]);
 }
 
 type ControlProps = { label: string; icon: 'close' | 'back' | 'chevronRight'; showLabel?: boolean; onPress: () => void; disabled?: boolean };
@@ -59,6 +49,7 @@ function ControlButton({ label, icon, showLabel, onPress, disabled }: ControlPro
 }
 
 export default function PhotoViewer() {
+  const confirm = useConfirm();
   const { id = '', photoId = '', filter } = useLocalSearchParams<{ id: string; photoId: string; filter?: string }>();
   const { width, height } = useWindowDimensions();
   const { session } = useAuth();
@@ -115,7 +106,8 @@ export default function PhotoViewer() {
 
   const remove = () => {
     if (!photo) return;
-    confirmDelete(async () => {
+    confirm({ title: 'Delete this photo?', message: "It's removed for everyone on the trip.", destructive: true }).then(async (ok) => {
+      if (!ok) return;
       setError(null);
       setDeleting(true);
       try {

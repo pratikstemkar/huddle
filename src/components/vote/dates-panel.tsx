@@ -134,7 +134,7 @@ export function DatesPanel({ trip, me, refreshTrip, header }: Props) {
 
       {!locked ? (
         <Segmented
-          style={styles.inner}
+          size="sm"
           options={[
             { value: 'mine', label: 'My days' },
             { value: 'all', label: 'Everyone' },
@@ -263,7 +263,6 @@ export function DatesPanel({ trip, me, refreshTrip, header }: Props) {
 }
 
 const styles = StyleSheet.create({
-  inner: { height: 40 },
   fixed: { gap: space.s6 },
   link: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   bestRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },

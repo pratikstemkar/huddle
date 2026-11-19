@@ -16,7 +16,7 @@ import { Text } from '@/components/ui/text';
 import { displayName, useAuth } from '@/lib/auth';
 import { formatRange, formatTripDates, today as todayDay, type Day } from '@/lib/dates';
 import { useMyProfile } from '@/lib/profile';
-import { countdown, homeChip, tripDates, type ChipTone } from '@/lib/trip-status';
+import { countdown, homeChip, sortTrips, tripDates, type ChipTone } from '@/lib/trip-status';
 import {
   inviteLink,
   leadingPlaceName,
@@ -31,6 +31,9 @@ import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
 const CHIP_TONES: Record<ChipTone, BadgeTone> = { action: 'beak', open: 'vote', done: 'neutral' };
 const COPIED_MS = 1800;
+// Only the first few cards cascade in; a long list never makes the last card wait.
+const STAGGER_COUNT = 4;
+const STAGGER_MS = 40;
 // Trip tints are light in both schemes, so what sits on them is always ink.
 const ON_TINT = palette.light.text;
 
@@ -207,7 +210,7 @@ function TripCard({
   const label = `${trip.name}${chip ? `, ${chip.text}` : ''}${dates ? `, ${formatTripDates(dates.start, dates.end)}` : ''}`;
   return (
     <Animated.View
-      entering={reduced ? undefined : FadeInDown.delay(index * 70).springify().damping(16)}
+      entering={reduced || index >= STAGGER_COUNT ? undefined : FadeInDown.delay(index * STAGGER_MS).duration(260)}
       layout={reduced ? undefined : LinearTransition.springify()}>
       <Pressable
         accessibilityRole="button"
@@ -243,6 +246,7 @@ export default function Home() {
   const name = profile?.display_name ?? displayName(session);
   const today = todayDay();
   const hero = useMemo(() => homeHero(trips, summaries, today), [trips, summaries, today]);
+  const sorted = useMemo(() => sortTrips(trips, today), [trips, today]);
   const firstLoad = loading && trips.length === 0;
 
   useFocusEffect(
@@ -299,7 +303,7 @@ export default function Home() {
                 </Text>
               </Card>
             ) : null}
-            {trips.map((t, i) => (
+            {sorted.map((t, i) => (
               <TripCard
                 key={t.id}
                 trip={t}

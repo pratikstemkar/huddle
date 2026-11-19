@@ -3,8 +3,9 @@ import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, TextInput, View } from 'react-native';
 
-import { CATEGORY_LABEL, confirmAction, nameMap } from '@/components/split/people';
+import { CATEGORY_LABEL, nameMap } from '@/components/split/people';
 import { closeSheet, SheetHeader } from '@/components/split/sheet-header';
+import { useConfirm } from '@/components/ui/confirm-sheet';
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
 import { Input } from '@/components/ui/input';
@@ -31,6 +32,7 @@ function saveMessage(e: unknown): string {
 }
 
 export default function ExpenseSheet() {
+  const confirm = useConfirm();
   const { id, expense: expenseId } = useLocalSearchParams<{ id: string; expense?: string }>();
   const { session } = useAuth();
   const me = session?.user.id;
@@ -150,7 +152,7 @@ export default function ExpenseSheet() {
 
   const remove = async () => {
     if (!editing) return;
-    const ok = await confirmAction('Delete this expense?', "It comes off everyone's balances. This can't be undone.", 'Delete');
+    const ok = await confirm({ title: 'Delete this expense?', message: "It comes off everyone's balances. This can't be undone.", confirmLabel: 'Delete', destructive: true });
     if (!ok) return;
     setDeleting(true);
     try {

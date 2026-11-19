@@ -7,6 +7,7 @@ import { addDays, formatRange, formatTripDates, today } from '@/lib/dates';
 import { router, setParams } from '../../test-utils/expo-router-mock';
 import { MEMBER, ORGANISER, TRIP_ID, destination, sessionFor, trip, tripState } from '../../test-utils/fixtures';
 import { queueResult } from '../../test-utils/supabase-mock';
+import { mockToastShow } from '../../test-utils/ui-mocks';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
@@ -280,7 +281,7 @@ describe('Trip screen', () => {
         await render(<TripScreen />);
         await fireEvent.press(screen.getByRole('button', { name: 'Nudge' }));
         expect(setString).toHaveBeenCalledWith(expect.stringContaining('Quick nudge'));
-        expect(screen.getByText('Copied')).toBeTruthy();
+        expect(mockToastShow).toHaveBeenCalledWith('Copied to clipboard');
       });
     });
 
@@ -361,18 +362,13 @@ describe('Trip screen', () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Share plan' }));
     });
 
-    it('copies the plan on browsers without a share sheet, then resets', async () => {
+    it('copies the plan on browsers without a share sheet and says so', async () => {
       mockState = tripState(locked({ destinations: [] }));
       await withoutWebShare(async () => {
-        jest.useFakeTimers();
         await render(<TripScreen />);
         await fireEvent.press(screen.getByRole('button', { name: 'Share plan' }));
         expect(setString).toHaveBeenCalledWith(expect.stringContaining('a place to be decided'));
-        expect(screen.getByText('Copied')).toBeTruthy();
-        await act(async () => {
-          jest.advanceTimersByTime(1800);
-        });
-        expect(screen.queryByText('Copied')).toBeNull();
+        expect(mockToastShow).toHaveBeenCalledWith('Copied to clipboard');
       });
     });
 
@@ -381,7 +377,7 @@ describe('Trip screen', () => {
       await withoutWebShare(async () => {
         await render(<TripScreen />);
         await fireEvent.press(screen.getByRole('button', { name: 'Share plan' }));
-        expect(screen.queryByText('Copied')).toBeNull();
+        expect(mockToastShow).not.toHaveBeenCalled();
       });
     });
 

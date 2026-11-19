@@ -12,13 +12,16 @@ type Props<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   style?: ViewStyle;
+  /** `sm` is the quieter second-level switch: outlined, tinted selection, shorter. */
+  size?: 'md' | 'sm';
 };
 
 const PAD = 4;
 
-export function Segmented<T extends string>({ options, value, onChange, style }: Props<T>) {
+export function Segmented<T extends string>({ options, value, onChange, style, size = 'md' }: Props<T>) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
+  const small = size === 'sm';
   const [width, setWidth] = useState(0);
   const x = useSharedValue(0);
   const index = Math.max(0, options.findIndex((o) => o.value === value));
@@ -38,9 +41,9 @@ export function Segmented<T extends string>({ options, value, onChange, style }:
     <View
       accessibilityRole="tablist"
       onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}
-      style={[styles.wrap, { backgroundColor: colors.track }, style]}>
+      style={[styles.wrap, small ? [styles.small, { borderColor: colors.line }] : { backgroundColor: colors.track }, style]}>
       {slot > 0 ? (
-        <Animated.View pointerEvents="none" style={[styles.indicator, { width: slot, backgroundColor: colors.card }, indicator]} />
+        <Animated.View pointerEvents="none" style={[styles.indicator, small && styles.indicatorSmall, { width: slot, backgroundColor: small ? colors.tint.vote : colors.card }, indicator]} />
       ) : null}
       {options.map((o) => {
         const on = o.value === value;
@@ -53,8 +56,8 @@ export function Segmented<T extends string>({ options, value, onChange, style }:
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.value)}
             // Before the first measurement there is no sliding pill, so the selected item paints its own.
-            style={[styles.item, slot === 0 && on && { backgroundColor: colors.card }]}>
-            <Text variant="calloutStrong" tone={on ? 'primary' : 'secondary'}>
+            style={[styles.item, small && styles.itemSmall, slot === 0 && on && { backgroundColor: small ? colors.tint.vote : colors.card }]}>
+            <Text variant={small ? 'caption' : 'calloutStrong'} tone={on ? (small ? 'iris' : 'primary') : 'secondary'} style={small ? styles.smallText : undefined}>
               {o.label}
             </Text>
           </PressableScale>
@@ -66,6 +69,10 @@ export function Segmented<T extends string>({ options, value, onChange, style }:
 
 const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', height: 48, borderRadius: radius.card, padding: PAD },
+  small: { height: 40, borderRadius: radius.lg, borderWidth: 1 },
+  indicatorSmall: { borderRadius: radius.md },
+  itemSmall: { borderRadius: radius.md },
+  smallText: { fontWeight: '600' },
   indicator: { position: 'absolute', top: PAD, bottom: PAD, left: 0, borderRadius: radius.lg },
   item: { flex: 1, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.md },
 });

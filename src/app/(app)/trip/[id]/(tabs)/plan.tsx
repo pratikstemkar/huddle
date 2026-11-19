@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useRegisterPipAction } from '@/components/nav/pip-action';
 import { DayStrip } from '@/components/plan/day-strip';
 import { PlanList } from '@/components/plan/plan-list';
+import { TripBack } from '@/components/nav/trip-back';
 import { Pip } from '@/components/pip/pip';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -102,6 +103,7 @@ export default function PlanTab() {
   if (!selected) {
     return (
       <Screen withNav contentStyle={styles.content}>
+        <TripBack />
         <Header line={trip.name} />
         <Card style={styles.hmm}>
           <Pip mood="hmm" size={110} />
@@ -133,6 +135,7 @@ export default function PlanTab() {
 
   return (
     <Screen withNav contentStyle={styles.content}>
+      <TripBack />
       <Header line={`${trip.name} · ${progress.planned} of ${progress.total} days planned`} />
       <DayStrip days={days} selected={selected} counts={counts} onSelect={setPicked} />
 

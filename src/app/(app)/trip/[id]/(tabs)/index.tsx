@@ -96,7 +96,7 @@ function Hero({ trip }: { trip: TripDetail }) {
         <Text variant="calloutStrong" tone="onBeak" numberOfLines={1} style={styles.kicker}>
           {trip.name}
         </Text>
-        <Text variant="display" tone="onBeak" numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>
+        <Text variant={title.length > 7 ? 'title' : 'display'} tone="onBeak" numberOfLines={2}>
           {title}
         </Text>
         <Text variant="callout" tone="onBeak" numberOfLines={2}>
@@ -164,7 +164,7 @@ export default function TripScreen() {
   const split = useSplit(id, me);
   const refreshSplit = split.refresh;
   const { colors } = useTheme();
-  const { share, copied } = useShareOrCopy();
+  const { share } = useShareOrCopy();
 
   const reload = useCallback(() => {
     refresh();
@@ -311,11 +311,6 @@ export default function TripScreen() {
           {next.text}
         </SpeechCard>
       ) : null}
-      {copied ? (
-        <Text variant="caption" tone="secondary" accessibilityLiveRegion="polite" style={styles.centerText}>
-          Copied
-        </Text>
-      ) : null}
 
       <Card
         chevron
@@ -342,9 +337,9 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   plus: { marginLeft: space.s6 },
   hero: {
-    height: 172,
+    minHeight: 172,
     borderRadius: radius.xl,
-    paddingTop: space.s20,
+    paddingVertical: space.s20,
     paddingHorizontal: space.s20,
     flexDirection: 'row',
     gap: space.sm,
@@ -352,7 +347,7 @@ const styles = StyleSheet.create({
   },
   heroText: { flex: 1, gap: space.xs },
   kicker: { fontSize: 13, lineHeight: 18 },
-  heroPip: { alignSelf: 'flex-end', marginBottom: -14, flexShrink: 0 },
+  heroPip: { alignSelf: 'flex-end', marginBottom: -34, flexShrink: 0 },
   grid: { gap: space.md },
   gridRow: { flexDirection: 'row', gap: space.md },
   tile: { flex: 1, gap: space.s10 },

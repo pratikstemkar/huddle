@@ -2,6 +2,7 @@ import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { TripBack } from '@/components/nav/trip-back';
 import { Pip } from '@/components/pip/pip';
 import { Screen } from '@/components/ui/screen';
 import { Segmented } from '@/components/ui/segmented';
@@ -87,6 +88,7 @@ export default function VoteTab() {
 
   return (
     <Screen withNav contentStyle={styles.content}>
+      <TripBack />
       {error ? (
         <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
           {error}

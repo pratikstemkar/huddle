@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Platform } from 'react-native';
 
 import type { Category, Expense, Settlement } from '@/lib/split';
 import { supabase } from '@/lib/supabase';
@@ -86,20 +85,3 @@ export const CATEGORY_LOOK: Record<Category, { icon: IconName; area: TintArea }>
   other: { icon: 'split', area: 'vote' },
 };
 
-/** A yes/no question before something destructive: a browser confirm on web, an alert on native. */
-export function confirmAction(title: string, message: string, action: string): Promise<boolean> {
-  if (Platform.OS === 'web') {
-    return Promise.resolve(typeof window !== 'undefined' && window.confirm(`${title} ${message}`));
-  }
-  return new Promise((resolve) => {
-    Alert.alert(
-      title,
-      message,
-      [
-        { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-        { text: action, style: 'destructive', onPress: () => resolve(true) },
-      ],
-      { cancelable: true, onDismiss: () => resolve(false) },
-    );
-  });
-}

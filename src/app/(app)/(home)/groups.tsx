@@ -7,6 +7,7 @@ import { HangoutInviteRow, InviteRow, TripInviteRow } from '@/components/groups/
 import { Pip } from '@/components/pip/pip';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ErrorState } from '@/components/ui/error-state';
 import { Screen } from '@/components/ui/screen';
 import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
@@ -94,6 +95,8 @@ export default function Groups() {
               Loading your groups
             </Text>
           </View>
+        ) : error && groups.length === 0 && waiting === 0 ? (
+          <ErrorState title="Couldn't load your groups" message="Check your connection and try again." onRetry={refresh} />
         ) : (
           <>
             {error || tripError || hangoutError || actionError ? (
