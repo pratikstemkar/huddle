@@ -182,3 +182,20 @@ insert into public.group_invites (group_id, user_id, invited_by) values
 -- under "Waiting on you" next to the group invite.
 insert into public.trip_invites (trip_id, user_id, invited_by) values
   ('aaaaaaaa-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111');
+
+-- A hangout: Aarav asked College gang to dinner and offered three evenings. Meera has answered one;
+-- Zoya isn't in the group yet, so it shows for Aarav, Meera and Kabir.
+insert into public.hangouts (id, group_id, created_by, kind, name, place_name, mode, duration_min, answers_close_at) values
+  ('eeeeeeee-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',
+   'dinner', 'Dinner with the gang', 'Nori House, Indiranagar', 'find', 120, now() + interval '1 day');
+insert into public.hangout_members (hangout_id, user_id) values
+  ('eeeeeeee-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111'),
+  ('eeeeeeee-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222'),
+  ('eeeeeeee-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333');
+insert into public.hangout_slots (id, hangout_id, starts_at, ends_at) values
+  ('ffffffff-0000-0000-0000-000000000001', 'eeeeeeee-0000-0000-0000-000000000001', date_trunc('day', now()) + interval '3 days 19 hours', date_trunc('day', now()) + interval '3 days 21 hours'),
+  ('ffffffff-0000-0000-0000-000000000002', 'eeeeeeee-0000-0000-0000-000000000001', date_trunc('day', now()) + interval '4 days 19 hours', date_trunc('day', now()) + interval '4 days 21 hours'),
+  ('ffffffff-0000-0000-0000-000000000003', 'eeeeeeee-0000-0000-0000-000000000001', date_trunc('day', now()) + interval '5 days 13 hours', date_trunc('day', now()) + interval '5 days 15 hours');
+insert into public.hangout_answers (slot_id, user_id, answer) values
+  ('ffffffff-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'yes'),
+  ('ffffffff-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 'maybe');

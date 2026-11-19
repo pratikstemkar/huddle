@@ -352,7 +352,7 @@ export function useGroupsLive(enabled: boolean, onChange: () => void) {
       timer = setTimeout(() => latest.current(), 250);
     };
     const channel = supabase.channel(`groups:${++liveInstances}`);
-    for (const table of ['groups', 'group_members', 'group_invites', 'trip_invites'] as const) {
+    for (const table of ['groups', 'group_members', 'group_invites', 'trip_invites', 'hangouts', 'hangout_members', 'hangout_slots', 'hangout_answers'] as const) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, fire);
     }
     let wasDown = false;

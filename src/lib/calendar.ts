@@ -5,6 +5,9 @@ import { addDays, type Day } from './dates';
 
 export type CalendarTrip = { id: string; name: string; start: Day; end: Day; place?: string | null };
 
+/** A timed event, such as a locked hangout. `end` is null when the length is left open (one hour is assumed). */
+export type CalendarEvent = { id: string; name: string; start: Date; end: Date | null; place?: string | null };
+
 const compact = (day: Day) => day.replace(/-/g, '');
 
 /** RFC 5545 TEXT escaping: backslash, semicolon, comma and newlines. */
@@ -71,6 +74,41 @@ export function buildIcs(t: CalendarTrip, now: Date = new Date()): string {
   return lines.map(foldIcsLine).join('\r\n') + '\r\n';
 }
 
+const HOUR_MS = 60 * 60 * 1000;
+const eventEnd = (e: CalendarEvent) => e.end ?? new Date(e.start.getTime() + HOUR_MS);
+
+/** A timed event in UTC, with the same stable UID rule as trips. */
+export function buildEventIcs(e: CalendarEvent, now: Date = new Date()): string {
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Huddle//Huddle hangouts//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${e.id}@huddle`,
+    `DTSTAMP:${stamp(now)}`,
+    `DTSTART:${stamp(e.start)}`,
+    `DTEND:${stamp(eventEnd(e))}`,
+    `SUMMARY:${escapeIcsText(e.name)}`,
+    ...(e.place ? [`LOCATION:${escapeIcsText(e.place)}`] : []),
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ];
+  return lines.map(foldIcsLine).join('\r\n') + '\r\n';
+}
+
+/** A link that opens Google Calendar with the event filled in. */
+export function googleEventUrl(e: CalendarEvent): string {
+  const params = [
+    'action=TEMPLATE',
+    `text=${encodeURIComponent(e.name)}`,
+    `dates=${stamp(e.start)}/${stamp(eventEnd(e))}`,
+    ...(e.place ? [`location=${encodeURIComponent(e.place)}`] : []),
+  ];
+  return `https://calendar.google.com/calendar/render?${params.join('&')}`;
+}
+
 /** A link that opens Google Calendar with the trip filled in as an all-day event. */
 export function googleCalendarUrl(t: CalendarTrip): string {
   const params = [
@@ -83,7 +121,7 @@ export function googleCalendarUrl(t: CalendarTrip): string {
 }
 
 /** A file name from the trip name: "Goa in March!" -> "goa-in-march". */
-export function icsFileName(name: string): string {
+export function icsFileName(name: string, fallback = 'trip'): string {
   const slug = name
     .normalize('NFKD')
     .replace(/[̀-ͯ]/g, '')
@@ -91,7 +129,7 @@ export function icsFileName(name: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 40);
-  return `${slug || 'trip'}.ics`;
+  return `${slug || fallback}.ics`;
 }
 
 /**
@@ -102,12 +140,21 @@ export function icsFileName(name: string): string {
  *   to another app needs expo-sharing, which this build doesn't include.
  */
 export async function addTripToCalendar(t: CalendarTrip): Promise<void> {
+  await deliver(buildIcs(t), googleCalendarUrl(t), icsFileName(t.name), t.id);
+}
+
+/** Adds a timed event (a locked hangout) to the person's calendar, the same way as a trip. */
+export async function addEventToCalendar(e: CalendarEvent): Promise<void> {
+  await deliver(buildEventIcs(e), googleEventUrl(e), icsFileName(e.name, 'hangout'), e.id);
+}
+
+async function deliver(ics: string, googleUrl: string, fileName: string, id: string): Promise<void> {
   if (Platform.OS === 'web') {
-    const blob = new Blob([buildIcs(t)], { type: 'text/calendar;charset=utf-8' });
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = icsFileName(t.name);
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -115,11 +162,11 @@ export async function addTripToCalendar(t: CalendarTrip): Promise<void> {
     return;
   }
   if (Platform.OS === 'ios') {
-    const file = new File(Paths.cache, `huddle-${t.id}.ics`);
+    const file = new File(Paths.cache, `huddle-${id}.ics`);
     if (!file.exists) file.create();
-    await file.write(buildIcs(t));
+    await file.write(ics);
     await Share.share({ url: file.uri });
     return;
   }
-  await Linking.openURL(googleCalendarUrl(t));
+  await Linking.openURL(googleUrl);
 }

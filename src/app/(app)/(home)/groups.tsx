@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { GroupCard } from '@/components/groups/group-card';
-import { InviteRow, TripInviteRow } from '@/components/groups/invite-row';
+import { HangoutInviteRow, InviteRow, TripInviteRow } from '@/components/groups/invite-row';
 import { Pip } from '@/components/pip/pip';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { Screen } from '@/components/ui/screen';
 import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
+import { useMyHangouts, waitingOnMe } from '@/lib/hangouts';
 import { acceptGroupInvite, groupsSummary, removeGroupInvite, useGroups, useGroupsLive, type GroupInvite } from '@/lib/groups';
 import { acceptTripInvite, removeTripInvite, useMyTripInvites, type TripInvite } from '@/lib/trip-invites';
 import { space } from '@/theme/tokens';
@@ -20,6 +21,7 @@ export default function Groups() {
   const me = session?.user.id;
   const { groups, invites, loading, error, refresh } = useGroups(me);
   const { invites: tripInvites, error: tripError, refresh: refreshTrips } = useMyTripInvites();
+  const { hangouts, error: hangoutError, refresh: refreshHangouts } = useMyHangouts();
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -27,11 +29,13 @@ export default function Groups() {
     useCallback(() => {
       refresh();
       refreshTrips();
-    }, [refresh, refreshTrips]),
+      refreshHangouts();
+    }, [refresh, refreshTrips, refreshHangouts]),
   );
   useGroupsLive(!!me, () => {
     refresh();
     refreshTrips();
+    refreshHangouts();
   });
 
   const answer = async (invite: GroupInvite, join: boolean) => {
@@ -66,7 +70,8 @@ export default function Groups() {
     }
   };
 
-  const waiting = invites.length + tripInvites.length;
+  const hangoutsWaiting = waitingOnMe(hangouts);
+  const waiting = invites.length + tripInvites.length + hangoutsWaiting.length;
   const firstLoad = loading && groups.length === 0 && waiting === 0;
 
   return (
@@ -91,9 +96,9 @@ export default function Groups() {
           </View>
         ) : (
           <>
-            {error || tripError || actionError ? (
+            {error || tripError || hangoutError || actionError ? (
               <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
-                {error ?? tripError ?? actionError}
+                {error ?? tripError ?? hangoutError ?? actionError}
               </Text>
             ) : null}
 
@@ -107,6 +112,9 @@ export default function Groups() {
                 ))}
                 {tripInvites.map((i) => (
                   <TripInviteRow key={i.trip_id} invite={i} busy={busy === i.trip_id} onJoin={() => answerTrip(i, true)} onDecline={() => answerTrip(i, false)} />
+                ))}
+                {hangoutsWaiting.map((h) => (
+                  <HangoutInviteRow key={h.id} hangout={h} onOpen={() => router.push({ pathname: '/hangout/[id]', params: { id: h.id } })} />
                 ))}
               </View>
             ) : (
