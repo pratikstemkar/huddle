@@ -1,9 +1,10 @@
 // The small form screens: join a trip and start a new trip.
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { router, setParams } from '../../test-utils/expo-router-mock';
+import { queueResult } from '../../test-utils/supabase-mock';
 import { formatDay, fromDay, today, toDay } from '@/lib/dates';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
@@ -22,7 +23,7 @@ jest.mock('@/components/invite-panel', () => ({
 }));
 
 const { joinTrip, createTrip, updateTrip } = require('@/lib/trips') as { joinTrip: jest.Mock; createTrip: jest.Mock; updateTrip: jest.Mock };
-const JoinTrip = require('@/app/(app)/(home)/join').default as () => React.JSX.Element;
+const JoinTrip = require('@/app/(app)/join').default as () => React.JSX.Element;
 const NewTrip = require('@/app/(app)/new-trip').default as () => React.JSX.Element;
 
 describe('Join a trip', () => {
@@ -50,8 +51,7 @@ describe('Join a trip', () => {
     await fireEvent.changeText(screen.getByLabelText('Invite code'), '  goa2027 ');
     await fireEvent(screen.getByLabelText('Invite code'), 'submitEditing');
     expect(joinTrip).toHaveBeenCalledWith('goa2027');
-    expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[id]', params: { id: 'trip-1' } });
-    expect(router.replace).not.toHaveBeenCalled();
+    expect(router.replace).toHaveBeenCalledWith({ pathname: '/trip/[id]', params: { id: 'trip-1' } });
     expect(Haptics.notificationAsync).toHaveBeenCalledWith('success');
     expect(screen.getByLabelText('Invite code').props.value).toBe('');
   });
@@ -71,12 +71,23 @@ describe('Join a trip', () => {
     expect(await screen.findByDisplayValue('xyz98765')).toBeTruthy();
   });
 
+  it('joins a group when the code is a group join link', async () => {
+    joinTrip.mockRejectedValue(new Error("That code doesn't match a trip. Check it and try again."));
+    queueResult('rpc:join_group', { data: 'group-1' });
+    await render(<JoinTrip />);
+    await fireEvent.changeText(screen.getByLabelText('Invite code'), 'https://huddle.app/group-invite/college1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Join trip' }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith({ pathname: '/group/[id]', params: { id: 'group-1' } }));
+    expect(joinTrip).toHaveBeenCalledWith('college1');
+  });
+
   it('shows why joining failed', async () => {
     joinTrip.mockRejectedValue(new Error("That code doesn't match a trip. Check it and try again."));
+    queueResult('rpc:join_group', { error: { message: 'That invite code does not match a group' } });
     await render(<JoinTrip />);
     await fireEvent.changeText(screen.getByLabelText('Invite code'), 'nope');
     await fireEvent.press(screen.getByRole('button', { name: 'Join trip' }));
-    expect(await screen.findByText("That code doesn't match a trip. Check it and try again.")).toBeTruthy();
+    expect(await screen.findByText("That code doesn't match a trip or group. Check it and try again.")).toBeTruthy();
     expect(router.push).not.toHaveBeenCalled();
   });
 
@@ -132,7 +143,7 @@ describe('New trip', () => {
     await fireEvent.press(screen.getByRole('radio', { name: 'Mint' }));
     expect(screen.getByRole('radio', { name: 'Mint' }).props.accessibilityState).toEqual({ selected: true });
     await fireEvent(screen.getByLabelText('Trip name'), 'submitEditing');
-    expect(createTrip).toHaveBeenCalledWith('Manali', 'mint', null);
+    expect(createTrip).toHaveBeenCalledWith('Manali', 'mint', null, null);
 
     expect(await screen.findByText('Step 2 of 2')).toBeTruthy();
     expect(screen.getByText('Invite panel for t-new')).toBeTruthy();
@@ -156,7 +167,7 @@ describe('New trip', () => {
     await fireEvent.press(screen.getByRole('button', { name: dayLabel(last) }));
     expect(screen.queryByText('Pick the first and last day of the trip.')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Next: invite people' }));
-    expect(createTrip).toHaveBeenCalledWith('Goa', 'iris', { start: first, end: last });
+    expect(createTrip).toHaveBeenCalledWith('Goa', 'iris', { start: first, end: last }, null);
   });
 
   it('updates the trip it already made after going back', async () => {

@@ -46,10 +46,16 @@ type CoverRow = { trip_id: string; image_path: string | null; image_url: string 
 // NOTE: direct Supabase calls for now. The offline-first local store replaces these in a later step.
 
 /** Creates a trip (I become its organiser). `fixed` sets the dates up front instead of a vote. */
-export async function createTrip(name: string, color: TripColor, fixed?: { start: string; end: string } | null) {
-  const row: { name: string; color: TripColor; fixed_start?: string; fixed_end?: string } = fixed
+export async function createTrip(
+  name: string,
+  color: TripColor,
+  fixed?: { start: string; end: string } | null,
+  groupId?: string | null,
+) {
+  const row: { name: string; color: TripColor; fixed_start?: string; fixed_end?: string; group_id?: string } = fixed
     ? { name, color, fixed_start: fixed.start, fixed_end: fixed.end }
     : { name, color };
+  if (groupId) row.group_id = groupId;
   const { data, error } = await supabase.from('trips').insert(row).select().single();
   if (error) throw error;
   return data as Trip;
@@ -70,7 +76,11 @@ export async function joinTrip(code: string): Promise<string> {
  * universal / app links. Falls back to a `huddle://` link only in native dev builds with no APP_URL.
  */
 export function inviteLink(code: string) {
-  const path = `invite/${encodeURIComponent(code)}`;
+  return appLink(`invite/${encodeURIComponent(code)}`);
+}
+
+/** An https link to a path in the app: the hosted web origin, else `EXPO_PUBLIC_APP_URL`, else a `huddle://` link. */
+export function appLink(path: string) {
   const origin = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location?.origin : undefined;
   if (origin) return `${origin}/${path}`;
   // Where the hosted web app lives, e.g. `https://huddle.expo.app`. Unset in local native development.

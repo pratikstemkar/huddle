@@ -163,3 +163,17 @@ insert into public.votes (destination_id, trip_id, user_id) values
 
 insert into public.itinerary_items (trip_id, day, start_time, title, note, created_by) values
   ('aaaaaaaa-0000-0000-0000-000000000005', current_date + 70, '16:00', 'Check in and walk the old city', null, '33333333-3333-3333-3333-333333333333');
+
+-- Groups: "College gang" (Aarav admin, Meera member, Kabir member) and "Flatmates" (Meera admin).
+-- Zoya has a pending invite to College gang so the Groups tab shows "Waiting on you".
+insert into public.groups (id, name, color, created_by, invite_code) values
+  ('bbbbbbbb-0000-0000-0000-000000000001', 'College gang', 'iris', '11111111-1111-1111-1111-111111111111', 'college1'),
+  ('bbbbbbbb-0000-0000-0000-000000000002', 'Flatmates', 'mint', '22222222-2222-2222-2222-222222222222', 'flatmate');
+
+insert into public.group_members (group_id, user_id) values
+  ('bbbbbbbb-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222'),
+  ('bbbbbbbb-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333'),
+  ('bbbbbbbb-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111');
+
+insert into public.group_invites (group_id, user_id, invited_by) values
+  ('bbbbbbbb-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111');

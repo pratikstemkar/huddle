@@ -2,7 +2,7 @@
 
 Shared invites link to `/invite/<code>` (`inviteLink()`): `<page origin>/invite/<code>` on web, `EXPO_PUBLIC_APP_URL/invite/<code>` in native builds, `huddle://invite/<code>` in native dev builds with no `EXPO_PUBLIC_APP_URL`. The route sits outside both auth guards, so it opens signed in or out. It uses the same welcome scene as sign-in.
 
-- **Signed in:** redirects straight to `/join?code=<code>` (the Invites tab, code filled in, not yet joined).
+- **Signed in:** redirects straight to `/join?code=<code>` (the join screen, code filled in, not yet joined).
 - **Signed out:** saves the code (AsyncStorage key `huddle.pendingInvite`), calls `invite_preview(code)` and shows "You’re invited to", the trip name, "<n> people are going" (or "1 person is going") and `Sign in to join` → `/sign-in`. After any sign-in, the `(app)` layout takes the saved code once and pushes `/join?code=<code>`.
 - **Unknown code:** "This invite doesn’t work" + `Go to Huddle`; the saved code is dropped so sign-in lands on home.
 - **Preview unreachable:** "a trip on Huddle"; the code is still kept.
