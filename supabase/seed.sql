@@ -177,3 +177,8 @@ insert into public.group_members (group_id, user_id) values
 
 insert into public.group_invites (group_id, user_id, invited_by) values
   ('bbbbbbbb-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111');
+
+-- A trip invite: Aarav (organiser of Goa in March) has invited Zoya, so her Groups tab shows a trip
+-- under "Waiting on you" next to the group invite.
+insert into public.trip_invites (trip_id, user_id, invited_by) values
+  ('aaaaaaaa-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111');

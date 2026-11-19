@@ -313,19 +313,17 @@ export function useKnownPeople() {
   return { people, loading, error, refresh };
 }
 
-/** How many group invites are waiting on me, for the tab badge. */
+/** How many invites (to groups and to trips) are waiting on me, for the tab badge. */
 export function useGroupInviteCount(myId: string | undefined, refreshKey?: string) {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (!myId) return;
     let live = true;
-    supabase
-      .from('group_invites')
-      .select('group_id', { count: 'exact', head: true })
-      .eq('user_id', myId)
-      .then(({ count: n, error }) => {
-        if (live && !error) setCount(n ?? 0);
-      });
+    const head = (table: 'group_invites' | 'trip_invites') =>
+      supabase.from(table).select('user_id', { count: 'exact', head: true }).eq('user_id', myId);
+    Promise.all([head('group_invites'), head('trip_invites')]).then(([g, t]) => {
+      if (live && !g.error && !t.error) setCount((g.count ?? 0) + (t.count ?? 0));
+    });
     return () => {
       live = false;
     };
@@ -354,7 +352,7 @@ export function useGroupsLive(enabled: boolean, onChange: () => void) {
       timer = setTimeout(() => latest.current(), 250);
     };
     const channel = supabase.channel(`groups:${++liveInstances}`);
-    for (const table of ['groups', 'group_members', 'group_invites'] as const) {
+    for (const table of ['groups', 'group_members', 'group_invites', 'trip_invites'] as const) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, fire);
     }
     let wasDown = false;

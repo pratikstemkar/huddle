@@ -21,6 +21,7 @@ Every file was rewritten for the redesign (commits `2ca5728`…`1b0ae8d`); none 
 | Groups tab (invites, group cards) | `/groups` | [groups.md](groups.md) | not yet |
 | New group | `/groups` → `/new-group` | [new-group.md](new-group.md) | not yet |
 | Group details and members | `/groups` → `/group/[id]` (`/edit`, `/add`) | [group-details.md](group-details.md) | not yet |
+| Invite a group to a trip | `/trip/[id]/invite` → `/trip/[id]/invite-people`; `/groups` (answer) | [group-invite-people.md](group-invite-people.md) | not yet |
 | Mark my free days | `/trip/[id]/vote?seg=dates` (My days) | [mark-days.md](mark-days.md) | old UI 2026-11-11 |
 | See overlap | `/trip/[id]/vote?seg=dates` (Everyone), `/trip/[id]` | [overlap.md](overlap.md) | old UI 2026-11-11 |
 | Suggest a destination | `/trip/[id]/vote` → `/trip/[id]/suggest` | [suggest-destination.md](suggest-destination.md) | old UI 2026-11-14 |

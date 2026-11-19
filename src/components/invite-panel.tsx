@@ -1,5 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { useEffect, useRef, useState } from 'react';
+import { router } from 'expo-router';
 import { ActivityIndicator, Platform, Share, StyleSheet, View } from 'react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 
@@ -10,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { nightsBetween, today as todayDay } from '@/lib/dates';
+import { useGroups } from '@/lib/groups';
 import { useTripLive } from '@/lib/realtime';
+import { usePendingTripInvites } from '@/lib/trip-invites';
 import { inviteLink, inviteMessage, useTrip, type TripMember } from '@/lib/trips';
 import { fonts, radius, space, toTripColor, tripColors } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
@@ -75,18 +78,25 @@ function MemberRow({ member, me, last }: { member: TripMember; me: boolean; last
 }
 
 /** The invite code, copy and share buttons, and who has joined so far (live). */
-export function InvitePanel({ tripId }: { tripId: string }) {
+export function InvitePanel({ tripId, groupId }: { tripId: string; groupId?: string | null }) {
   const { colors } = useTheme();
   const { session } = useAuth();
   const myId = session?.user.id;
   const { trip, loading, error, refresh } = useTrip(tripId, myId);
   const [copied, flashCopied] = useFlash();
   const [shareCopied, flashShareCopied] = useFlash();
+  const { groups, refresh: refreshGroups } = useGroups(myId);
+  const { pending, refresh: refreshPending } = usePendingTripInvites(tripId);
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
-  useTripLive(tripId, refresh, ['trip_members', 'trips']);
+    refreshGroups();
+    refreshPending();
+  }, [refresh, refreshGroups, refreshPending]);
+  useTripLive(tripId, () => {
+    refresh();
+    refreshPending();
+  }, ['trip_members', 'trips', 'trip_invites']);
 
   if (!trip) {
     return (
@@ -102,6 +112,7 @@ export function InvitePanel({ tripId }: { tripId: string }) {
     );
   }
 
+  const startGroup = groups.find((g) => g.id === groupId);
   const code = trip.invite_code;
   const letters = code.toUpperCase().split('');
   const half = Math.ceil(letters.length / 2);
@@ -155,6 +166,15 @@ export function InvitePanel({ tripId }: { tripId: string }) {
         </View>
       </View>
 
+      {groups.length > 0 ? (
+        <Button
+          label={startGroup ? `Invite ${startGroup.name}` : 'Invite from a group'}
+          variant="beak"
+          icon="groups"
+          onPress={() => router.push({ pathname: '/trip/[id]/invite-people', params: { id: tripId, ...(startGroup ? { group: startGroup.id } : {}) } })}
+        />
+      ) : null}
+
       <View style={styles.section}>
         <Text variant="heading">In the huddle · {trip.members.length}</Text>
         <View style={[styles.list, { backgroundColor: colors.card, borderColor: colors.line }]}>
@@ -163,6 +183,29 @@ export function InvitePanel({ tripId }: { tripId: string }) {
           ))}
         </View>
       </View>
+
+      {pending.length > 0 ? (
+        <View style={styles.section}>
+          <Text variant="heading">Invited · {pending.length}</Text>
+          <View style={[styles.list, { backgroundColor: colors.card, borderColor: colors.line }]}>
+            {pending.map((p, i) => (
+              <View
+                key={p.user_id}
+                accessible
+                accessibilityLabel={`${p.display_name}, invited`}
+                style={[styles.row, i < pending.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.line }]}>
+                <Avatar name={p.display_name} url={p.avatar_url} color={p.avatar_color} size={40} />
+                <Text variant="label" numberOfLines={1} style={styles.name}>
+                  {p.display_name}
+                </Text>
+                <Text variant="caption" tone="secondary">
+                  Invited
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }

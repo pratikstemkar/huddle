@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Platform, Share } from 'react-native';
 
 import { channels } from '../../test-utils/supabase-mock';
+import { router } from '../../test-utils/expo-router-mock';
 import { MEMBER, ORGANISER, TRIP_ID, trip, tripState } from '../../test-utils/fixtures';
 import type { TripDetail } from '@/lib/trips';
 
@@ -14,6 +15,11 @@ jest.mock('@/lib/auth', () => ({
   ...jest.requireActual('@/lib/auth'),
   useAuth: () => ({ session: require('../../test-utils/fixtures').sessionFor('org-id') }),
 }));
+
+let mockGroups: { groups: { id: string; name: string }[]; refresh: jest.Mock };
+let mockPending: { pending: { user_id: string; display_name: string; avatar_url: null; avatar_color: null; invited_at: string }[]; refresh: jest.Mock };
+jest.mock('@/lib/groups', () => ({ ...jest.requireActual('@/lib/groups'), useGroups: () => mockGroups }));
+jest.mock('@/lib/trip-invites', () => ({ ...jest.requireActual('@/lib/trip-invites'), usePendingTripInvites: () => mockPending }));
 
 let mockState: ReturnType<typeof tripState>;
 jest.mock('@/lib/trips', () => ({ ...jest.requireActual('@/lib/trips'), useTrip: () => mockState }));
@@ -37,11 +43,31 @@ describe('InvitePanel', () => {
   let share: jest.SpyInstance;
   beforeEach(() => {
     mockState = tripState(withMembers());
+    mockGroups = { groups: [], refresh: jest.fn() };
+    mockPending = { pending: [], refresh: jest.fn() };
     share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction', activityType: undefined });
   });
   afterEach(() => {
     share.mockRestore();
     jest.useRealTimers();
+  });
+
+  it('offers to invite a group, naming the one the trip started with', async () => {
+    mockGroups.groups = [{ id: 'g1', name: 'College gang' }];
+    await render(<InvitePanel tripId={TRIP_ID} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Invite from a group' }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[id]/invite-people', params: { id: TRIP_ID } });
+    await render(<InvitePanel tripId={TRIP_ID} groupId="g1" />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Invite College gang' }));
+    expect(router.push).toHaveBeenLastCalledWith({ pathname: '/trip/[id]/invite-people', params: { id: TRIP_ID, group: 'g1' } });
+  });
+
+  it('hides the group button when I am in no group, and lists people invited but not in yet', async () => {
+    mockPending.pending = [{ user_id: 'k', display_name: 'Kabir', avatar_url: null, avatar_color: null, invited_at: '' }];
+    await render(<InvitePanel tripId={TRIP_ID} />);
+    expect(screen.queryByRole('button', { name: 'Invite from a group' })).toBeNull();
+    expect(screen.getByText('Invited · 1')).toBeTruthy();
+    expect(screen.getByLabelText('Kabir, invited')).toBeTruthy();
   });
 
   it('shows the code as letter tiles, read out one character at a time', async () => {

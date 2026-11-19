@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { router, setParams } from '../../test-utils/expo-router-mock';
 import type { GroupCard, GroupDetail, GroupInvite, KnownPerson } from '@/lib/groups';
+import type { TripInvite } from '@/lib/trip-invites';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
@@ -14,6 +15,13 @@ type GroupsState = { groups: GroupCard[]; invites: GroupInvite[]; loading: boole
 let mockGroups: GroupsState;
 let mockGroup: { group: GroupDetail | null; loading: boolean; error: string | null; refresh: jest.Mock };
 let mockPeople: { people: KnownPerson[]; loading: boolean; error: string | null; refresh: jest.Mock };
+let mockTripInvites: { invites: TripInvite[]; error: string | null; refresh: jest.Mock };
+jest.mock('@/lib/trip-invites', () => ({
+  ...jest.requireActual('@/lib/trip-invites'),
+  useMyTripInvites: () => mockTripInvites,
+  acceptTripInvite: jest.fn(),
+  removeTripInvite: jest.fn(),
+}));
 jest.mock('@/lib/groups', () => ({
   ...jest.requireActual('@/lib/groups'),
   useGroups: () => mockGroups,
@@ -30,6 +38,7 @@ jest.mock('@/lib/groups', () => ({
 }));
 
 const lib = require('@/lib/groups') as Record<string, jest.Mock>;
+const tripLib = require('@/lib/trip-invites') as Record<string, jest.Mock>;
 const Clipboard = require('expo-clipboard') as { setStringAsync: jest.Mock };
 const Groups = require('@/app/(app)/(home)/groups').default as () => React.JSX.Element;
 const NewGroup = require('@/app/(app)/new-group').default as () => React.JSX.Element;
@@ -70,6 +79,9 @@ const detail = (over: Partial<GroupDetail> = {}): GroupDetail => ({
 beforeEach(() => {
   mockSession = sessionFor('u1', 'Aarav Shah');
   mockGroups = { groups: [], invites: [], loading: false, error: null, refresh: jest.fn().mockResolvedValue(undefined) };
+  mockTripInvites = { invites: [], error: null, refresh: jest.fn() };
+  tripLib.acceptTripInvite.mockReset().mockResolvedValue('t9');
+  tripLib.removeTripInvite.mockReset().mockResolvedValue(undefined);
   mockGroup = { group: null, loading: false, error: null, refresh: jest.fn() };
   mockPeople = { people: [], loading: false, error: null, refresh: jest.fn() };
   for (const k of ['acceptGroupInvite', 'removeGroupInvite', 'createGroup', 'inviteToGroup', 'setGroupRole', 'removeGroupMember', 'updateGroup']) lib[k].mockReset().mockResolvedValue(undefined);
@@ -108,6 +120,25 @@ describe('Groups tab', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Join Book club' }));
     await waitFor(() => expect(lib.acceptGroupInvite).toHaveBeenCalledWith('g2'));
     await waitFor(() => expect(mockGroups.refresh).toHaveBeenCalledTimes(2));
+  });
+
+  it('shows trip invites next to group invites and joins one, opening the trip', async () => {
+    mockGroups.invites = [invite];
+    mockTripInvites.invites = [{ trip_id: 't9', trip_name: 'Winter workation', trip_color: 'coral', members: 3, datesSet: false, from: 'Kabir', created_at: '' }];
+    await render(<Groups />);
+    expect(screen.getByText('2 invites · 0 groups')).toBeTruthy();
+    expect(screen.getByText('Trip · dates still open')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Join Winter workation' }));
+    await waitFor(() => expect(tripLib.acceptTripInvite).toHaveBeenCalledWith('t9'));
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[id]', params: { id: 't9' } });
+  });
+
+  it('declines a trip invite with my own id', async () => {
+    mockTripInvites.invites = [{ trip_id: 't9', trip_name: 'Winter workation', trip_color: 'coral', members: 3, datesSet: true, from: 'Kabir', created_at: '' }];
+    await render(<Groups />);
+    expect(screen.getByText('Trip · dates set')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Decline Winter workation' }));
+    await waitFor(() => expect(tripLib.removeTripInvite).toHaveBeenCalledWith('t9', 'u1'));
   });
 
   it('declines an invite with my own id', async () => {

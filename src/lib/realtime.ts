@@ -16,7 +16,8 @@ export type LiveTable =
   | 'itinerary_items'
   | 'expenses'
   | 'settlements'
-  | 'trip_photos';
+  | 'trip_photos'
+  | 'trip_invites';
 
 /** Everything a trip has; the default when a screen doesn't say what it shows. */
 export const ALL_LIVE_TABLES: LiveTable[] = [
@@ -35,7 +36,7 @@ export const ALL_LIVE_TABLES: LiveTable[] = [
 /** Tables whose deleted rows keep their trip_id (it's part of the primary key), so deletes can be checked. */
 const DELETE_HAS_TRIP: LiveTable[] = ['availability', 'day_counts', 'trip_members'];
 /** Tables whose deleted rows carry only their id: any delete reloads (cheap, debounced). */
-const DELETE_ANY: LiveTable[] = ['votes', 'destinations', 'itinerary_items', 'expenses', 'settlements', 'trip_photos'];
+const DELETE_ANY: LiveTable[] = ['votes', 'destinations', 'itinerary_items', 'expenses', 'settlements', 'trip_photos', 'trip_invites'];
 
 /**
  * Calls `onChange` shortly after anyone changes this trip's data in `tables` (default: all of it).
@@ -63,7 +64,7 @@ export function useTripLive(tripId: string | undefined, onChange: () => void, ta
     // Screens stack (trip page under settings), so each subscription needs its own channel name;
     // supabase-js hands back the same, already-subscribed channel for a repeated name.
     const channel = supabase.channel(`trip:${tripId}:${++instances}`);
-    for (const table of ['availability', 'day_counts', 'destinations', 'votes', 'trip_members', 'itinerary_items', 'expenses', 'settlements', 'trip_photos'] as const) {
+    for (const table of ['availability', 'day_counts', 'destinations', 'votes', 'trip_members', 'itinerary_items', 'expenses', 'settlements', 'trip_photos', 'trip_invites'] as const) {
       if (watch.has(table)) channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table, filter: byTrip }, fire);
     }
     if (watch.has('trips')) {
