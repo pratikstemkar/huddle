@@ -39,7 +39,7 @@ Enable both in your hosted Supabase project under Authentication → Providers, 
 
 ## Layout
 
-- `src/app` Expo Router routes only: `sign-in`, `invite/[code]`, `privacy`, the home tabs `(app)/(home)/` (`index` Trips, `groups` Groups, `profile` You), `(app)/new-trip`, `(app)/new-group`, `(app)/join`, `(app)/group/[id]/` (`index`, `edit`, `add`), `(app)/delete-account`, `group-invite/[code]`, and `(app)/trip/[id]/`: the tabs `(tabs)/` (`index` Trip, `vote`, `plan`, `split`, `photos`) plus the sheets and pages `invite`, `suggest`, `lock`, `locked`, `settings`, `plan-item`, `expense`, `settle`, `photo/[photoId]` (`days` and `places` only redirect to `vote`)
+- `src/app` Expo Router routes only: `sign-in`, `invite/[code]`, `privacy`, the home tabs `(app)/(home)/` (`index` Trips, `groups` Groups, `profile` You), `(app)/new-trip`, `(app)/new-group`, `(app)/join`, `(app)/group/[id]/` (`index`, `edit`, `add`), `(app)/delete-account`, `group-invite/[code]`, and `(app)/trip/[id]/`: the tabs `(tabs)/` (`index` Trip, `vote`, `plan`, `split`, `photos`) plus the sheets and pages `invite`, `invite-people`, `suggest`, `lock`, `locked`, `settings`, `plan-item`, `expense`, `settle`, `photo/[photoId]` (`days` and `places` only redirect to `vote`)
 - `src/theme` Huddle design tokens (light and dark, five trip colours), `useTheme`, `useReducedMotion`
 - `src/components` UI building blocks; base components in `src/components/ui`, Pip in `src/components/pip`, the tab bars in `src/components/nav`
 - `src/lib` Supabase client, auth (Google, Apple, dev), trips, availability, realtime, itinerary, split and money, trip photos, calendar, trip status and stats

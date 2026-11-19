@@ -133,7 +133,7 @@ export default function NewTrip() {
         }>
         <View style={styles.body}>
           <StepHeader step={2} icon="back" label="Back" onPress={() => setStep(1)} />
-          <InvitePanel tripId={createdId} />
+          <InvitePanel tripId={createdId} groupId={groupId} />
         </View>
       </Screen>
     );

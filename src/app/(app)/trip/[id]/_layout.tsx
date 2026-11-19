@@ -8,6 +8,7 @@ const SHEETS: { name: string; detents: number[] }[] = [
   { name: 'settings', detents: [0.75, 1] },
   { name: 'lock', detents: [0.9, 1] },
   { name: 'invite', detents: [0.9, 1] },
+  { name: 'invite-people', detents: [0.9, 1] },
   { name: 'plan-item', detents: [0.75, 1] },
   { name: 'expense', detents: [0.9, 1] },
   { name: 'settle', detents: [0.75, 1] },

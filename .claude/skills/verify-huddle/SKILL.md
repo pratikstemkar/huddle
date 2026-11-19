@@ -50,6 +50,7 @@ Use accessibility handles via `find` / `read_page`, then click by `ref`. Never c
 | `/new-trip` step 1 | `Next: invite people` | button → step 2 (trip is created) |
 | `/new-trip` step 2 | `Back`, `Go to the trip` | button |
 | `/groups` | `New group`, `Join with a code`, `Join <group>` / `Decline <group>`, `<group>, <size and trips>`, `Start a trip with <group>` | button |
+| `/trip/[id]/invite-people` | group chips, `Don’t invite <name>` / `Invite <name>`, `Select all` / `Clear`, `Invite N people` | button |
 | `/new-group` | `Group name` (textbox), `Search your people by name` (textbox), colour radios, `Add <name>` / `Remove <name>`, `Create group` | |
 | `/group/[id]` | `Edit group name and colour`, `Add`, `Options for <name>`, `Make admin <name>` / `Remove admin from <name>`, `Remove <name>`, `Cancel invite for <name>`, `Copy link`, `Leave group`, `Leave <group>` | button |
 | `/join` (opened from Groups, or a link) | `Invite code` | textbox (a trip's code or link, or a group's) |

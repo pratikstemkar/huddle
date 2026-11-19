@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { GroupCard } from '@/components/groups/group-card';
-import { InviteRow } from '@/components/groups/invite-row';
+import { InviteRow, TripInviteRow } from '@/components/groups/invite-row';
 import { Pip } from '@/components/pip/pip';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -12,21 +12,27 @@ import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { acceptGroupInvite, groupsSummary, removeGroupInvite, useGroups, useGroupsLive, type GroupInvite } from '@/lib/groups';
+import { acceptTripInvite, removeTripInvite, useMyTripInvites, type TripInvite } from '@/lib/trip-invites';
 import { space } from '@/theme/tokens';
 
 export default function Groups() {
   const { session } = useAuth();
   const me = session?.user.id;
   const { groups, invites, loading, error, refresh } = useGroups(me);
+  const { invites: tripInvites, error: tripError, refresh: refreshTrips } = useMyTripInvites();
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh]),
+      refreshTrips();
+    }, [refresh, refreshTrips]),
   );
-  useGroupsLive(!!me, refresh);
+  useGroupsLive(!!me, () => {
+    refresh();
+    refreshTrips();
+  });
 
   const answer = async (invite: GroupInvite, join: boolean) => {
     setBusy(invite.group_id);
@@ -42,7 +48,26 @@ export default function Groups() {
     }
   };
 
-  const firstLoad = loading && groups.length === 0 && invites.length === 0;
+  const answerTrip = async (invite: TripInvite, join: boolean) => {
+    setBusy(invite.trip_id);
+    setActionError(null);
+    try {
+      if (join) {
+        const tripId = await acceptTripInvite(invite.trip_id);
+        router.push({ pathname: '/trip/[id]', params: { id: tripId } });
+      } else if (me) {
+        await removeTripInvite(invite.trip_id, me);
+      }
+      await refreshTrips();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Couldn't answer that invite.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const waiting = invites.length + tripInvites.length;
+  const firstLoad = loading && groups.length === 0 && waiting === 0;
 
   return (
     <Screen withNav>
@@ -50,7 +75,7 @@ export default function Groups() {
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Text variant="callout" tone="secondary">
-              {groupsSummary(invites.length, groups.length)}
+              {groupsSummary(waiting, groups.length)}
             </Text>
             <Text variant="title">Your people</Text>
           </View>
@@ -66,19 +91,22 @@ export default function Groups() {
           </View>
         ) : (
           <>
-            {error || actionError ? (
+            {error || tripError || actionError ? (
               <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
-                {error ?? actionError}
+                {error ?? tripError ?? actionError}
               </Text>
             ) : null}
 
-            {invites.length > 0 ? (
+            {waiting > 0 ? (
               <View style={styles.section}>
                 <Text variant="label" accessibilityRole="header">
                   Waiting on you
                 </Text>
                 {invites.map((i) => (
                   <InviteRow key={i.group_id} invite={i} busy={busy === i.group_id} onJoin={() => answer(i, true)} onDecline={() => answer(i, false)} />
+                ))}
+                {tripInvites.map((i) => (
+                  <TripInviteRow key={i.trip_id} invite={i} busy={busy === i.trip_id} onJoin={() => answerTrip(i, true)} onDecline={() => answerTrip(i, false)} />
                 ))}
               </View>
             ) : (
