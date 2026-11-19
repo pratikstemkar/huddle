@@ -1,10 +1,11 @@
 import * as Haptics from 'expo-haptics';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
 import { DayCalendar, type CalendarMode, type CalendarPerson } from '@/components/day-calendar';
 import { formatDay } from '@/lib/dates';
 import { palette } from '@/theme/tokens';
+import { pan } from '../../test-utils/gesture-mock';
 
 
 const long = (day: string) => formatDay(day, { weekday: 'long', day: 'numeric', month: 'long' });
@@ -196,5 +197,103 @@ describe('DayCalendar', () => {
   it("doesn't divide by zero with no members", async () => {
     await renderCalendar({ mode: 'all', memberCount: 0, counts: new Map([['2027-03-15', 1]]) });
     expect(bg(screen.getByLabelText(`${long('2027-03-15')}, 1 of 0 free`))).toBe(palette.light.heat[3]);
+  });
+});
+
+
+describe('DayCalendar drag to mark', () => {
+  // March 2027 starts on a Monday, so day d sits in column (d-1) % 7, row floor((d-1) / 7).
+  const at = (d: number, width: number) => {
+    const col = (d - 1) % 7;
+    const row = Math.floor((d - 1) / 7);
+    const colWidth = (width - 6 * 4) / 7;
+    return { x: col * (colWidth + 4) + colWidth / 2, y: row * 48 + 22 };
+  };
+  const pageWidth = () => screen.getByTestId('month-pager').props.getItemLayout(null, 1).offset as number;
+  const run = async (fn: () => void) => act(async () => fn());
+
+  it('only listens in Mine mode on an editable calendar, after a short hold', async () => {
+    await renderCalendar();
+    expect(pan.config?.enabled).toBe(true);
+    expect(pan.config?.activateAfterLongPress).toBeGreaterThan(100);
+    await renderCalendar({ mode: 'all' });
+    expect(pan.config?.enabled).toBe(false);
+    await renderCalendar({ readOnly: true });
+    expect(pan.config?.enabled).toBe(false);
+  });
+
+  it('marks every day the finger crosses, once each', async () => {
+    const { onToggle } = await renderCalendar();
+    const w = pageWidth();
+    await run(() => pan.config!.onActivate(at(15, w)));
+    await run(() => pan.config!.onUpdate(at(17, w)));
+    await run(() => pan.config!.onUpdate(at(17, w)));
+    await run(() => pan.config!.onUpdate(at(18, w)));
+    expect(onToggle.mock.calls).toEqual([
+      ['2027-03-15', true],
+      ['2027-03-16', true],
+      ['2027-03-17', true],
+      ['2027-03-18', true],
+    ]);
+  });
+
+  it('clears days when the stroke starts on a marked day, and leaves clear days alone', async () => {
+    const { onToggle } = await renderCalendar({ myDays: new Set(['2027-03-15', '2027-03-17']) });
+    const w = pageWidth();
+    await run(() => pan.config!.onActivate(at(15, w)));
+    await run(() => pan.config!.onUpdate(at(17, w)));
+    expect(onToggle.mock.calls).toEqual([
+      ['2027-03-15', false],
+      ['2027-03-17', false],
+    ]);
+  });
+
+  it("doesn't touch past days or days outside the range", async () => {
+    const { onToggle } = await renderCalendar();
+    const w = pageWidth();
+    // Today is 12 March: 11 is past, 12 is fine.
+    await run(() => pan.config!.onActivate(at(13, w)));
+    await run(() => pan.config!.onUpdate(at(10, w)));
+    expect(onToggle.mock.calls).toEqual([
+      ['2027-03-13', true],
+      ['2027-03-12', true],
+    ]);
+  });
+
+  it('ignores the tap the platform sends after a drag, then taps work again', async () => {
+    jest.useFakeTimers();
+    try {
+      const { onToggle } = await renderCalendar();
+      const w = pageWidth();
+      await run(() => pan.config!.onActivate(at(15, w)));
+      await run(() => pan.config!.onFinalize());
+      onToggle.mockClear();
+      await fireEvent.press(screen.getByLabelText(long('2027-03-15')));
+      expect(onToggle).not.toHaveBeenCalled();
+      await act(async () => {
+        jest.advanceTimersByTime(400);
+      });
+      await fireEvent.press(screen.getByLabelText(long('2027-03-16')));
+      expect(onToggle).toHaveBeenCalledWith('2027-03-16', true);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not block taps when a press never became a drag', async () => {
+    const { onToggle } = await renderCalendar();
+    await run(() => pan.config!.onFinalize());
+    await fireEvent.press(screen.getByLabelText(long('2027-03-16')));
+    expect(onToggle).toHaveBeenCalledWith('2027-03-16', true);
+  });
+
+  it('stops the pager scrolling while a stroke is in progress', async () => {
+    await renderCalendar();
+    const w = pageWidth();
+    expect(screen.getByTestId('month-pager').props.scrollEnabled).toBe(true);
+    await run(() => pan.config!.onActivate(at(15, w)));
+    expect(screen.getByTestId('month-pager').props.scrollEnabled).toBe(false);
+    await run(() => pan.config!.onFinalize());
+    expect(screen.getByTestId('month-pager').props.scrollEnabled).toBe(true);
   });
 });

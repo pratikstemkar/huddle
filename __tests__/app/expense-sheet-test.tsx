@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { mockConfirm } from '../../test-utils/ui-mocks';
 
 import type { TripMember } from '@/lib/trips';
 import { router, setParams } from '../../test-utils/expo-router-mock';
@@ -159,22 +159,17 @@ describe('Expense sheet: edit', () => {
   });
 
   it('deletes after confirming', async () => {
-    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
-    });
     await render(<ExpenseSheet />);
     queueResult('expenses', { data: [{ id: 'e1' }] });
     await fireEvent.press(await screen.findByRole('button', { name: 'Delete expense' }));
-    expect(Alert.alert).toHaveBeenCalledWith('Delete this expense?', expect.any(String), expect.any(Array), expect.any(Object));
+    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ title: 'Delete this expense?' }));
     const del = queriesFor('expenses').find((q) => q.ops.some(([m]) => m === 'delete'));
     expect(del?.ops).toEqual(expect.arrayContaining([['eq', ['id', 'e1']]]));
     expect(router.back).toHaveBeenCalled();
   });
 
   it('keeps the expense when Delete is cancelled', async () => {
-    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.find((b) => b.style === 'cancel')?.onPress?.();
-    });
+    mockConfirm.mockResolvedValueOnce(false);
     await render(<ExpenseSheet />);
     await fireEvent.press(await screen.findByRole('button', { name: 'Delete expense' }));
     expect(queriesFor('expenses').some((q) => q.ops.some(([m]) => m === 'delete'))).toBe(false);

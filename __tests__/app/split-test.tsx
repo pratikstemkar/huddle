@@ -1,5 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { Alert, Text } from 'react-native';
+import { Text } from 'react-native';
+
+import { mockConfirm } from '../../test-utils/ui-mocks';
 
 import { PipActionProvider, usePipAction } from '@/components/nav/pip-action';
 import type { TripMember } from '@/lib/trips';
@@ -148,9 +150,6 @@ describe('Split tab', () => {
   });
 
   it('undoes my own settlement after confirming', async () => {
-    const alert = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
-    });
     load([villa], [settlement('s1', ORGANISER, MEMBER, 10000, '2027-01-11T00:00:00Z'), settlement('s2', ZOE, ORGANISER, 5000, '2027-01-12T00:00:00Z')]);
     await renderTab();
     await screen.findByText('You paid Meera');
@@ -159,16 +158,13 @@ describe('Split tab', () => {
     queueResult('settlements', { data: [{ id: 's1' }] });
     load([villa], []);
     await fireEvent.press(screen.getByRole('button', { name: /^You paid Meera/ }));
-    expect(alert).toHaveBeenCalledWith('Undo this payment?', expect.any(String), expect.any(Array), expect.any(Object));
+    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ title: 'Undo this payment?' }));
     const del = queriesFor('settlements').find((q) => q.ops.some(([m]) => m === 'delete'));
     expect(del?.ops).toEqual(expect.arrayContaining([['eq', ['id', 's1']]]));
     expect(await screen.findByLabelText("You're owed ₹800")).toBeTruthy();
   });
 
   it('shows an error when undoing fails', async () => {
-    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
-    });
     load([villa], [settlement('s1', ORGANISER, MEMBER, 10000, '2027-01-11T00:00:00Z')]);
     await renderTab();
     await screen.findByText('You paid Meera');

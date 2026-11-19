@@ -4,11 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 import { useRegisterPipAction } from '@/components/nav/pip-action';
+import { TripBack } from '@/components/nav/trip-back';
 import { Pip } from '@/components/pip/pip';
 import { BalanceCard } from '@/components/split/balance-card';
 import { MyLines } from '@/components/split/my-lines';
-import { confirmAction, useMoneyNames } from '@/components/split/people';
+import { useMoneyNames } from '@/components/split/people';
 import { SplitFeed } from '@/components/split/split-feed';
+import { useConfirm } from '@/components/ui/confirm-sheet';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
@@ -28,6 +30,7 @@ const LIVE_TABLES = ['expenses', 'settlements', 'trip_members'] as const;
 const NO_MEMBERS: TripMember[] = [];
 
 export default function SplitTab() {
+  const confirm = useConfirm();
   const id = useTripId();
   const { session } = useAuth();
   const me = session?.user.id;
@@ -95,7 +98,7 @@ export default function SplitTab() {
   const settle = () => router.push({ pathname: '/trip/[id]/settle', params: { id: trip.id } });
   const editExpense = (expense: string) => router.push({ pathname: '/trip/[id]/expense', params: { id: trip.id, expense } });
   const undo = async (settlementId: string) => {
-    const ok = await confirmAction('Undo this payment?', 'It comes off the balances for everyone.', 'Undo');
+    const ok = await confirm({ title: 'Undo this payment?', message: 'It comes off the balances for everyone.', confirmLabel: 'Undo', destructive: true });
     if (!ok) return;
     setUndoError(null);
     try {
@@ -109,6 +112,7 @@ export default function SplitTab() {
 
   return (
     <Screen withNav contentStyle={styles.content}>
+      <TripBack />
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text variant="callout" tone="secondary" numberOfLines={1}>

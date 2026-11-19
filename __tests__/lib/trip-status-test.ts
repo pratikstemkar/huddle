@@ -1,5 +1,5 @@
 import { formatRange } from '@/lib/dates';
-import { countdown, homeChip, pipNext, tripDates, votedCount } from '@/lib/trip-status';
+import { countdown, homeChip, pipNext, sortTrips, tripDates, votedCount } from '@/lib/trip-status';
 import type { TripStats } from '@/lib/trip-stats';
 import { destination, MEMBER, members, ORGANISER, trip } from '../../test-utils/fixtures';
 
@@ -190,5 +190,28 @@ describe('pipNext', () => {
       expect(pipNext(locked, ORGANISER, TODAY, { stats })).toEqual({ text: "It's official. Tell the group chat.", action: 'share', label: 'Share' });
       expect(pipNext(locked, ORGANISER, TODAY)).toEqual({ text: "It's official. Tell the group chat.", action: 'share', label: 'Share' });
     });
+  });
+});
+
+describe('sortTrips', () => {
+  const t = (name: string, fixed_start: string | null = null, fixed_end: string | null = null) =>
+    trip({ name, fixed_start, fixed_end, locked_start: null, locked_end: null });
+
+  it('puts a trip on now first, then soonest upcoming, then undated, then finished', () => {
+    const list = [
+      t('Past', '2026-01-01', '2026-01-03'),
+      t('Undated A'),
+      t('Later', '2026-12-20', '2026-12-22'),
+      t('Now', '2026-11-18', '2026-11-20'),
+      t('Soon', '2026-11-25', '2026-11-27'),
+      t('Undated B'),
+    ];
+    expect(sortTrips(list, '2026-11-19').map((x) => x.name)).toEqual(['Now', 'Soon', 'Later', 'Undated A', 'Undated B', 'Past']);
+  });
+
+  it('does not change the input', () => {
+    const list = [t('B'), t('A', '2026-11-25', '2026-11-27')];
+    sortTrips(list, '2026-11-19');
+    expect(list.map((x) => x.name)).toEqual(['B', 'A']);
   });
 });

@@ -18,7 +18,7 @@ import { useShareOrCopy } from './share';
 /** The locked trip's place and dates, who's going, and Share plan / Add to calendar. */
 export function LockedSummary({ trip }: { trip: TripDetail }) {
   const { colors } = useTheme();
-  const { share, copied } = useShareOrCopy();
+  const { share } = useShareOrCopy();
   const place = trip.destinations.find((d) => d.id === trip.locked_destination_id);
   const start = trip.locked_start;
   const end = trip.locked_end;
@@ -98,11 +98,6 @@ export function LockedSummary({ trip }: { trip: TripDetail }) {
           <Button label="Share plan" icon="share" variant="outline" size="md" onPress={sharePlan} style={styles.flex} />
           <Button label="Add to calendar" icon="plan" variant="outline" size="md" onPress={addToCalendar} style={styles.flex} />
         </View>
-        {copied ? (
-          <Text variant="caption" tone="secondary" accessibilityLiveRegion="polite" style={styles.center}>
-            Copied
-          </Text>
-        ) : null}
         {calendarError ? (
           <Text variant="caption" tone="danger" accessibilityLiveRegion="polite" style={styles.center}>
             Couldn&apos;t add it to your calendar. Try again.

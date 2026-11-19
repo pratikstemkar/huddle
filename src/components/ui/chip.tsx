@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
+import { StyleSheet, type ViewStyle } from 'react-native';
 
 import { MIN_TOUCH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
+import { PressableScale } from './press-scale';
 import { Text } from './text';
 
 type Props = {
@@ -16,7 +17,7 @@ type Props = {
 export function Chip({ label, selected = false, onPress, accessibilityLabel, style }: Props) {
   const { colors } = useTheme();
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected }}
@@ -29,7 +30,7 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, sty
       <Text variant="calloutStrong" style={{ color: selected ? colors.onInk : colors.text }}>
         {label}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 

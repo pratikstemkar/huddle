@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { mockConfirm } from '../../test-utils/ui-mocks';
 
 import { formatDay } from '@/lib/dates';
 import type { AlbumPhoto } from '@/lib/trip-photos';
@@ -48,17 +48,12 @@ function photo(id: string, uploaded_by: string, taken_on: string): AlbumPhoto {
 const ALBUM = [photo('p1', ORGANISER, '2027-03-01'), photo('p2', MEMBER, '2027-03-02'), photo('p3', MEMBER, '2027-03-03')];
 
 describe('Photo viewer', () => {
-  let alert: jest.SpyInstance;
-
   beforeEach(() => {
     setParams({ id: TRIP_ID, photoId: 'p2', filter: 'all' });
     mockSession = sessionFor(MEMBER, 'Meera');
     mockState = tripState(dated);
     mockAlbum = { photos: ALBUM, loading: false, error: null, refresh: jest.fn() };
-    alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });
-
-  afterEach(() => alert.mock && alert.mockRestore());
 
   it('loads, follows live changes and captions the photo', async () => {
     await render(<PhotoViewer />);
@@ -100,10 +95,7 @@ describe('Photo viewer', () => {
     deleteAlbumPhoto.mockResolvedValue(undefined);
     await render(<PhotoViewer />);
     await fireEvent.press(screen.getByRole('button', { name: 'Delete photo' }));
-    expect(alert).toHaveBeenCalledWith('Delete this photo?', "It's removed for everyone on the trip.", expect.any(Array));
-    expect(deleteAlbumPhoto).not.toHaveBeenCalled();
-
-    await act(async () => alert.mock.calls[0][2][1].onPress());
+    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ title: 'Delete this photo?', message: "It's removed for everyone on the trip." }));
     expect(deleteAlbumPhoto).toHaveBeenCalledWith(ALBUM[1]);
     expect(mockAlbum.refresh).toHaveBeenCalled();
     expect(router.back).not.toHaveBeenCalled();
@@ -115,7 +107,7 @@ describe('Photo viewer', () => {
     mockAlbum.photos = [ALBUM[0], ALBUM[1]];
     await render(<PhotoViewer />);
     await fireEvent.press(screen.getByRole('button', { name: 'Delete photo' }));
-    await act(async () => alert.mock.calls[0][2][1].onPress());
+    await act(async () => {});
     expect(router.back).toHaveBeenCalled();
   });
 
@@ -123,7 +115,7 @@ describe('Photo viewer', () => {
     deleteAlbumPhoto.mockRejectedValue(new Error('offline'));
     await render(<PhotoViewer />);
     await fireEvent.press(screen.getByRole('button', { name: 'Delete photo' }));
-    await act(async () => alert.mock.calls[0][2][1].onPress());
+    await act(async () => {});
     expect(screen.getByText("Couldn't delete that photo. Check your connection and try again.")).toBeTruthy();
   });
 

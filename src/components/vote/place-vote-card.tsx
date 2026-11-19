@@ -1,9 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import { Alert, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 
 import { PlacePhoto } from '@/components/place-photo';
+import { useConfirm } from '@/components/ui/confirm-sheet';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { ProgressBar } from '@/components/ui/progress-bar';
@@ -29,6 +30,7 @@ const THUMB = 56;
 export function PlaceVoteCard({ destination: d, names, memberCount, leading, readOnly, canRemove, onVote, onRemove }: Props) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const by = (d.created_by && names.get(d.created_by)) || 'Someone';
   const voterNames = d.voters.map((u) => names.get(u) ?? 'Someone');
@@ -39,15 +41,8 @@ export function PlaceVoteCard({ destination: d, names, memberCount, leading, rea
     onVote();
   };
 
-  const confirmRemove = () => {
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.confirm(`Remove "${d.title}"? Its votes go too.`)) onRemove();
-      return;
-    }
-    Alert.alert(`Remove "${d.title}"?`, 'Its votes go too.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: onRemove },
-    ]);
+  const confirmRemove = async () => {
+    if (await confirm({ title: `Remove "${d.title}"?`, message: 'Its votes go too.', confirmLabel: 'Remove', destructive: true })) onRemove();
   };
 
   return (

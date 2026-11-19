@@ -105,3 +105,24 @@ export function pipNext(
   if (waiting > 0) return { text: `Waiting on ${waiting} more to vote.`, action: 'nudge', label: 'Nudge' };
   return { text: "Everyone's voted. Waiting on the organiser to lock it in.", action: 'vote', label: 'See votes' };
 }
+
+/**
+ * Home list order: a trip happening now, then upcoming trips (soonest first), then trips still being planned
+ * (newest first, as loaded), then finished trips. Stable within each group.
+ */
+export function sortTrips<T extends { fixed_start: Day | null; fixed_end: Day | null; locked_start: Day | null; locked_end: Day | null }>(
+  trips: readonly T[],
+  today: Day,
+): T[] {
+  const rank = (t: T): [number, number] => {
+    const cd = countdown(tripDates(t), today);
+    if (cd?.kind === 'during') return [0, 0];
+    if (cd?.kind === 'upcoming') return [1, cd.days];
+    if (cd?.kind === 'past') return [3, 0];
+    return [2, 0];
+  };
+  return trips
+    .map((t, i) => ({ t, i, r: rank(t) }))
+    .sort((a, b) => a.r[0] - b.r[0] || a.r[1] - b.r[1] || a.i - b.i)
+    .map((x) => x.t);
+}

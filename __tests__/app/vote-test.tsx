@@ -1,6 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useEffect } from 'react';
-import { Alert } from 'react-native';
 
 import { PipActionProvider, usePipAction, type PipAction } from '@/components/nav/pip-action';
 import { formatDay, formatRange, formatTripDates } from '@/lib/dates';
@@ -185,7 +184,6 @@ describe('Places panel', () => {
   });
 
   it('votes, and lets the organiser remove any place', async () => {
-    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => buttons?.[1].onPress?.());
     mockDest.list = [destination({ id: 'd1', title: 'Palolem', created_by: MEMBER })];
     await renderVote();
     await fireEvent.press(screen.getByRole('button', { name: 'Vote for Palolem' }));
@@ -244,7 +242,7 @@ describe('Dates panel', () => {
 
   it('lets me mark days in My days mode', async () => {
     await renderVote('dates');
-    expect(screen.getByText('Tap the days you could go.')).toBeTruthy();
+    expect(screen.getByText('Tap the days you could go, or press and drag across several.')).toBeTruthy();
     expect(screen.getByText('Nobody has marked a day yet.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText(long('2027-03-15')));
     expect(mockAv.setDay).toHaveBeenCalledWith('2027-03-15', true);
