@@ -10,7 +10,7 @@ export default function AppLayout() {
   const { colors } = useTheme();
 
   // This layout mounts once signed in. If they arrived through an invite link while signed out,
-  // carry on to the Invites tab with the code filled in.
+  // carry on to the join screen with the code filled in.
   useEffect(() => {
     takePendingInvite().then((code) => {
       if (code) router.push({ pathname: '/join', params: { code } });
@@ -22,6 +22,9 @@ export default function AppLayout() {
       <Stack.Screen name="(home)" />
       <Stack.Screen name="trip/[id]" />
       <Stack.Screen name="new-trip" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
+      <Stack.Screen name="new-group" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
+      <Stack.Screen name="group/[id]" />
+      <Stack.Screen name="join" />
       <Stack.Screen name="delete-account" />
     </Stack>
   );

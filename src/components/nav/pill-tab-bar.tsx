@@ -8,20 +8,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { MAX_CONTENT_WIDTH, NAV_BOTTOM, NAV_HEIGHT, NAV_INSET, radius, shadow, space } from '@/theme/tokens';
+import { MAX_CONTENT_WIDTH, NAV_BOTTOM, NAV_HEIGHT, NAV_INSET, radius, shadow, space, tripColors } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
-export type PillTab = { name: string; label: string; icon: IconName };
+export type PillTab = { name: string; label: string; icon: IconName; /** A count shown on the icon; hidden at 0. */ badge?: number };
 
 type TabItemProps = Omit<TabTriggerSlotProps, 'ref'> & {
   label: string;
   icon: IconName;
+  badge?: number;
   index: number;
   /** Tells the bar which tab is focused so the highlight can slide to it. */
   onFocused: (index: number) => void;
 };
 
-function TabItem({ label, icon, index, onFocused, isFocused, onPress, ...rest }: TabItemProps) {
+function TabItem({ label, icon, badge, index, onFocused, isFocused, onPress, ...rest }: TabItemProps) {
   const { colors } = useTheme();
   useEffect(() => {
     if (isFocused) onFocused(index);
@@ -31,14 +32,23 @@ function TabItem({ label, icon, index, onFocused, isFocused, onPress, ...rest }:
     <Pressable
       {...rest}
       accessibilityRole="tab"
-      accessibilityLabel={label}
+      accessibilityLabel={badge ? `${label}, ${badge} waiting` : label}
       accessibilityState={{ selected: !!isFocused }}
       onPress={(e) => {
         if (!isFocused && Platform.OS !== 'web') Haptics.selectionAsync();
         onPress?.(e);
       }}
       style={styles.item}>
-      <Icon name={icon} size={22} color={tint} />
+      <View>
+        <Icon name={icon} size={22} color={tint} />
+        {badge ? (
+          <View aria-hidden style={[styles.badge, { backgroundColor: tripColors.coral, borderColor: isFocused ? colors.tint.vote : colors.navGlass }]}>
+            <Text variant="badge" style={styles.badgeText}>
+              {badge > 9 ? '9+' : badge}
+            </Text>
+          </View>
+        ) : null}
+      </View>
       <Text variant="tab" style={{ color: tint }} numberOfLines={1} maxFontSizeMultiplier={1.3}>
         {label}
       </Text>
@@ -109,7 +119,7 @@ export function PillTabBar({ tabs, trailing, accessibilityLabel }: Props) {
           )}
           {tabs.map((t, i) => (
             <TabTrigger key={t.name} name={t.name} asChild>
-              <TabItem label={t.label} icon={t.icon} index={i} onFocused={setFocusedIndex} />
+              <TabItem label={t.label} icon={t.icon} badge={t.badge} index={i} onFocused={setFocusedIndex} />
             </TabTrigger>
           ))}
         </View>
@@ -126,5 +136,7 @@ const styles = StyleSheet.create({
   bar: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, paddingHorizontal: NAV_INSET, flexDirection: 'row', alignItems: 'center', gap: space.navGap },
   pill: { flex: 1, height: NAV_HEIGHT, padding: 4, borderWidth: 1, borderRadius: radius.nav, flexDirection: 'row' },
   highlight: { position: 'absolute', top: PILL_PAD, bottom: PILL_PAD, left: 0, borderRadius: radius.xl },
+  badge: { position: 'absolute', top: -6, right: -12, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  badgeText: { fontSize: 10, lineHeight: 12, fontWeight: '700', color: '#171A2F' },
   item: { flex: 1, borderRadius: radius.xl, alignItems: 'center', justifyContent: 'center', gap: space.xxs },
 });

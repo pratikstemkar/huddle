@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
@@ -78,6 +78,9 @@ function close() {
 }
 
 export default function NewTrip() {
+  // Started from a group's card or details: the trip is linked to that group.
+  const params = useLocalSearchParams<{ group?: string }>();
+  const groupId = typeof params.group === 'string' && params.group ? params.group : null;
   const [step, setStep] = useState<1 | 2>(1);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -104,7 +107,7 @@ export default function NewTrip() {
       if (createdId) {
         await updateTrip(createdId, { name: trimmed, color, fixed_start: fixed?.start ?? null, fixed_end: fixed?.end ?? null });
       } else {
-        const trip = await createTrip(trimmed, color, fixed);
+        const trip = await createTrip(trimmed, color, fixed, groupId);
         setCreatedId(trip.id);
       }
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

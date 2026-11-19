@@ -3,7 +3,10 @@
     "details": [
       {
         "appIDs": ["APPLE_TEAM_ID.com.huddle.app"],
-        "components": [{ "/": "/invite/*", "comment": "Trip invite links" }]
+        "components": [
+          { "/": "/invite/*", "comment": "Trip invite links" },
+          { "/": "/group-invite/*", "comment": "Group join links" }
+        ]
       }
     ]
   }

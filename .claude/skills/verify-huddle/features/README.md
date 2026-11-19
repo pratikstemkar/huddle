@@ -2,7 +2,7 @@
 
 Every user-facing feature, how to reach it on web, and what proves it works. Keep this in step with `src/app/` — `/pstack:maintain-verification-skill` checks for drift.
 
-Routes: the home tabs are `(app)/(home)/` (`/` Trips, `/join` Invites, `/profile` You). A trip's tabs are `(app)/trip/[id]/(tabs)/` (`/trip/[id]` Trip, `/vote`, `/plan`, `/split`, `/photos`). Sheets and full-screen pages sit next to them in `(app)/trip/[id]/`. `/trip/[id]/days` and `/trip/[id]/places` only redirect to the Vote tab.
+Routes: the home tabs are `(app)/(home)/` (`/` Trips, `/groups` Groups, `/profile` You); `/join`, `/new-group` and `/group/[id]` sit beside them in `(app)/`. A trip's tabs are `(app)/trip/[id]/(tabs)/` (`/trip/[id]` Trip, `/vote`, `/plan`, `/split`, `/photos`). Sheets and full-screen pages sit next to them in `(app)/trip/[id]/`. `/trip/[id]/days` and `/trip/[id]/places` only redirect to the Vote tab.
 
 Every file was rewritten for the redesign (commits `2ca5728`…`1b0ae8d`); none has been re-proven on the new screens yet. "Last proven" gives the last run on the old UI where there was one.
 
@@ -17,7 +17,10 @@ Every file was rewritten for the redesign (commits `2ca5728`…`1b0ae8d`); none 
 | Trip detail (Trip tab) | `/` → `/trip/[id]` | [trip-detail.md](trip-detail.md) | old UI 2026-11-11 |
 | Share invite code / link | `/trip/[id]` → `/trip/[id]/invite`; `/new-trip` step 2 | [invite-share.md](invite-share.md) | old UI 2026-11-12 |
 | Invite link (signed out → sign in → join) | `/invite/[code]` → `/sign-in` → `/join` | [invite-link.md](invite-link.md) | old UI 2026-11-12 |
-| Join a trip by code | `/join` (Invites) | [join-trip.md](join-trip.md) | old UI 2026-11-11 |
+| Join a trip by code | `/groups` → `/join` | [join-trip.md](join-trip.md) | old UI 2026-11-11 |
+| Groups tab (invites, group cards) | `/groups` | [groups.md](groups.md) | not yet |
+| New group | `/groups` → `/new-group` | [new-group.md](new-group.md) | not yet |
+| Group details and members | `/groups` → `/group/[id]` (`/edit`, `/add`) | [group-details.md](group-details.md) | not yet |
 | Mark my free days | `/trip/[id]/vote?seg=dates` (My days) | [mark-days.md](mark-days.md) | old UI 2026-11-11 |
 | See overlap | `/trip/[id]/vote?seg=dates` (Everyone), `/trip/[id]` | [overlap.md](overlap.md) | old UI 2026-11-11 |
 | Suggest a destination | `/trip/[id]/vote` → `/trip/[id]/suggest` | [suggest-destination.md](suggest-destination.md) | old UI 2026-11-14 |

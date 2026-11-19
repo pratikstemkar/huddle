@@ -9,7 +9,7 @@
  * - `channel(name)` records `.on(...)` handlers and the `.subscribe(...)` callback so tests can fire them.
  */
 
-type Result = { data?: unknown; error?: { message: string; code?: string } | null };
+type Result = { data?: unknown; count?: number | null; error?: { message: string; code?: string } | null };
 
 export type QueryCall = { table: string; ops: [method: string, args: unknown[]][] };
 

@@ -14,6 +14,17 @@ export type IconDef = {
 export const iconPaths = {
   trips: { shapes: [{ t: 'path', d: 'M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z' }, { t: 'path', d: 'M9 4v13M15 7v13' }] },
   invites: { shapes: [{ t: 'rect', x: 3, y: 5, width: 18, height: 14, rx: 3 }, { t: 'path', d: 'M3 8l9 6 9-6' }] },
+  groups: {
+    shapes: [
+      { t: 'circle', cx: 9, cy: 8, r: 3.5 },
+      { t: 'path', d: 'M2.5 20c.8-3.5 3.3-5.5 6.5-5.5s5.7 2 6.5 5.5' },
+      { t: 'path', d: 'M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c1.8.7 3 2.5 3.5 5.2' },
+    ],
+  },
+  search: { shapes: [{ t: 'circle', cx: 11, cy: 11, r: 6.5 }, { t: 'path', d: 'M16 16l4 4' }] },
+  more: { shapes: [{ t: 'circle', cx: 5, cy: 12, r: 1.4 }, { t: 'circle', cx: 12, cy: 12, r: 1.4 }, { t: 'circle', cx: 19, cy: 12, r: 1.4 }] },
+  check: { shapes: [{ t: 'path', d: 'M5 12.5l4.5 4.5L19 7.5' }], strokeWidth: 2.4 },
+  link: { shapes: [{ t: 'path', d: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1' }] },
   you: { shapes: [{ t: 'circle', cx: 12, cy: 8, r: 4 }, { t: 'path', d: 'M4 21c1-4 4-6 8-6s7 2 8 6' }] },
   trip: { shapes: [{ t: 'path', d: 'M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' }] },
   vote: { shapes: [{ t: 'path', d: 'M12 19V6M6 12l6-6 6 6' }] },

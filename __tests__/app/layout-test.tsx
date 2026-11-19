@@ -4,6 +4,7 @@ import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
 import { useRegisterPipAction } from '@/components/nav/pip-action';
+import { queueResult } from '../../test-utils/supabase-mock';
 
 let mockAuth: { session: unknown; loading: boolean } = { session: null, loading: false };
 jest.mock('@/lib/auth', () => ({
@@ -37,7 +38,8 @@ const routes = {
   '(app)/_layout': AppLayout,
   '(app)/(home)/_layout': HomeTabsLayout,
   '(app)/(home)/index': () => <Text>Home screen</Text>,
-  '(app)/(home)/join': () => <Text>Join screen</Text>,
+  '(app)/(home)/groups': () => <Text>Groups screen</Text>,
+  '(app)/join': () => <Text>Join screen</Text>,
   '(app)/(home)/profile': () => <Text>Profile screen</Text>,
   '(app)/new-trip': () => <Text>New trip screen</Text>,
   '(app)/delete-account': () => <Text>Delete account screen</Text>,
@@ -141,13 +143,19 @@ describe('Tab bars', () => {
     await AsyncStorage.clear();
   });
 
+  it('badges the Groups tab with the invites waiting on me', async () => {
+    queueResult('group_invites', { count: 2 });
+    await renderRouter(routes, { initialUrl: '/' });
+    expect(await screen.findByRole('tab', { name: 'Groups, 2 waiting' })).toBeTruthy();
+  });
+
   it('switches between the main tabs and keeps their URLs', async () => {
     await renderRouter(routes, { initialUrl: '/' });
     expect(screen.getByRole('tab', { name: 'Trips' }).props.accessibilityState).toEqual({ selected: true });
-    await fireEvent.press(screen.getByRole('tab', { name: 'Invites' }));
-    expect(await screen.findByText('Join screen')).toBeTruthy();
-    expect(screen).toHavePathname('/join');
-    expect(screen.getByRole('tab', { name: 'Invites' }).props.accessibilityState).toEqual({ selected: true });
+    await fireEvent.press(screen.getByRole('tab', { name: 'Groups' }));
+    expect(await screen.findByText('Groups screen')).toBeTruthy();
+    expect(screen).toHavePathname('/groups');
+    expect(screen.getByRole('tab', { name: 'Groups' }).props.accessibilityState).toEqual({ selected: true });
     await fireEvent.press(screen.getByRole('tab', { name: 'You' }));
     expect(await screen.findByText('Profile screen')).toBeTruthy();
     expect(screen).toHavePathname('/profile');

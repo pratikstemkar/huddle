@@ -1,8 +1,8 @@
 # Join a trip by invite code
 
-The Invites tab (`/join`): "Got a code?", "Join a trip", Pip and "Paste the code or link your friend sent.", the `Invite code` field with a `Paste` chip (`Paste invite code`), and `Join trip`. Under it Pip says the code is on the trip screen, under the + next to everyone's faces. It's also reached from `Join with a code` on Pip's hero card when you have no trips.
+The join screen (`/join`, opened from `Join with a code` on the Groups tab or the Trips hero, or by a link): "Got a code?", "Join a trip", Pip and "Paste the code or link your friend sent.", the `Invite code` field with a `Paste` chip (`Paste invite code`), and `Join trip`. Under it Pip says the code is on the trip screen, under the + next to everyone's faces. It's also reached from `Join with a code` on Pip's hero card when you have no trips.
 
-On success it pushes `/trip/<id>` over the tabs, so Back returns to Invites. `/join?code=<code>` fills the field (also when the tab is already open) but doesn't join until `Join trip` is pressed.
+On success it pushes `/trip/<id>` over the tabs, so Back returns to the tab you came from. (Success replaces the join screen.) A group's join link also works here: if the code matches no trip, `join_group` is tried, and a match opens `/group/<id>`. `/join?code=<code>` fills the field (also when the tab is already open) but doesn't join until `Join trip` is pressed.
 
 ## Sub-features
 
@@ -16,7 +16,7 @@ On success it pushes `/trip/<id>` over the tabs, so Back returns to Invites. `/j
 
 ## Driving it with the built-in browser
 
-1. Sign in as Kabir (not in Goa) → `Invites` tab → URL `/join`.
+1. Sign in as Kabir (not in Goa) → `Groups` tab → `Join with a code` → URL `/join`.
 2. Click `Join trip` empty → the empty-code message. Type `nope1234` → `Join trip` → the unknown-code message.
 3. Triple-click the field, type `http://localhost:<PORT>/invite/GOA2027` → `Join trip` → URL `/trip/aaaaaaaa-…0001`, `3 people in the huddle`.
 4. Navigate to `/join?code=goa2027` → the textbox value is `goa2027`; `Join trip` again → the trip opens, still 3 members, no error.

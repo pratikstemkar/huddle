@@ -6,11 +6,13 @@ import { Platform, StyleSheet, View } from 'react-native';
 
 import { Pip } from '@/components/pip/pip';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Chip } from '@/components/ui/chip';
 import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
 import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
+import { joinGroup } from '@/lib/groups';
 import { joinTrip, parseInviteCode } from '@/lib/trips';
 import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
@@ -50,11 +52,25 @@ export default function JoinTrip() {
     }
     setJoining(true);
     try {
-      const tripId = await joinTrip(parsed);
+      let tripId: string | null = null;
+      let groupId: string | null = null;
+      try {
+        tripId = await joinTrip(parsed);
+      } catch (e) {
+        // Not a trip's code: it may be a group's join link.
+        if (!(e instanceof Error) || !/doesn't match/i.test(e.message)) throw e;
+        try {
+          groupId = await joinGroup(parsed);
+        } catch (g) {
+          if (g instanceof Error && /doesn't match/i.test(g.message)) throw new Error("That code doesn't match a trip or group. Check it and try again.");
+          throw g;
+        }
+      }
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setCode('');
-      // Push (not replace) so the trip opens over the tabs and Back returns here.
-      router.push({ pathname: '/trip/[id]', params: { id: tripId } });
+      // Replace this screen so Back from the trip or group returns to the tabs, not to a used code.
+      if (tripId) router.replace({ pathname: '/trip/[id]', params: { id: tripId } });
+      else if (groupId) router.replace({ pathname: '/group/[id]', params: { id: groupId } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't join the trip.");
     } finally {
@@ -63,8 +79,9 @@ export default function JoinTrip() {
   };
 
   return (
-    <Screen withNav>
+    <Screen>
       <View style={styles.page}>
+        <IconButton icon="back" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back} />
         <View style={styles.header}>
           <Text variant="callout" tone="secondary">
             Got a code?
@@ -75,7 +92,7 @@ export default function JoinTrip() {
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.line }]}>
           <Pip mood="hello" size={96} />
           <Text variant="callout" tone="secondary" style={styles.centered}>
-            Paste the code or link your friend sent.
+            Paste the code or link your friend sent, for a trip or a group.
           </Text>
           <View style={styles.field}>
             <Input
@@ -100,7 +117,7 @@ export default function JoinTrip() {
           <Button label="Join trip" loading={joining} onPress={submit} style={styles.stretch} />
         </View>
 
-        <SpeechCard>The code is on the trip screen, under the + next to everyone&apos;s faces.</SpeechCard>
+        <SpeechCard>A trip&apos;s code is under the + next to everyone&apos;s faces. A group&apos;s join link is on its details screen.</SpeechCard>
       </View>
     </Screen>
   );
@@ -108,6 +125,7 @@ export default function JoinTrip() {
 
 const styles = StyleSheet.create({
   page: { gap: space.s18 },
+  back: { alignSelf: 'flex-start' },
   header: { gap: space.xxs },
   card: { borderWidth: 1, borderRadius: radius.xl, padding: space.s20, gap: space.s14, alignItems: 'center' },
   centered: { textAlign: 'center' },
