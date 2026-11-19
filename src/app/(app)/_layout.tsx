@@ -23,7 +23,9 @@ export default function AppLayout() {
       <Stack.Screen name="trip/[id]" />
       <Stack.Screen name="new-trip" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
       <Stack.Screen name="new-group" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
+      <Stack.Screen name="new-hangout" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
       <Stack.Screen name="group/[id]" />
+      <Stack.Screen name="hangout/[id]" />
       <Stack.Screen name="join" />
       <Stack.Screen name="delete-account" />
     </Stack>
