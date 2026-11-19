@@ -1,6 +1,6 @@
 import { Linking, Platform, Share } from 'react-native';
 
-import { addTripToCalendar, buildIcs, escapeIcsText, foldIcsLine, googleCalendarUrl, icsFileName } from '@/lib/calendar';
+import { addEventToCalendar, addTripToCalendar, buildEventIcs, buildIcs, escapeIcsText, foldIcsLine, googleCalendarUrl, googleEventUrl, icsFileName } from '@/lib/calendar';
 import { photoState } from '../../test-utils/photo-mocks';
 
 const trip = { id: 'aaaaaaaa-0000-0000-0000-000000000001', name: 'Goa in March', start: '2027-03-12', end: '2027-03-14', place: 'Palolem Beach' };
@@ -156,5 +156,42 @@ describe('addTripToCalendar', () => {
       URL.createObjectURL = prevCreate;
       URL.revokeObjectURL = prevRevoke;
     }
+  });
+});
+
+describe('timed events (hangouts)', () => {
+  const event = { id: 'h1', name: 'Dinner; with, the gang', start: new Date(Date.UTC(2027, 0, 8, 13, 30)), end: new Date(Date.UTC(2027, 0, 8, 15, 30)), place: 'Nori House' };
+
+  it('builds a UTC event with an escaped title, the place and a stable UID', () => {
+    const ics = buildEventIcs(event, NOW);
+    expect(ics).toContain('UID:h1@huddle');
+    expect(ics).toContain('DTSTAMP:20270102T030405Z');
+    expect(ics).toContain('DTSTART:20270108T133000Z');
+    expect(ics).toContain('DTEND:20270108T153000Z');
+    expect(ics).toContain('SUMMARY:Dinner\\; with\\, the gang');
+    expect(ics).toContain('LOCATION:Nori House');
+    expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true);
+  });
+
+  it('assumes one hour when the length is open', () => {
+    expect(buildEventIcs({ ...event, end: null }, NOW)).toContain('DTEND:20270108T143000Z');
+    expect(googleEventUrl({ ...event, end: null })).toContain('dates=20270108T133000Z/20270108T143000Z');
+  });
+
+  it('links Google Calendar with the title, times and place', () => {
+    const url = googleEventUrl(event);
+    expect(url).toContain('text=Dinner%3B%20with%2C%20the%20gang');
+    expect(url).toContain('dates=20270108T133000Z/20270108T153000Z');
+    expect(url).toContain('location=Nori%20House');
+  });
+
+  it('opens Google Calendar on Android, like trips do', async () => {
+    const original = Platform.OS;
+    Platform.OS = 'android';
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+    await addEventToCalendar(event);
+    expect(open).toHaveBeenCalledWith(googleEventUrl(event));
+    open.mockRestore();
+    Platform.OS = original;
   });
 });

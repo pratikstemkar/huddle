@@ -60,6 +60,30 @@ export const iconPaths = {
       { t: 'path', d: 'M6 17l4-8h5l3 8M10 9H7' },
     ],
   },
+  dinner: { shapes: [{ t: 'path', d: 'M7 3v18M4 3v5a3 3 0 0 0 6 0V3M17 21V3c-2.5 1.5-3.5 4-3.5 7.5S15 14 17 14' }] },
+  coffee: {
+    shapes: [
+      { t: 'path', d: 'M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z' },
+      { t: 'path', d: 'M16 11h1.5a2.5 2.5 0 0 1 0 5H16M8 3v3M12 3v3' },
+    ],
+  },
+  movie: { shapes: [{ t: 'rect', x: 3, y: 5, width: 18, height: 14, rx: 3 }, { t: 'path', d: 'M10 9.5v5l4-2.5z' }] },
+  drinks: { shapes: [{ t: 'path', d: 'M5 4h14l-7 8zM12 12v8M8 20h8' }] },
+  games: {
+    shapes: [
+      { t: 'rect', x: 4, y: 4, width: 16, height: 16, rx: 4 },
+      { t: 'circle', cx: 9, cy: 9, r: 1 },
+      { t: 'circle', cx: 15, cy: 9, r: 1 },
+      { t: 'circle', cx: 9, cy: 15, r: 1 },
+      { t: 'circle', cx: 15, cy: 15, r: 1 },
+    ],
+  },
+  out: { shapes: [{ t: 'path', d: 'M3 20l6-11 4 7 2-3 6 7z' }, { t: 'circle', cx: 17, cy: 6, r: 2 }] },
+  pin: { shapes: [{ t: 'path', d: 'M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z' }, { t: 'circle', cx: 12, cy: 9.5, r: 2.5 }] },
+  clock: { shapes: [{ t: 'circle', cx: 12, cy: 12, r: 9 }, { t: 'path', d: 'M12 7v5l3 2' }] },
+  lock: { shapes: [{ t: 'rect', x: 5, y: 11, width: 14, height: 10, rx: 3 }, { t: 'path', d: 'M8 11V8a4 4 0 0 1 8 0v3' }] },
+  send: { shapes: [{ t: 'path', d: 'M4 12l16-8-6 16-3-7z' }] },
+  maybe: { shapes: [{ t: 'path', d: 'M4 13c2.5-3 5-3 8 0s5.5 3 8 0' }], strokeWidth: 2.4 },
   apple: {
     filled: true,
     shapes: [
