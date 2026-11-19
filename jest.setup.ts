@@ -22,6 +22,9 @@ jest.mock('expo-haptics', () => ({
 jest.mock('@/components/ui/confirm-sheet', () => require('./test-utils/ui-mocks').confirmSheet);
 jest.mock('@/components/ui/toast', () => require('./test-utils/ui-mocks').toast);
 
+// Gesture Handler needs a native root view; tests drive the pan callbacks directly (see test-utils/gesture-mock).
+jest.mock('react-native-gesture-handler', () => require('./test-utils/gesture-mock').gestureHandler);
+
 // Photo picking, resizing and the device's Huddle folder are native; tests drive these fakes instead.
 jest.mock('expo-image-picker', () => require('./test-utils/photo-mocks').imagePicker);
 jest.mock('expo-image-manipulator', () => require('./test-utils/photo-mocks').imageManipulator);

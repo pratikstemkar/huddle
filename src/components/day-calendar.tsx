@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
@@ -12,6 +13,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 
+import { dayAtPoint, pointsBetween, Stroke, type Point } from '@/lib/calendar-grid';
 import { formatDay, monthGrids, type Day, type MonthGrid } from '@/lib/dates';
 import { MAX_CONTENT_WIDTH, MIN_TOUCH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
@@ -47,6 +49,10 @@ const CELL = 44;
 const ROW_GAP = 4;
 const MAX_DOTS = 3;
 const TODAY_H = 32;
+/** Press and hold this long before a drag starts marking days; a quicker swipe still turns the month. */
+const HOLD_MS = 220;
+/** After a drag, the tap the browser or OS still sends for the cell under the finger is ignored this long. */
+const TAP_GUARD_MS = 350;
 
 type CellProps = {
   day: Day;
@@ -171,6 +177,7 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
   // A first guess from the screen size so the first frame isn't empty; onLayout gives the real width.
   const [width, setWidth] = useState(() => Math.max(0, Math.min(window.width, MAX_CONTENT_WIDTH) - 2 * (space.screenX + space.lg + 1)));
   const [index, setIndex] = useState(0);
+  const [painting, setPainting] = useState(false);
   const list = useRef<FlatList<MonthGrid>>(null);
   // The month an arrow is scrolling to. While set, the animation's in-between offsets don't move the index,
   // or the header would flick back to the old month for the first half of the scroll.
@@ -188,6 +195,84 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
     }
     return out;
   }, [who, people]);
+
+  // Press and hold on a day, then drag across others: they all take the state the first one is changing to.
+  const paintable = mode === 'mine' && !readOnly;
+  const latest = useRef({ months, index, width, myDays, from, to, today, onToggle });
+  useEffect(() => {
+    latest.current = { months, index, width, myDays, from, to, today, onToggle };
+  });
+  const stroke = useRef<Stroke | null>(null);
+  const lastPoint = useRef<Point | null>(null);
+  const active = useRef(false);
+  const guard = useRef(false);
+  const guardTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(guardTimer.current), []);
+
+  const dayAt = (p: Point) => {
+    const l = latest.current;
+    const m = l.months[l.index];
+    return m ? dayAtPoint(m, p, { width: l.width, cell: CELL, gap: ROW_GAP }) : null;
+  };
+  const paint = (days: Day[], free: boolean) => {
+    for (const d of days) {
+      latest.current.onToggle(d, free);
+      if (Platform.OS !== 'web') Haptics.selectionAsync();
+    }
+  };
+
+  const pan = usePanGesture({
+    enabled: paintable,
+    runOnJS: true,
+    activateAfterLongPress: HOLD_MS,
+    onActivate: (e) => {
+      active.current = true;
+      guard.current = true;
+      clearTimeout(guardTimer.current);
+      const at = { x: e.x, y: e.y };
+      const day = dayAt(at);
+      if (!day) return;
+      const l = latest.current;
+      const canEdit = (d: Day) => d >= l.today && d >= l.from && d <= l.to;
+      const s = new Stroke(day, (d) => l.myDays.has(d), canEdit);
+      stroke.current = s;
+      lastPoint.current = at;
+      setPainting(true);
+      // The first day always changes: it decides what the stroke does.
+      if (canEdit(day)) paint([day], s.free);
+    },
+    onUpdate: (e) => {
+      const s = stroke.current;
+      const prev = lastPoint.current;
+      if (!s || !prev) return;
+      const to = { x: e.x, y: e.y };
+      for (const p of pointsBetween(prev, to, CELL / 2)) {
+        const day = dayAt(p);
+        if (day) paint(s.next(day), s.free);
+      }
+      lastPoint.current = to;
+    },
+    onFinalize: () => {
+      if (!active.current) return;
+      active.current = false;
+      stroke.current = null;
+      lastPoint.current = null;
+      setPainting(false);
+      // The tap the platform may still deliver for the cell under the finger must not undo the stroke.
+      clearTimeout(guardTimer.current);
+      guardTimer.current = setTimeout(() => {
+        guard.current = false;
+      }, TAP_GUARD_MS);
+    },
+  });
+
+  const toggle = useCallback(
+    (day: Day, free: boolean) => {
+      if (guard.current) return;
+      onToggle(day, free);
+    },
+    [onToggle],
+  );
 
   const onLayout = (e: LayoutChangeEvent) => {
     const w = Math.round(e.nativeEvent.layout.width);
@@ -289,6 +374,7 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
         ))}
       </View>
 
+      <GestureDetector gesture={pan}>
       <View onLayout={onLayout} style={{ height: WEEKS * CELL + (WEEKS - 1) * ROW_GAP }}>
         {width > 0 ? (
           <FlatList
@@ -299,6 +385,7 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
+            scrollEnabled={!painting}
             onScroll={onScroll}
             // A finger on the pager takes over from any arrow scroll still running.
             onScrollBeginDrag={() => {
@@ -324,13 +411,14 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
                 selected={selected}
                 readOnly={readOnly}
                 marked={marked}
-                onToggle={onToggle}
+                onToggle={toggle}
                 onSelect={onSelect}
               />
             )}
           />
         ) : null}
       </View>
+      </GestureDetector>
 
       {mode === 'mine' ? (
         <Text variant="caption" tone="muted" style={{ textAlign: 'center' }}>

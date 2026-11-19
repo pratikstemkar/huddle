@@ -242,7 +242,7 @@ describe('Dates panel', () => {
 
   it('lets me mark days in My days mode', async () => {
     await renderVote('dates');
-    expect(screen.getByText('Tap the days you could go.')).toBeTruthy();
+    expect(screen.getByText('Tap the days you could go, or press and drag across several.')).toBeTruthy();
     expect(screen.getByText('Nobody has marked a day yet.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText(long('2027-03-15')));
     expect(mockAv.setDay).toHaveBeenCalledWith('2027-03-15', true);
