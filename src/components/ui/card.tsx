@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
 
 import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
 import { Icon } from './icon';
+import { PressableScale } from './press-scale';
 
 export type CardProps = Omit<ViewProps, 'style'> & {
   style?: StyleProp<ViewStyle>;
@@ -36,15 +37,16 @@ export function Card({ style, variant = 'default', color, onPress, chevron, chil
 
   if (onPress) {
     return (
-      <Pressable
+      <PressableScale
+        pressedScale={0.98}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         accessibilityHint={accessibilityHint}
         onPress={onPress}
-        style={({ pressed }) => [base, pressed && { opacity: 0.85 }, style]}
+        style={[base, style]}
         {...rest}>
         {content}
-      </Pressable>
+      </PressableScale>
     );
   }
   return (

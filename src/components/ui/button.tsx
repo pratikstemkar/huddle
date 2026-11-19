@@ -8,7 +8,7 @@ import { useReducedMotion, useTheme } from '@/theme/use-theme';
 import { Icon, type IconName } from './icon';
 import { Text } from './text';
 
-export type ButtonVariant = 'primary' | 'ink' | 'outline' | 'outlineInk' | 'beak' | 'suggest' | 'ghost' | 'secondary';
+export type ButtonVariant = 'primary' | 'ink' | 'outline' | 'outlineInk' | 'beak' | 'suggest' | 'ghost' | 'secondary' | 'danger';
 export type ButtonSize = 'lg' | 'md' | 'sm';
 
 export type ButtonProps = {
@@ -20,6 +20,8 @@ export type ButtonProps = {
   icon?: IconName | ReactNode;
   iconRight?: IconName | ReactNode;
   loading?: boolean;
+  /** Can't be pressed: dimmed, no haptic, announced as disabled. */
+  disabled?: boolean;
   /** Override the fill, e.g. a trip colour. The text picks a readable colour for it. */
   color?: string;
   /** Suggest variant only: the tall tile with the icon stacked over the label (Photos). */
@@ -61,6 +63,8 @@ function look(variant: ButtonVariant, colors: Colors, color?: string): { bg: str
       return { bg: 'transparent', fg: colors.irisText, border: { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.dashed } };
     case 'ghost':
       return { bg: 'transparent', fg: colors.text };
+    case 'danger':
+      return { bg: colors.danger, fg: colors.onIris };
   }
 }
 
@@ -76,6 +80,7 @@ export function Button({
   icon,
   iconRight,
   loading,
+  disabled,
   color,
   tall,
   style,
@@ -106,15 +111,16 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ busy: !!loading }}
-      onPressIn={() => press(0.96)}
+      accessibilityState={{ busy: !!loading, ...(disabled ? { disabled: true } : null) }}
+      disabled={disabled}
+      onPressIn={() => !disabled && press(0.96)}
       onPressOut={() => press(1)}
       onPress={() => {
-        if (loading) return;
+        if (loading || disabled) return;
         if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress?.();
       }}
-      style={[styles.base, shape, { backgroundColor: bg }, border, animated, style]}>
+      style={[styles.base, shape, { backgroundColor: bg }, border, disabled && styles.disabled, animated, style]}>
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
@@ -133,5 +139,6 @@ export function Button({
 const styles = StyleSheet.create({
   base: { alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  disabled: { opacity: 0.5 },
   stack: { flexDirection: 'column', gap: space.s6 },
 });

@@ -10,6 +10,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { ConfirmProvider } from '@/components/ui/confirm-sheet';
+import { ToastProvider } from '@/components/ui/toast';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { useUpdateCheck } from '@/lib/use-update-check';
 import { ThemePreferenceProvider, useThemePreference } from '@/theme/theme-preference';
@@ -62,7 +64,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemePreferenceProvider>
         <AuthProvider>
-          <RootStack />
+          <ToastProvider>
+            <ConfirmProvider>
+              <RootStack />
+            </ConfirmProvider>
+          </ToastProvider>
         </AuthProvider>
       </ThemePreferenceProvider>
     </GestureHandlerRootView>
