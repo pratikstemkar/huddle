@@ -18,13 +18,15 @@ import { IconTile } from '@/components/ui/icon-tile';
 import { Screen } from '@/components/ui/screen';
 import { SpeechCard } from '@/components/ui/speech-card';
 import { Text, type Tone } from '@/components/ui/text';
+import { useToast } from '@/components/ui/toast';
+import { nudgeSentText, nudgeTrip } from '@/lib/activity';
 import { useAuth } from '@/lib/auth';
 import { formatRange, formatTripDates, today } from '@/lib/dates';
 import { useTripLive } from '@/lib/realtime';
 import { useSplit } from '@/lib/split';
 import { countdown, pipNext, tripDates, votedCount, type PipAction } from '@/lib/trip-status';
 import { photosCardText, planCardText, splitCardText, useTripStats } from '@/lib/trip-stats';
-import { inviteLink, nudgeMessage, planMessage, useTrip, type TripDetail } from '@/lib/trips';
+import { planMessage, useTrip, type TripDetail } from '@/lib/trips';
 import { radius, space, toTripColor, tripColors, tripTints, type TintArea } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 import { useTripId } from '@/components/nav/trip-id';
@@ -165,6 +167,7 @@ export default function TripScreen() {
   const refreshSplit = split.refresh;
   const { colors } = useTheme();
   const { share } = useShareOrCopy();
+  const toast = useToast();
 
   const reload = useCallback(() => {
     refresh();
@@ -225,13 +228,18 @@ export default function TripScreen() {
         const dates = trip.locked_start && trip.locked_end ? formatTripDates(trip.locked_start, trip.locked_end) : '';
         share(planMessage(trip.name, dates, place));
       },
-      nudge: () => share(nudgeMessage(trip.name, 'vote', inviteLink(trip.invite_code))),
+      nudge: () => {
+        nudgeTrip(trip.id, 'vote').then(
+          (n) => toast.show(nudgeSentText(n)),
+          (e: Error) => toast.show(e.message),
+        );
+      },
       plan: () => openTab(trip.id, 'plan'),
       split: () => openTab(trip.id, 'split'),
       photos: () => openTab(trip.id, 'photos'),
     };
     go[action]();
-  }, [trip, action, share]);
+  }, [trip, action, share, toast]);
   useRegisterPipAction(next?.label ?? null, next ? runPip : null);
 
   if (loading && !trip) {

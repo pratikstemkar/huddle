@@ -6,7 +6,7 @@ import { Linking, Platform, Share } from 'react-native';
 import { addDays, formatRange, formatTripDates, today } from '@/lib/dates';
 import { router, setParams } from '../../test-utils/expo-router-mock';
 import { MEMBER, ORGANISER, TRIP_ID, destination, sessionFor, trip, tripState } from '../../test-utils/fixtures';
-import { queueResult } from '../../test-utils/supabase-mock';
+import { queueResult, rpcCalls } from '../../test-utils/supabase-mock';
 import { mockToastShow } from '../../test-utils/ui-mocks';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
@@ -270,19 +270,11 @@ describe('Trip screen', () => {
       mockState = tripState(trip({ iMarked: true, destinations: [destination({ voteCount: 1, voters: [MEMBER], iVoted: true })] }));
       await render(<TripScreen />);
       expect(pipSays('Waiting on 1 more to vote.')).toBeTruthy();
+      queueResult('rpc:nudge_trip', { data: 1 });
       await fireEvent.press(screen.getByRole('button', { name: 'Nudge' }));
-      expect(share).toHaveBeenCalledWith({ message: expect.stringContaining('Quick nudge: vote on where to go for "Goa in March"') });
-    });
-
-    it('copies the nudge on browsers without a share sheet', async () => {
-      mockSession = sessionFor(MEMBER);
-      mockState = tripState(trip({ iMarked: true, destinations: [destination({ voteCount: 1, voters: [MEMBER], iVoted: true })] }));
-      await withoutWebShare(async () => {
-        await render(<TripScreen />);
-        await fireEvent.press(screen.getByRole('button', { name: 'Nudge' }));
-        expect(setString).toHaveBeenCalledWith(expect.stringContaining('Quick nudge'));
-        expect(mockToastShow).toHaveBeenCalledWith('Copied to clipboard');
-      });
+      expect(rpcCalls).toContainEqual({ name: 'nudge_trip', args: { t: TRIP_ID, what: 'vote' } });
+      await waitFor(() => expect(mockToastShow).toHaveBeenCalledWith('Nudged 1 person.'));
+      expect(share).not.toHaveBeenCalled();
     });
 
     it('asks a lone member to invite people', async () => {

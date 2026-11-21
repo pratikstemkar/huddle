@@ -1,8 +1,9 @@
-import * as Clipboard from 'expo-clipboard';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Platform, Share } from 'react-native';
+import { Share } from 'react-native';
 
 import { router } from '../../test-utils/expo-router-mock';
+import { queueResult, rpcCalls } from '../../test-utils/supabase-mock';
+import { mockToastShow } from '../../test-utils/ui-mocks';
 import { addDays, formatRange, formatTripDates, today } from '@/lib/dates';
 import type { Trip, TripCover, TripSummary } from '@/lib/trips';
 
@@ -164,15 +165,25 @@ describe('Home', () => {
     });
     afterEach(() => share.mockRestore());
 
-    it('asks me to nudge friends who have not marked their days, with counts only', async () => {
+    it('nudges friends who have not marked their days, with counts only', async () => {
       mockTrips.trips = [planning];
       mockTrips.summaries = new Map([['t1', summary('t1', { members: 5, marked: 2 })]]);
+      queueResult('rpc:nudge_trip', { data: 3 });
       await render(<Home />);
       expect(screen.getByText('3 of 5 still need to mark their days for Goa in March.')).toBeTruthy();
       await fireEvent.press(screen.getByRole('button', { name: 'Nudge them' }));
-      const message = (share.mock.calls[0][0] as { message: string }).message;
-      expect(message).toContain(`Quick nudge: mark the days you're free for "Goa in March" on Huddle:`);
-      expect(message).toContain('invite/goa2027x');
+      expect(rpcCalls).toContainEqual({ name: 'nudge_trip', args: { t: 't1', what: 'days' } });
+      await waitFor(() => expect(mockToastShow).toHaveBeenCalledWith('Nudged 3 people.'));
+      expect(share).not.toHaveBeenCalled();
+    });
+
+    it('says when everyone was nudged today already', async () => {
+      mockTrips.trips = [planning];
+      mockTrips.summaries = new Map([['t1', summary('t1', { members: 5, marked: 2 })]]);
+      queueResult('rpc:nudge_trip', { error: { message: 'Everyone was nudged about this today already. Try again tomorrow.', code: 'P0001' } });
+      await render(<Home />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Nudge them' }));
+      await waitFor(() => expect(mockToastShow).toHaveBeenCalledWith('Everyone was nudged about this today already. Try again tomorrow.'));
     });
 
     it('does not nudge anyone to mark days when the dates are fixed', async () => {
@@ -182,25 +193,6 @@ describe('Home', () => {
       await render(<Home />);
       expect(screen.queryByText('Nudge them')).toBeNull();
       expect(screen.getByText('Goa in March is 12 days away. Start packing.')).toBeTruthy();
-    });
-
-    it('copies the nudge on web without a share sheet', async () => {
-      const os = Platform.OS;
-      Platform.OS = 'web';
-      const nav = globalThis.navigator;
-      Object.defineProperty(globalThis, 'navigator', { value: {}, configurable: true });
-      try {
-        mockTrips.trips = [planning];
-        mockTrips.summaries = new Map([['t1', summary('t1', { members: 3, marked: 1 })]]);
-        await render(<Home />);
-        await fireEvent.press(screen.getByRole('button', { name: 'Nudge them' }));
-        expect(Clipboard.setStringAsync).toHaveBeenCalledWith(expect.stringContaining('Quick nudge'));
-        expect(share).not.toHaveBeenCalled();
-        expect(await screen.findByRole('button', { name: 'Copied' })).toBeTruthy();
-      } finally {
-        Platform.OS = os;
-        Object.defineProperty(globalThis, 'navigator', { value: nav, configurable: true });
-      }
     });
 
     it("asks for my vote and names the leader when I haven't voted", async () => {

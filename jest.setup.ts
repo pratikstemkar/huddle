@@ -1,6 +1,7 @@
 // Shared test setup: no test talks to a real Supabase project or native module.
 
 import { resetRouterMock } from './test-utils/expo-router-mock';
+import { resetNotificationMocks } from './test-utils/notifications-mock';
 import { resetPhotoMocks } from './test-utils/photo-mocks';
 import { resetSupabaseMock } from './test-utils/supabase-mock';
 
@@ -33,6 +34,10 @@ jest.mock('expo-file-system', () => require('./test-utils/photo-mocks').fileSyst
 // Safe-area insets are zero in tests; screens read them for padding around the floating tab bar.
 jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
 
+// Push is native; tests run as a phone with permission granted (see test-utils/notifications-mock).
+jest.mock('expo-notifications', () => require('./test-utils/notifications-mock').notifications);
+jest.mock('expo-device', () => require('./test-utils/notifications-mock').device);
+
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 
 // Reanimated runs its web implementation in tests (see the jest `resolver` in package.json).
@@ -43,4 +48,5 @@ beforeEach(() => {
   resetSupabaseMock();
   resetRouterMock();
   resetPhotoMocks();
+  resetNotificationMocks();
 });

@@ -13,11 +13,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ConfirmProvider } from '@/components/ui/confirm-sheet';
 import { ToastProvider } from '@/components/ui/toast';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { configureNotifications } from '@/lib/notifications';
 import { useUpdateCheck } from '@/lib/use-update-check';
 import { ThemePreferenceProvider, useThemePreference } from '@/theme/theme-preference';
 import { useTheme } from '@/theme/use-theme';
 
 SplashScreen.preventAutoHideAsync();
+configureNotifications();
 
 function RootStack() {
   const { session, loading } = useAuth();

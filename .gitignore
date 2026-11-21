@@ -48,3 +48,6 @@ coverage/
 
 # per-checkout Supabase stacks (see AGENTS.md)
 /.supabase-isolated
+
+# Firebase service-account keys (FCM v1). Upload with `bunx eas-cli credentials`; never commit.
+*-firebase-adminsdk-*.json

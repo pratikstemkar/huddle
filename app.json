@@ -20,7 +20,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.huddle.app"
+      "package": "com.huddle.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "single",
@@ -46,6 +47,12 @@
           "photosPermission": "Huddle uses your photos so you can add a picture to a place you suggest.",
           "cameraPermission": "Huddle uses your camera so you can take a picture of a place you suggest.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#5257E8"
         }
       ]
     ],

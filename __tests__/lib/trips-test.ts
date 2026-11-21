@@ -9,7 +9,6 @@ import {
   joinTrip,
   leaveTrip,
   lockTrip,
-  nudgeMessage,
   parseInviteCode,
   planMessage,
   removeMember,
@@ -175,18 +174,6 @@ describe('parseInviteCode', () => {
     ['', ''],
   ])('reads %p as %p', (input, code) => {
     expect(parseInviteCode(input)).toBe(code);
-  });
-});
-
-describe('nudgeMessage', () => {
-  it('asks people to mark their days', () => {
-    expect(nudgeMessage('Goa', 'days', 'https://h.app/invite/goa2027')).toBe(
-      'Quick nudge: mark the days you\'re free for "Goa" on Huddle: https://h.app/invite/goa2027',
-    );
-  });
-
-  it('asks people to vote', () => {
-    expect(nudgeMessage('Goa', 'vote', 'https://h.app/invite/goa2027')).toBe('Quick nudge: vote on where to go for "Goa" on Huddle: https://h.app/invite/goa2027');
   });
 });
 

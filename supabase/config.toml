@@ -432,3 +432,7 @@ enabled = false
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
 skip_nonce_check = true
+
+# Called by the database with a shared secret (x-push-secret), not a user's JWT.
+[functions.send-push]
+verify_jwt = false
