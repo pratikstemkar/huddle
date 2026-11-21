@@ -113,20 +113,22 @@ export default function SplitTab() {
   return (
     <Screen withNav contentStyle={styles.content}>
       <TripBack />
-      <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text variant="callout" tone="secondary" numberOfLines={1}>
-            {`${trip.name} · ${formatMoney(split.spent, currency)} spent`}
+      <View style={styles.headerBlock}>
+        <Text variant="callout" tone="secondary" numberOfLines={2}>
+          {`${trip.name} · ${formatMoney(split.spent, currency)} spent`}
+        </Text>
+        <View style={styles.header}>
+          <Text variant="title" style={styles.headerTitle}>
+            Split
           </Text>
-          <Text variant="title">Split</Text>
+          <Button
+            label="Add expense"
+            size="sm"
+            icon={<Icon name="plus" size={18} color={colors.onIris} />}
+            onPress={addExpense}
+            style={styles.add}
+          />
         </View>
-        <Button
-          label="Add expense"
-          size="sm"
-          icon={<Icon name="plus" size={18} color={colors.onIris} />}
-          onPress={addExpense}
-          style={styles.add}
-        />
       </View>
 
       {split.error ? (
@@ -172,8 +174,9 @@ export default function SplitTab() {
 const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
   content: { gap: space.lg },
-  header: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: space.md },
-  headerText: { flex: 1, minWidth: 0, gap: space.xs },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
+  headerBlock: { gap: space.xs },
+  headerTitle: { flex: 1, minWidth: 0 },
   add: { paddingHorizontal: space.lg },
   empty: { alignItems: 'center', gap: space.md, paddingVertical: space.xxl },
   emptyText: { textAlign: 'center' },

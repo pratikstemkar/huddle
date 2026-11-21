@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
 
 import { radius, space } from '@/theme/tokens';
@@ -9,10 +9,12 @@ export type InputProps = TextInputProps & {
   label: string;
   error?: string | null;
   containerStyle?: ViewStyle;
+  /** Sits beside the field, centred on it (not on the label or error), e.g. a Paste button. */
+  trailing?: ReactNode;
 };
 
 /** A labelled text field. The label doubles as the accessible name. */
-export function Input({ label, error, containerStyle, style, onFocus, onBlur, accessibilityLabel, ...rest }: InputProps) {
+export function Input({ label, error, containerStyle, trailing, style, onFocus, onBlur, accessibilityLabel, ...rest }: InputProps) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   const border = error
@@ -23,20 +25,23 @@ export function Input({ label, error, containerStyle, style, onFocus, onBlur, ac
   return (
     <View style={[styles.wrap, containerStyle]}>
       <Text variant="calloutStrong">{label}</Text>
-      <TextInput
-        accessibilityLabel={accessibilityLabel ?? label}
-        placeholderTextColor={colors.textMuted}
-        onFocus={(e) => {
-          setFocused(true);
-          onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setFocused(false);
-          onBlur?.(e);
-        }}
-        style={[styles.input, { backgroundColor: colors.card, color: colors.text }, border, style]}
-        {...rest}
-      />
+      <View style={styles.row}>
+        <TextInput
+          accessibilityLabel={accessibilityLabel ?? label}
+          placeholderTextColor={colors.textMuted}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
+          style={[styles.input, { backgroundColor: colors.card, color: colors.text }, border, style]}
+          {...rest}
+        />
+        {trailing}
+      </View>
       {error ? (
         <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
           {error}
@@ -48,5 +53,6 @@ export function Input({ label, error, containerStyle, style, onFocus, onBlur, ac
 
 const styles = StyleSheet.create({
   wrap: { gap: space.sm },
-  input: { minHeight: 56, paddingHorizontal: space.s18, borderRadius: radius.lg, fontSize: 17 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  input: { flex: 1, minWidth: 0, minHeight: 56, paddingHorizontal: space.s18, borderRadius: radius.lg, fontSize: 17 },
 });

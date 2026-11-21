@@ -225,7 +225,8 @@ export default function NewHangout() {
         <Button
           label={find ? 'Next: suggest times' : 'Next: pick the time'}
           iconRight="arrowRight"
-          onPress={canNext ? () => setStep('times') : undefined}
+          disabled={!canNext}
+          onPress={() => setStep('times')}
         />
       }>
       <View style={styles.body}>
@@ -289,21 +290,18 @@ export default function NewHangout() {
               </View>
             </>
           ) : (
-            <View style={styles.placeRow}>
-              <Input
-                label="Where (optional)"
-                accessibilityLabel="Google Maps link"
-                containerStyle={styles.placeInput}
-                value={placeText}
-                onChangeText={setPlaceText}
-                placeholder="Paste a Google Maps link"
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                error={placeBad ? 'That doesn’t look like a Google Maps link.' : null}
-              />
-              <Button label="Paste" size="sm" variant="secondary" onPress={paste} />
-            </View>
+            <Input
+              label="Where (optional)"
+              accessibilityLabel="Google Maps link"
+              value={placeText}
+              onChangeText={setPlaceText}
+              placeholder="Paste a Google Maps link"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              error={placeBad ? 'That doesn’t look like a Google Maps link.' : null}
+              trailing={<Button label="Paste" size="sm" variant="secondary" onPress={paste} />}
+            />
           )}
         </View>
 
@@ -326,6 +324,15 @@ export default function NewHangout() {
                 </Text>
                 <Button label={changing ? 'Done' : 'Change'} variant="ghost" size="sm" onPress={() => setChanging((c) => !c)} />
               </View>
+              {others.length === 0 && group ? (
+                <Text variant="caption" tone="secondary" accessibilityLiveRegion="polite">
+                  {group.name} has no one else in it yet. Invite friends from the Groups tab, or pick another group.
+                </Text>
+              ) : invited.length === 0 && others.length > 0 ? (
+                <Text variant="caption" tone="secondary" accessibilityLiveRegion="polite">
+                  Everyone is switched off. Tap Change and pick at least one person.
+                </Text>
+              ) : null}
               {changing ? <MemberGrid people={others} off={left} onToggle={toggleLeft} /> : null}
             </>
           )}
@@ -369,8 +376,6 @@ const styles = StyleSheet.create({
   place: { borderWidth: 1, borderRadius: radius.lg, padding: space.sm, flexDirection: 'row', alignItems: 'center', gap: space.md },
   placeIcon: { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
   placeText: { flex: 1, minWidth: 0 },
-  placeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
-  placeInput: { flex: 1 },
   panel: { borderWidth: 1, borderRadius: radius.lg, padding: space.md, gap: space.md },
   dashed: { height: 48, borderWidth: 2, borderStyle: 'dashed', borderRadius: radius.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm },
   durations: { flexDirection: 'row', gap: space.sm },
