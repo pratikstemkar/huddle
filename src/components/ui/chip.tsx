@@ -2,11 +2,14 @@ import { StyleSheet, type ViewStyle } from 'react-native';
 
 import { MIN_TOUCH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
+import { Icon, type IconName } from './icon';
 import { PressableScale } from './press-scale';
 import { Text } from './text';
 
 type Props = {
   label: string;
+  /** Optional leading icon, tinted to match the label. */
+  icon?: IconName;
   selected?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
@@ -14,7 +17,7 @@ type Props = {
 };
 
 /** A filter chip. Selected chips are ink-filled. */
-export function Chip({ label, selected = false, onPress, accessibilityLabel, style }: Props) {
+export function Chip({ label, icon, selected = false, onPress, accessibilityLabel, style }: Props) {
   const { colors } = useTheme();
   return (
     <PressableScale
@@ -27,6 +30,7 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, sty
         selected ? { backgroundColor: colors.ink, borderColor: colors.ink } : { backgroundColor: colors.card, borderColor: colors.line },
         style,
       ]}>
+      {icon ? <Icon name={icon} size={18} color={selected ? colors.onInk : colors.text} /> : null}
       <Text variant="calloutStrong" style={{ color: selected ? colors.onInk : colors.text }}>
         {label}
       </Text>
@@ -35,5 +39,5 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, sty
 }
 
 const styles = StyleSheet.create({
-  base: { minHeight: MIN_TOUCH, paddingHorizontal: space.lg, borderRadius: radius.pill44, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  base: { minHeight: MIN_TOUCH, paddingHorizontal: space.lg, borderRadius: radius.pill44, borderWidth: 1, flexDirection: 'row', gap: space.sm, alignItems: 'center', justifyContent: 'center' },
 });

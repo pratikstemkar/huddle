@@ -3,7 +3,7 @@ import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, TextInput, View } from 'react-native';
 
-import { CATEGORY_LABEL, nameMap } from '@/components/split/people';
+import { CATEGORY_LABEL, CATEGORY_LOOK, nameMap } from '@/components/split/people';
 import { closeSheet, SheetHeader } from '@/components/split/sheet-header';
 import { useConfirm } from '@/components/ui/confirm-sheet';
 import { Button } from '@/components/ui/button';
@@ -188,7 +188,7 @@ export default function ExpenseSheet() {
             { backgroundColor: colors.card },
             errors.amount ? { borderWidth: 2, borderColor: colors.danger } : { borderWidth: 1, borderColor: colors.lineStrong },
           ]}>
-          <Text variant="display" tone="secondary">
+          <Text variant="display" tone="secondary" style={styles.amountSymbol}>
             {currencySymbol(currency)}
           </Text>
           <TextInput
@@ -232,6 +232,7 @@ export default function ExpenseSheet() {
           <Chip
             key={c}
             label={CATEGORY_LABEL[c]}
+            icon={CATEGORY_LOOK[c].icon}
             selected={categoryValue === c}
             onPress={() => {
               setCategory(c);
@@ -291,6 +292,8 @@ const styles = StyleSheet.create({
   content: { gap: space.xl },
   field: { gap: space.sm },
   amount: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 80, paddingHorizontal: space.s20, borderRadius: radius.lg },
-  amountInput: { flex: 1, minWidth: 0, ...type.display, paddingVertical: space.sm },
+  // Same line box as the currency symbol, no font padding and no vertical padding, so the digits sit on the symbol's baseline on Android too.
+  amountSymbol: { includeFontPadding: false, textAlignVertical: 'center' },
+  amountInput: { flex: 1, minWidth: 0, ...type.display, paddingVertical: 0, includeFontPadding: false, textAlignVertical: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
 });
