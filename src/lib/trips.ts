@@ -114,15 +114,6 @@ export function parseInviteCode(input: string): string {
   }
 }
 
-export type NudgeKind = 'days' | 'vote';
-
-/** The message behind "Nudge them". Counts only, never names, so it can't leak hidden marking. */
-export function nudgeMessage(tripName: string, kind: NudgeKind, link: string) {
-  return kind === 'days'
-    ? `Quick nudge: mark the days you're free for "${tripName}" on Huddle: ${link}`
-    : `Quick nudge: vote on where to go for "${tripName}" on Huddle: ${link}`;
-}
-
 export function inviteMessage(tripName: string, code: string) {
   return `Join "${tripName}" on Huddle! Use code ${code}, or open ${inviteLink(code)}`;
 }

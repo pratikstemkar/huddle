@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { Platform } from 'react-native';
 
 import { DEV_PASSWORD, devAuthEnabled } from './dev-auth';
+import { unregisterPush } from './notifications';
 import { exchangeOAuthCode, OAUTH_CALLBACK_PATH, oauthCode } from './oauth-callback';
 import { supabase } from './supabase';
 
@@ -104,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithApple,
       signInAsDevUser,
       signOut: async () => {
+        await unregisterPush();
         await supabase.auth.signOut();
       },
     }),

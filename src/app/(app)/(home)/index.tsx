@@ -1,8 +1,7 @@
-import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Platform, Pressable, Share, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 
 import { Pip } from '@/components/pip/pip';
@@ -13,14 +12,14 @@ import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
+import { useToast } from '@/components/ui/toast';
+import { nudgeSentText, nudgeTrip, useActivity } from '@/lib/activity';
 import { displayName, useAuth } from '@/lib/auth';
 import { formatRange, formatTripDates, today as todayDay, type Day } from '@/lib/dates';
 import { useMyProfile } from '@/lib/profile';
 import { countdown, homeChip, sortTrips, tripDates, type ChipTone } from '@/lib/trip-status';
 import {
-  inviteLink,
   leadingPlaceName,
-  nudgeMessage,
   useTrips,
   type Trip,
   type TripCover,
@@ -30,7 +29,6 @@ import { MIN_TOUCH, palette, radius, space, toTripColor, tripTints } from '@/the
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
 const CHIP_TONES: Record<ChipTone, BadgeTone> = { action: 'beak', open: 'vote', done: 'neutral' };
-const COPIED_MS = 1800;
 // Only the first few cards cascade in; a long list never makes the last card wait.
 const STAGGER_COUNT = 4;
 const STAGGER_MS = 40;
@@ -71,10 +69,9 @@ const openTrip = (id: string) => router.push({ pathname: '/trip/[id]', params: {
 
 function HeroCard({ hero }: { hero: Hero }) {
   const { colors } = useTheme();
-  const [copied, setCopied] = useState(false);
+  const toast = useToast();
+  const [nudging, setNudging] = useState(false);
   const [leading, setLeading] = useState<{ tripId: string; name: string | null } | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
 
   const voteTripId = hero.kind === 'vote' ? hero.trip.id : null;
   const leader = leading && leading.tripId === voteTripId ? leading.name : null;
@@ -91,21 +88,16 @@ function HeroCard({ hero }: { hero: Hero }) {
     };
   }, [voteTripId]);
 
+  // The server picks who still needs to mark their days, so nobody here learns who that is.
   const nudge = async (trip: Trip) => {
-    const message = nudgeMessage(trip.name, 'days', inviteLink(trip.invite_code));
-    // Browsers without the Web Share API can't open a share sheet; copy the message instead.
-    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && !navigator.share) {
-      try {
-        await Clipboard.setStringAsync(message);
-        setCopied(true);
-        clearTimeout(timer.current);
-        timer.current = setTimeout(() => setCopied(false), COPIED_MS);
-      } catch {}
-      return;
-    }
+    setNudging(true);
     try {
-      await Share.share({ message });
-    } catch {}
+      toast.show(nudgeSentText(await nudgeTrip(trip.id, 'days')));
+    } catch (e) {
+      toast.show((e as Error).message);
+    } finally {
+      setNudging(false);
+    }
   };
 
   let text: string;
@@ -113,7 +105,15 @@ function HeroCard({ hero }: { hero: Hero }) {
   switch (hero.kind) {
     case 'nudge':
       text = hero.text;
-      actions = <Button label={copied ? 'Copied' : 'Nudge them'} variant="beak" onPress={() => nudge(hero.trip)} />;
+      actions = (
+        <Button
+          label="Nudge them"
+          variant="beak"
+          loading={nudging}
+          accessibilityHint="Sends a reminder to the people who haven't marked their days"
+          onPress={() => nudge(hero.trip)}
+        />
+      );
       break;
     case 'vote':
       text = `Got a favourite for ${hero.trip.name}? ${leader ? `${leader} is ahead.` : 'Voting is open.'}`;
@@ -241,8 +241,10 @@ function TripCard({
 
 export default function Home() {
   const { session } = useAuth();
+  const { colors } = useTheme();
   const { trips, covers, summaries, photoCounts, loading, error, refresh } = useTrips();
   const { profile, refresh: refreshProfile } = useMyProfile(session?.user.id);
+  const { unread } = useActivity(session?.user.id);
   const name = profile?.display_name ?? displayName(session);
   const today = todayDay();
   const hero = useMemo(() => homeHero(trips, summaries, today), [trips, summaries, today]);
@@ -266,6 +268,15 @@ export default function Home() {
             </Text>
             <Text variant="title">Where to next?</Text>
           </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={unread > 0 ? `Activity, ${unread} unread` : 'Activity'}
+            accessibilityHint="Invites, nudges and locked plans"
+            onPress={() => router.push('/activity')}
+            style={styles.avatar}>
+            <Icon name="bell" size={24} color={colors.text} />
+            {unread > 0 ? <View style={[styles.unread, { backgroundColor: colors.iris, borderColor: colors.bg }]} /> : null}
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Your profile"
@@ -325,6 +336,7 @@ const styles = StyleSheet.create({
   page: { gap: space.s18 },
   header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   headerText: { flex: 1, gap: space.xxs },
+  unread: { position: 'absolute', top: 9, right: 10, width: 10, height: 10, borderRadius: 5, borderWidth: 2 },
   avatar: { width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: MIN_TOUCH / 2, alignItems: 'center', justifyContent: 'center' },
   hero: {
     borderRadius: radius.xl,

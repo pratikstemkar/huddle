@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { ColorSwatches } from '@/components/color-swatches';
+import { NotificationSettings } from '@/components/notification-settings';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
@@ -173,6 +174,10 @@ export default function ProfileScreen() {
               System follows your phone&apos;s light or dark setting.
             </Text>
           </View>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.line }]}>
+          <NotificationSettings userId={userId} />
         </View>
 
         <View style={[styles.list, { backgroundColor: colors.card, borderColor: colors.line }]}>

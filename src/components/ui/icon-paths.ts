@@ -26,6 +26,7 @@ export const iconPaths = {
   check: { shapes: [{ t: 'path', d: 'M5 12.5l4.5 4.5L19 7.5' }], strokeWidth: 2.4 },
   link: { shapes: [{ t: 'path', d: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1' }] },
   you: { shapes: [{ t: 'circle', cx: 12, cy: 8, r: 4 }, { t: 'path', d: 'M4 21c1-4 4-6 8-6s7 2 8 6' }] },
+  bell: { shapes: [{ t: 'path', d: 'M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z' }, { t: 'path', d: 'M10 21a2.2 2.2 0 0 0 4 0' }] },
   trip: { shapes: [{ t: 'path', d: 'M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' }] },
   vote: { shapes: [{ t: 'path', d: 'M12 19V6M6 12l6-6 6 6' }] },
   plan: { shapes: [{ t: 'rect', x: 3, y: 5, width: 18, height: 16, rx: 3 }, { t: 'path', d: 'M3 10h18M8 3v4M16 3v4' }] },

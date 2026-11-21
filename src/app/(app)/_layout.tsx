@@ -1,6 +1,8 @@
 import { router, Stack } from 'expo-router';
 import { useEffect } from 'react';
 
+import { useAuth } from '@/lib/auth';
+import { useNotifications } from '@/lib/notifications';
 import { takePendingInvite } from '@/lib/pending-invite';
 import { useTheme } from '@/theme/use-theme';
 
@@ -8,6 +10,8 @@ export const unstable_settings = { anchor: '(home)' };
 
 export default function AppLayout() {
   const { colors } = useTheme();
+  const { session } = useAuth();
+  useNotifications(session?.user.id);
 
   // This layout mounts once signed in. If they arrived through an invite link while signed out,
   // carry on to the join screen with the code filled in.
@@ -27,6 +31,7 @@ export default function AppLayout() {
       <Stack.Screen name="group/[id]" />
       <Stack.Screen name="hangout/[id]" />
       <Stack.Screen name="join" />
+      <Stack.Screen name="activity" />
       <Stack.Screen name="delete-account" />
     </Stack>
   );
