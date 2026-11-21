@@ -62,6 +62,29 @@ bun run typecheck
 bun run test
 ```
 
+## Push notifications
+
+Notifications are rows in `notifications`, written by database triggers. The `send-push` edge function (`supabase/functions/send-push`) sends them through Expo's push service. Nothing is pushed until these are set up. The in-app Activity list works without them.
+
+1. **Android (FCM v1).**
+   - Create a Firebase project and add an Android app with package `com.huddle.app`.
+   - Put `google-services.json` in the repo root and add `"googleServicesFile": "./google-services.json"` under `expo.android` in `app.json`.
+   - In Firebase, go to Project settings → Service accounts → Generate new private key. Upload that key with `bunx eas-cli credentials` (Android → production → Google Service Account → FCM V1). Never commit the key.
+2. **iOS (APNs).** This needs a paid Apple Developer account. Say yes to the push key when `bunx eas-cli build` asks.
+3. **Hosted Supabase.**
+   - Deploy the function: `bunx supabase functions deploy send-push --no-verify-jwt`.
+   - Set its secret, a long random string: `bunx supabase secrets set PUSH_SECRET=<random>`.
+   - If enhanced push security is on in Expo, also set `EXPO_ACCESS_TOKEN`.
+   - Store the function URL and the same secret in Vault (SQL editor):
+
+     ```sql
+     select vault.create_secret('https://<project>.supabase.co/functions/v1/send-push', 'push_function_url');
+     select vault.create_secret('<same PUSH_SECRET>', 'push_function_secret');
+     ```
+
+     The migration has already enabled `pg_net` and `pg_cron`, and schedules a retry and receipt check every five minutes.
+4. **A new native build.** `expo-notifications` is a native module, so an OTA update can't add it. Push also never works in Expo Go on Android.
+
 ## Releasing
 
 Pushing a `vX.Y.Z` tag builds the Android APK on GitHub (no EAS build credits), attaches it to a GitHub Release with notes from `CHANGELOG.md`, and publishes the JavaScript to installed apps over the air. Commits use conventional prefixes (`feat:`, `fix:`, `perf:`, `docs:`, `chore:`...) because the changelog is built from them.
