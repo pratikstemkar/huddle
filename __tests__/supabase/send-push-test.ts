@@ -2,6 +2,7 @@ import {
   buildMessages,
   checkReceipts,
   chunk,
+  isAuthorized,
   sendPending,
   type ClaimedPush,
   type PostJson,
@@ -167,5 +168,24 @@ describe('checkReceipts', () => {
     });
     await checkReceipts(store, post, { now });
     expect(store.deleteTickets).not.toHaveBeenCalled();
+  });
+});
+
+describe('isAuthorized', () => {
+  it('lets in a caller the database vouches for', async () => {
+    const matches = jest.fn(async (c: string) => c === 'right');
+    await expect(isAuthorized('right', matches)).resolves.toBe(true);
+    await expect(isAuthorized('wrong', matches)).resolves.toBe(false);
+  });
+
+  it('refuses a missing header without asking', async () => {
+    const matches = jest.fn(async () => true);
+    await expect(isAuthorized(null, matches)).resolves.toBe(false);
+    await expect(isAuthorized('', matches)).resolves.toBe(false);
+    expect(matches).not.toHaveBeenCalled();
+  });
+
+  it('refuses when the check itself fails', async () => {
+    await expect(isAuthorized('x', async () => { throw new Error('db down'); })).resolves.toBe(false);
   });
 });

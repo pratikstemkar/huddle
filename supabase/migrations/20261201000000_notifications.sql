@@ -6,7 +6,7 @@
 -- pg_cron (retries and delivery receipts), but only once the two Vault secrets below exist:
 --
 --   select vault.create_secret('https://<project>.supabase.co/functions/v1/send-push', 'push_function_url');
---   select vault.create_secret('<random string, also set as PUSH_SECRET on the function>', 'push_function_secret');
+--   select vault.create_secret('<random string>', 'push_function_secret');  -- checked by push_secret_ok() (…_push_secret_check.sql)
 --
 -- Without them nothing is sent and rows stay pending; Activity still works.
 --

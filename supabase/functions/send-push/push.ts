@@ -57,6 +57,19 @@ export type PushStore = {
 /** POSTs JSON and returns the status and parsed body. Throws on a network failure. */
 export type PostJson = (url: string, body: unknown) => Promise<{ status: number; body: unknown }>;
 
+/**
+ * Whether a caller sent the shared secret. `matches` asks the database (push_secret_ok, which reads Vault);
+ * an empty header is refused without asking, and a failed check counts as a no.
+ */
+export async function isAuthorized(header: string | null, matches: (candidate: string) => Promise<boolean>): Promise<boolean> {
+  if (!header) return false;
+  try {
+    return (await matches(header)) === true;
+  } catch {
+    return false;
+  }
+}
+
 export function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));

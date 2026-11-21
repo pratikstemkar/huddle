@@ -20,7 +20,6 @@ On the isolated stack, add to its `config.toml`:
 
 ```toml
 [edge_runtime.secrets]
-PUSH_SECRET = "local-push-secret"
 EXPO_PUSH_URL = "http://host.docker.internal:<port>/push"
 EXPO_RECEIPTS_URL = "http://host.docker.internal:<port>/receipts"
 ```

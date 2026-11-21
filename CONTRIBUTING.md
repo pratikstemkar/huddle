@@ -73,16 +73,15 @@ Notifications are rows in `notifications`, written by database triggers. The `se
 2. **iOS (APNs).** This needs a paid Apple Developer account. Say yes to the push key when `bunx eas-cli build` asks.
 3. **Hosted Supabase.**
    - Deploy the function: `bunx supabase functions deploy send-push --no-verify-jwt`.
-   - Set its secret, a long random string: `bunx supabase secrets set PUSH_SECRET=<random>`.
-   - If enhanced push security is on in Expo, also set `EXPO_ACCESS_TOKEN`.
-   - Store the function URL and the same secret in Vault (SQL editor):
+   - If enhanced push security is on in Expo, set `EXPO_ACCESS_TOKEN` on the function: `bunx supabase secrets set EXPO_ACCESS_TOKEN=<token>`.
+   - Store the function URL and a random secret in Vault (SQL editor):
 
      ```sql
      select vault.create_secret('https://<project>.supabase.co/functions/v1/send-push', 'push_function_url');
-     select vault.create_secret('<same PUSH_SECRET>', 'push_function_secret');
+     select vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'push_function_secret');
      ```
 
-     The migration has already enabled `pg_net` and `pg_cron`, and schedules a retry and receipt check every five minutes.
+     The function checks callers against `push_function_secret` through `push_secret_ok()`, so the secret only lives in Vault. The migration has already enabled `pg_net` and `pg_cron`, and schedules a retry and receipt check every five minutes.
 4. **A new native build.** `expo-notifications` is a native module, so an OTA update can't add it. Push also never works in Expo Go on Android.
 
 ## Releasing
