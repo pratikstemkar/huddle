@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSequence, withTiming } from 'react-native-reanimated';
 
 import { Text } from '@/components/ui/text';
@@ -7,6 +7,8 @@ import { NAV_HEIGHT } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
 const SHOW_MS = 4000;
+/** Room for the longest line; shorter ones shrink to fit inside it. */
+const TRACK_WIDTH = 260;
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 /** The bubble pops up once per launch: after that it would only repeat what the tab bar already says. */
@@ -51,25 +53,33 @@ export function PipHint({ labels, replayKey }: Props) {
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       testID="pip-hint"
-      style={[styles.bubble, { backgroundColor: colors.beak }, style]}>
-      <Text variant="label" tone="onBeak" numberOfLines={1}>
-        {label}
-      </Text>
+      style={[styles.track, style]}>
+      <View style={[styles.bubble, { backgroundColor: colors.beak }]}>
+        <Text variant="label" tone="onBeak" numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  bubble: {
+  // The Pip button is only NAV_HEIGHT wide, and an absolute child can't grow past its parent, so the bubble
+  // gets its own wider track to size against, pinned to the button's right edge.
+  track: {
     position: 'absolute',
     right: 0,
     bottom: NAV_HEIGHT + 10,
+    width: TRACK_WIDTH,
+    alignItems: 'flex-end',
+    transformOrigin: 'bottom right',
+  },
+  bubble: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 6,
-    transformOrigin: 'bottom right',
   },
 });
