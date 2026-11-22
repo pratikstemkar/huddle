@@ -1,14 +1,15 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
+/** The hosted web app. Keep in step with `HOSTED_APP_URL` in src/lib/trips.ts. */
+const HOSTED_APP_URL = 'https://huddletrips.vercel.app';
+
 /**
- * Extends app.json. When EXPO_PUBLIC_APP_URL (the hosted web app) is set, invite links on that domain
- * (`https://<domain>/invite/<code>`) open the installed app: iOS universal links + Android app links.
- * The domain must also serve public/.well-known/{apple-app-site-association,assetlinks.json}.
+ * Extends app.json. Invite links on the hosted web app's domain (`https://<domain>/invite/<code>` and
+ * `/group-invite/<code>`) open the installed app: iOS universal links + Android app links. The domain is
+ * EXPO_PUBLIC_APP_URL, else the hosted app, and must serve public/.well-known/{apple-app-site-association,assetlinks.json}.
  */
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const appUrl = process.env.EXPO_PUBLIC_APP_URL;
-  if (!appUrl) return config as ExpoConfig;
-  const host = new URL(appUrl).host;
+  const host = new URL(process.env.EXPO_PUBLIC_APP_URL || HOSTED_APP_URL).host;
 
   return {
     ...(config as ExpoConfig),
@@ -19,7 +20,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         {
           action: 'VIEW',
           autoVerify: true,
-          data: [{ scheme: 'https', host, pathPrefix: '/invite' }],
+          data: [
+            { scheme: 'https', host, pathPrefix: '/invite/' },
+            { scheme: 'https', host, pathPrefix: '/group-invite/' },
+          ],
           category: ['BROWSABLE', 'DEFAULT'],
         },
       ],

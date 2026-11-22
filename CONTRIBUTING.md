@@ -108,7 +108,7 @@ The release runs on a tag, so the commit must be on `main` first. Workflows:
 - `update.yml` publishes the bundle to EAS Update on the `production` branch.
 - `rollback.yml` retracts a bad update. Run it from the same tag the live APK was built from.
 
-Repository settings: variables `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_URL`, and secrets `EXPO_TOKEN` and `RELEASE_ANNOUNCE_SECRET`. An update only reaches an APK with the same runtime version (a fingerprint of the native app), so adding a native module or changing a plugin needs a new APK, not an update. After a first good build, record its size with `node scripts/perf/apk-size.mjs <apk> --update` and commit the baseline.
+Repository settings: variables `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_URL` (the hosted web app, `https://huddletrips.vercel.app`; release builds fall back to it when empty), and secrets `EXPO_TOKEN` and `RELEASE_ANNOUNCE_SECRET`. An update only reaches an APK with the same runtime version (a fingerprint of the native app), so adding a native module or changing a plugin needs a new APK, not an update. After a first good build, record its size with `node scripts/perf/apk-size.mjs <apk> --update` and commit the baseline.
 
 ### Release notifications
 

@@ -71,6 +71,9 @@ export async function joinTrip(code: string): Promise<string> {
   return data as string;
 }
 
+/** Where the hosted web app lives. Keep in step with `HOSTED_APP_URL` in app.config.ts. */
+export const HOSTED_APP_URL = 'https://huddletrips.vercel.app';
+
 /**
  * An https link a friend can open with or without the app: the hosted web page, or the app via
  * universal / app links. Falls back to a `huddle://` link only in native dev builds with no APP_URL.
@@ -79,12 +82,14 @@ export function inviteLink(code: string) {
   return appLink(`invite/${encodeURIComponent(code)}`);
 }
 
-/** An https link to a path in the app: the hosted web origin, else `EXPO_PUBLIC_APP_URL`, else a `huddle://` link. */
+/**
+ * An https link to a path in the app: the page's own origin on web, else `EXPO_PUBLIC_APP_URL`, else
+ * the hosted app in release builds. Only a native dev build with no APP_URL gets a `huddle://` link.
+ */
 export function appLink(path: string) {
   const origin = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location?.origin : undefined;
   if (origin) return `${origin}/${path}`;
-  // Where the hosted web app lives, e.g. `https://huddle.expo.app`. Unset in local native development.
-  const appUrl = process.env.EXPO_PUBLIC_APP_URL?.replace(/\/+$/, '');
+  const appUrl = (process.env.EXPO_PUBLIC_APP_URL || (__DEV__ ? '' : HOSTED_APP_URL)).replace(/\/+$/, '');
   if (appUrl) return `${appUrl}/${path}`;
   return Linking.createURL(path);
 }

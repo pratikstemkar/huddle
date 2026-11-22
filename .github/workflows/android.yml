@@ -100,7 +100,7 @@ jobs:
           [ -n "$EXPO_PUBLIC_SUPABASE_URL" ] || fail "No Supabase URL" "Set the SUPABASE_URL repository variable. Metro bakes it into the bundle."
           [ -n "$EXPO_PUBLIC_SUPABASE_ANON_KEY" ] || fail "No Supabase key" "Set the SUPABASE_ANON_KEY repository variable (the publishable key). Metro bakes it into the bundle."
           if [ -z "$EXPO_PUBLIC_APP_URL" ]; then
-            echo "::warning title=No app URL::APP_URL is empty, so invite links fall back to huddle:// and universal/app links are off."
+            echo "::warning title=No app URL::APP_URL is empty, so invite links and app links use the default hosted app (HOSTED_APP_URL in app.config.ts)."
           fi
           if grep -q REPLACE_WITH_EAS_PROJECT_ID app.json; then
             echo "::warning title=EAS project not linked::app.json still has the placeholder project id, so this APK cannot receive over-the-air updates. Run 'bunx eas-cli init' and commit the ids."

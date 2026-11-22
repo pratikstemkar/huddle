@@ -104,6 +104,18 @@ describe('invite and plan text', () => {
     expect(inviteLink('goa2027')).toBe('huddle://invite/goa2027');
   });
 
+  it('links to the hosted app in a release build with no APP_URL, never huddle://', () => {
+    delete process.env.EXPO_PUBLIC_APP_URL;
+    const g = globalThis as { __DEV__?: boolean };
+    const dev = g.__DEV__;
+    g.__DEV__ = false;
+    try {
+      expect(inviteLink('goa2027')).toBe('https://huddletrips.vercel.app/invite/goa2027');
+    } finally {
+      g.__DEV__ = dev;
+    }
+  });
+
   it('uses the page origin on web', () => {
     process.env.EXPO_PUBLIC_APP_URL = 'https://huddle.example.app';
     Object.defineProperty(Platform, 'OS', { value: 'web', configurable: true });
