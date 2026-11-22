@@ -180,6 +180,56 @@ export function FeaturePage({ index, count, width, height, scrollX, active, titl
   );
 }
 
+type NotifyProps = PagerProps & {
+  title: string;
+  preview: ReactNode;
+  says: string;
+  /** True while the system prompt is open, so the buttons can't be pressed twice. */
+  busy: boolean;
+  onBack: () => void;
+  onAllow: () => void;
+  onLater: () => void;
+};
+
+/** The page before Ready: why pings matter, then the system prompt. The choice is the way forward, so there is no Next. */
+export function NotifyPage({ index, count, width, height, scrollX, active, title, preview, says, busy, onBack, onAllow, onLater }: NotifyProps) {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const pip = usePipMood(active, 'hello');
+  return (
+    <View testID={`intro-page-${index}`} {...pageA11y(active)} style={[styles.page, { width, height, backgroundColor: colors.bg }]}>
+      <ScrollView contentContainerStyle={[styles.body, { paddingTop: insets.top + space.sm }]} showsVerticalScrollIndicator={false}>
+        <View style={styles.column}>
+          <View style={styles.top}>
+            <PageDots count={count} step={index} scrollX={scrollX} width={width} on={colors.iris} off={colors.lineStrong} />
+            <IconButton icon="back" accessibilityLabel="Back" onPress={onBack} />
+          </View>
+          <Text variant="title">{title}</Text>
+          <Parallax index={index} width={width} scrollX={scrollX} factor={0.12}>
+            {preview}
+          </Parallax>
+          <Parallax index={index} width={width} scrollX={scrollX} factor={0.3}>
+            <View style={styles.pipRow}>
+              <Pip mood={pip.mood} size={88} scarf={colors.beak} tail={colors.beak} />
+              <View style={styles.flex}>
+                <Pop active={active}>
+                  <SpeechCard style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, marginBottom: space.xl }}>{says}</SpeechCard>
+                </Pop>
+              </View>
+            </View>
+          </Parallax>
+        </View>
+      </ScrollView>
+      <View style={[styles.footer, { paddingBottom: Math.max(space.xl, insets.bottom + space.md) }]}>
+        <View style={[styles.column, styles.actions]}>
+          <Button label="Turn on notifications" icon="bell" onPress={onAllow} disabled={busy} />
+          <Button label="Not now" variant="ghost" size="md" onPress={onLater} disabled={busy} accessibilityHint="You can turn them on later from the You tab" />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 type ReadyProps = PagerProps & { title: string; says: string; onBack: () => void; onStart: () => void; onInvite: () => void };
 
 /** Page 6: Pip cheers, and the person heads to sign in. */

@@ -3,6 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { IntroSeenProvider } from '@/lib/intro-seen';
 
+import { notifications, notificationState } from '../../test-utils/notifications-mock';
+
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
 
 const { router } = require('../../test-utils/expo-router-mock') as typeof import('../../test-utils/expo-router-mock');
@@ -103,5 +105,59 @@ describe('First-open intro', () => {
     expect(router.replace).toHaveBeenCalledWith('/sign-in');
     await waitFor(async () => expect(await AsyncStorage.getItem('huddle.joinAfterSignIn')).toBe('1'));
     expect(await AsyncStorage.getItem('huddle.introSeen')).toBe('1');
+  });
+
+  describe('on a phone that has not been asked about notifications', () => {
+    const NOTIFY = 'Know the moment the plan moves';
+    const notifyPage = () => screen.getByRole('header', { name: NOTIFY });
+
+    beforeEach(() => {
+      notificationState.permission = 'undetermined';
+    });
+
+    async function openWithNotify() {
+      await open();
+      await waitFor(() => expect(screen.getByLabelText('Step 1 of 7')).toBeTruthy());
+    }
+
+    it('asks before Ready, and Turn on shows the system prompt then goes to Ready', async () => {
+      await openWithNotify();
+      await nextUntil(5);
+      expect(notifyPage()).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
+      await fireEvent.press(screen.getByRole('button', { name: 'Turn on notifications' }));
+      expect(notifications.requestPermissionsAsync).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(onPage(5)).toBeTruthy());
+      expect(await AsyncStorage.getItem('huddle.pushAsked')).toBe('1');
+      expect(router.replace).not.toHaveBeenCalled();
+    });
+
+    it('Not now goes to Ready without the system prompt, so a trip can still ask later', async () => {
+      await openWithNotify();
+      await nextUntil(5);
+      await fireEvent.press(screen.getByRole('button', { name: 'Not now' }));
+      expect(onPage(5)).toBeTruthy();
+      expect(notifications.requestPermissionsAsync).not.toHaveBeenCalled();
+      expect(await AsyncStorage.getItem('huddle.pushAsked')).toBeNull();
+    });
+
+    it('Skip still stops at notifications, then goes straight to sign in', async () => {
+      await openWithNotify();
+      await fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
+      expect(notifyPage()).toBeTruthy();
+      expect(router.replace).not.toHaveBeenCalled();
+      await fireEvent.press(screen.getByRole('button', { name: 'Turn on notifications' }));
+      await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/sign-in'));
+      expect(notifications.requestPermissionsAsync).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it.each(['granted', 'denied'] as const)('leaves the notifications page out when permission is already %s', async (permission) => {
+    notificationState.permission = permission;
+    await open();
+    await nextUntil(5);
+    expect(onPage(5)).toBeTruthy();
+    expect(screen.getByLabelText('Step 6 of 6')).toBeTruthy();
+    expect(screen.queryByText('Know the moment the plan moves', { includeHiddenElements: true })).toBeNull();
   });
 });

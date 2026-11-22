@@ -5,13 +5,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { runOnJS, useAnimatedReaction, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
-import { FeaturePage, ReadyPage, SkyPage, type PagerProps } from '@/components/intro/intro-page';
-import { PhotosPreview, PlanPreview, SplitPreview, VotePreview } from '@/components/intro/previews';
+import { FeaturePage, NotifyPage, ReadyPage, SkyPage, type PagerProps } from '@/components/intro/intro-page';
+import { NotifyPreview, PhotosPreview, PlanPreview, SplitPreview, VotePreview } from '@/components/intro/previews';
 import { saveJoinAfterSignIn, useIntroSeen } from '@/lib/intro-seen';
+import { requestPushPermission, shouldOfferPush } from '@/lib/notifications';
 import { tripColors } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
-const COUNT = 6;
+/** Hello and the four features come first; the notifications page (phones that haven't been asked) and Ready follow. */
+const FEATURES = 5;
 
 /** First open: Pip shows a signed-out newcomer what Huddle does, one page at a time, then hands over to sign in. */
 export default function Intro() {
@@ -23,6 +25,24 @@ export default function Intro() {
   const scrollX = useSharedValue(0);
   const [index, setIndex] = useState(0);
   const [height, setHeight] = useState(0);
+  // Off until the check says this phone can still be asked, so a granted or web device keeps six pages.
+  const [offerPush, setOfferPush] = useState(false);
+  const [asking, setAsking] = useState(false);
+  // Someone who pressed Skip still sees the notifications page, then goes straight to sign in.
+  const skipped = useRef(false);
+  const COUNT = FEATURES + (offerPush ? 1 : 0) + 1;
+  const NOTIFY = FEATURES;
+  const READY = COUNT - 1;
+
+  useEffect(() => {
+    let live = true;
+    shouldOfferPush().then((offer) => {
+      if (live) setOfferPush(offer);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollX.value = e.contentOffset.x;
@@ -34,7 +54,7 @@ export default function Intro() {
     (now, before) => {
       if (before !== null && now !== before) runOnJS(setIndex)(Math.max(0, Math.min(COUNT - 1, now)));
     },
-    [width],
+    [width, COUNT],
   );
 
   const goTo = useCallback(
@@ -44,7 +64,7 @@ export default function Intro() {
       // The scroll event sets the index too; set it now so the page is current even before the slide ends.
       setIndex(target);
     },
-    [width, reduced],
+    [width, reduced, COUNT],
   );
 
   // A rotation or a resized browser window keeps the same page in view.
@@ -85,7 +105,24 @@ export default function Intro() {
   const pager = (i: number): PagerProps => ({ index: i, count: COUNT, width, height, scrollX, active: index === i });
   const back = () => goTo(index - 1);
   const next = () => goTo(index + 1);
-  const skip = () => finish();
+  const skip = () => {
+    if (offerPush && index < NOTIFY) {
+      skipped.current = true;
+      goTo(NOTIFY);
+    } else finish();
+  };
+  const afterNotify = () => {
+    if (skipped.current) finish();
+    else goTo(READY);
+  };
+  const allow = async () => {
+    if (asking) return;
+    setAsking(true);
+    await requestPushPermission();
+    setAsking(false);
+    // Move on whatever they answered; coming Back and pressing again just reads the answer, no second prompt.
+    afterNotify();
+  };
 
   return (
     <View style={styles.root} onLayout={(e) => setHeight(e.nativeEvent.layout.height)}>
@@ -148,8 +185,23 @@ export default function Intro() {
           onNext={next}
           onSkip={skip}
         />
+        {offerPush ? (
+          <NotifyPage
+            {...pager(NOTIFY)}
+            title="Know the moment the plan moves"
+            preview={<NotifyPreview />}
+            says="Trips come together fast. I’ll ping you when you’re invited, when the dates lock, and when the group is waiting on your vote. Only the things that need you."
+            busy={asking}
+            onBack={() => {
+              skipped.current = false;
+              back();
+            }}
+            onAllow={allow}
+            onLater={afterNotify}
+          />
+        ) : null}
         <ReadyPage
-          {...pager(5)}
+          {...pager(READY)}
           title="Ready when your people are"
           says="Start a trip and send the link. Save your regulars as a group, and I’ll nudge anyone who hasn’t voted, so you don’t have to."
           onBack={back}
