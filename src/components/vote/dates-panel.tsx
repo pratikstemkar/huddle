@@ -147,9 +147,11 @@ export function DatesPanel({ trip, me, refreshTrip, header }: Props) {
         />
       ) : null}
 
-      <Text variant="caption" tone="secondary">
-        {locked ? 'Locked in. Dates are set.' : 'Tap the days you could go, or press and drag across several.'}
-      </Text>
+      {locked || mode === 'mine' ? (
+        <Text variant="caption" tone="secondary">
+          {locked ? 'Locked in. Dates are set.' : 'Tap the days you could go, or press and drag across several.'}
+        </Text>
+      ) : null}
 
       {av.error ? (
         <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
