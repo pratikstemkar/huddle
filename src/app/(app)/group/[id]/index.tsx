@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/icon';
 import { IconButton } from '@/components/ui/icon-button';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
+import { useAskForPush } from '@/components/use-ask-for-push';
 import { useAuth } from '@/lib/auth';
 import { hangoutStatusLine, useMyHangouts } from '@/lib/hangouts';
 import {
@@ -46,6 +47,7 @@ function rows(group: GroupDetail, me: string | undefined): Row[] {
 export default function GroupDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
+  useAskForPush();
   const me = session?.user.id;
   const { colors } = useTheme();
   const { group, loading, error, refresh } = useGroup(id, me);

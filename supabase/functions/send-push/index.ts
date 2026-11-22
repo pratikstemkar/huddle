@@ -1,8 +1,9 @@
 // Drains pending notifications to Expo's push service and checks delivery receipts.
-// Called by the database (pg_net after each insert, pg_cron every five minutes) with the shared
-// PUSH_SECRET in `x-push-secret`. JWT checks are off for this function in supabase/config.toml.
+// Called by the database (pg_net after each insert, pg_cron every five minutes) with Vault's
+// push_function_secret in `x-push-secret`, which push_secret_ok() checks. JWT checks are off for this
+// function in supabase/config.toml.
 //
-// Secrets: PUSH_SECRET (required), EXPO_ACCESS_TOKEN (when enhanced push security is on),
+// Secrets: EXPO_ACCESS_TOKEN (when enhanced push security is on),
 // EXPO_PUSH_URL / EXPO_RECEIPTS_URL (tests only, to point at a fake Expo).
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -70,10 +71,12 @@ const post: PostJson = async (url, body) => {
 };
 
 Deno.serve(async (req) => {
-  const secret = Deno.env.get('PUSH_SECRET');
-  if (!secret || req.headers.get('x-push-secret') !== secret) {
-    return new Response('Unauthorized', { status: 401 });
+  const { data: allowed, error } = await db.rpc('push_secret_ok', { candidate: req.headers.get('x-push-secret') ?? '' });
+  if (error) {
+    console.error('send-push: secret check failed', error.message);
+    return new Response('Secret check failed', { status: 500 });
   }
+  if (allowed !== true) return new Response('Unauthorized', { status: 401 });
   try {
     const sent = await sendPending(store, post, { pushUrl: Deno.env.get('EXPO_PUSH_URL') ?? undefined });
     const receipts = await checkReceipts(store, post, { receiptsUrl: Deno.env.get('EXPO_RECEIPTS_URL') ?? undefined });

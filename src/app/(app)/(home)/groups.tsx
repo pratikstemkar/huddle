@@ -11,6 +11,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { Screen } from '@/components/ui/screen';
 import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
+import { useAskForPush } from '@/components/use-ask-for-push';
 import { useAuth } from '@/lib/auth';
 import { useMyHangouts, waitingOnMe } from '@/lib/hangouts';
 import { acceptGroupInvite, groupsSummary, removeGroupInvite, useGroups, useGroupsLive, type GroupInvite } from '@/lib/groups';
@@ -74,6 +75,8 @@ export default function Groups() {
   const hangoutsWaiting = waitingOnMe(hangouts);
   const waiting = invites.length + tripInvites.length + hangoutsWaiting.length;
   const firstLoad = loading && groups.length === 0 && waiting === 0;
+  // Being added to a group (or a trip, or a hangout) is often someone's first reason for a ping.
+  useAskForPush(waiting > 0 || groups.length > 0);
 
   return (
     <Screen withNav>

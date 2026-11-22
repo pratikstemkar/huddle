@@ -73,13 +73,12 @@ Notifications are rows in `notifications`, written by database triggers. The `se
 2. **iOS (APNs).** This needs a paid Apple Developer account. Say yes to the push key when `bunx eas-cli build` asks.
 3. **Hosted Supabase.**
    - Deploy the function: `bunx supabase functions deploy send-push --no-verify-jwt`.
-   - Set its secret, a long random string: `bunx supabase secrets set PUSH_SECRET=<random>`.
-   - If enhanced push security is on in Expo, also set `EXPO_ACCESS_TOKEN`.
-   - Store the function URL and the same secret in Vault (SQL editor):
+   - If enhanced push security is on in Expo, set `EXPO_ACCESS_TOKEN` on it: `bunx supabase secrets set EXPO_ACCESS_TOKEN=<token>`.
+   - Store the function URL and a long random secret in Vault (SQL editor). The database sends that secret with each call and the function checks it against Vault, so it lives only there:
 
      ```sql
      select vault.create_secret('https://<project>.supabase.co/functions/v1/send-push', 'push_function_url');
-     select vault.create_secret('<same PUSH_SECRET>', 'push_function_secret');
+     select vault.create_secret('<long random string>', 'push_function_secret');
      ```
 
      The migration has already enabled `pg_net` and `pg_cron`, and schedules a retry and receipt check every five minutes.
