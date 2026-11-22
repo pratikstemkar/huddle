@@ -23,9 +23,9 @@ const CLOUD_FILL = palette.dark.iris;
 const PIP_SIZE = 200;
 const PIP_HEIGHT = (PIP_SIZE * 124) / 120;
 
-type CloudProps = { width: number; height: number; top: number; duration: number; offset: number; span: number; reduced: boolean };
+export type CloudProps = { width: number; height: number; top: number; duration: number; offset: number; span: number; reduced: boolean };
 
-function Cloud({ width, height, top, duration, offset, span, reduced }: CloudProps) {
+export function Cloud({ width, height, top, duration, offset, span, reduced }: CloudProps) {
   const progress = useSharedValue(0);
 
   useEffect(() => {
