@@ -67,6 +67,22 @@ describe('First-open intro', () => {
     expect(onPage(4)).toBeTruthy();
   });
 
+  it('has no "I already have an account" button on the first page', async () => {
+    await open();
+    expect(screen.queryByRole('button', { name: 'I already have an account' })).toBeNull();
+  });
+
+  it('keeps one dot row and one Back/Next row for every middle page, hiding them on the first and last', async () => {
+    await open();
+    expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
+    await nextUntil(1);
+    expect(screen.getAllByRole('button', { name: 'Next' })).toHaveLength(1);
+    expect(screen.getAllByLabelText(/^Step \d of 6$/)).toHaveLength(1);
+    for (let i = 1; i < 5; i++) await fireEvent.press(screen.getByRole('button', { name: 'Next' }));
+    expect(onPage(5)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
+  });
+
   it('plays a mood on the page that arrives and rests Pip on the others', async () => {
     await open();
     await nextUntil(1);
@@ -82,9 +98,6 @@ describe('First-open intro', () => {
     }],
     ['Skip on the first page', async () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
-    }],
-    ['I already have an account', async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'I already have an account' }));
     }],
     ['Get started', async () => {
       await nextUntil(5);

@@ -38,10 +38,19 @@ export function configureNotifications() {
   }
 }
 
+/**
+ * Android 13+ reports `denied` before anyone is asked, because notifications stay off until the
+ * permission is granted. Only a `denied` that can't be asked again means the person said no for good.
+ */
+export function readPermission({ status, canAskAgain }: { status: string; canAskAgain?: boolean }): PushPermission {
+  if (status === 'granted') return 'granted';
+  if (status === 'denied' && !canAskAgain) return 'denied';
+  return 'undetermined';
+}
+
 export async function pushPermission(): Promise<PushPermission> {
   if (!pushSupported) return 'unsupported';
-  const { status } = await Notifications.getPermissionsAsync();
-  return status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined';
+  return readPermission(await Notifications.getPermissionsAsync());
 }
 
 function projectId(): string | undefined {
@@ -64,8 +73,7 @@ export async function registerForPush({ prompt = false } = {}): Promise<PushPerm
   configureNotifications();
   let permission = await pushPermission();
   if (permission === 'undetermined' && prompt) {
-    const { status } = await Notifications.requestPermissionsAsync();
-    permission = status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined';
+    permission = readPermission(await Notifications.requestPermissionsAsync());
   }
   if (permission !== 'granted') return permission;
   try {
@@ -125,8 +133,7 @@ export async function requestPushPermission(): Promise<PushPermission> {
   try {
     await AsyncStorage.setItem(ASKED_KEY, '1');
     if ((await pushPermission()) !== 'undetermined') return pushPermission();
-    const { status } = await Notifications.requestPermissionsAsync();
-    return status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined';
+    return readPermission(await Notifications.requestPermissionsAsync());
   } catch {
     return 'undetermined';
   }

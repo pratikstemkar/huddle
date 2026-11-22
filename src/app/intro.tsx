@@ -3,13 +3,18 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { runOnJS, useAnimatedReaction, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
-import { FeaturePage, NotifyPage, ReadyPage, SkyPage, type PagerProps } from '@/components/intro/intro-page';
+import { ChromeFade } from '@/components/intro/intro-chrome';
+import { FeaturePage, ReadyPage, SkipLink, SkyPage, type PagerProps } from '@/components/intro/intro-page';
+import { PageDots } from '@/components/intro/page-dots';
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { NotifyPreview, PhotosPreview, PlanPreview, SplitPreview, VotePreview } from '@/components/intro/previews';
 import { saveJoinAfterSignIn, useIntroSeen } from '@/lib/intro-seen';
 import { requestPushPermission, shouldOfferPush } from '@/lib/notifications';
-import { tripColors } from '@/theme/tokens';
+import { MAX_CONTENT_WIDTH, space, tripColors } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
 
 /** Hello and the four features come first; the notifications page (phones that haven't been asked) and Ready follow. */
@@ -17,7 +22,8 @@ const FEATURES = 5;
 
 /** First open: Pip shows a signed-out newcomer what Huddle does, one page at a time, then hands over to sign in. */
 export default function Intro() {
-  const { scheme } = useTheme();
+  const { scheme, colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
   const { width } = useWindowDimensions();
   const { markSeen } = useIntroSeen();
@@ -28,10 +34,16 @@ export default function Intro() {
   // Off until the check says this phone can still be asked, so a granted or web device keeps six pages.
   const [offerPush, setOfferPush] = useState(false);
   const [asking, setAsking] = useState(false);
+  // How tall the fixed button row is, so the sliding pages leave room for it.
+  const [footerHeight, setFooterHeight] = useState(0);
   // Someone who pressed Skip still sees the notifications page, then goes straight to sign in.
   const skipped = useRef(false);
   const COUNT = FEATURES + (offerPush ? 1 : 0) + 1;
   const NOTIFY = FEATURES;
+  // The pages between hello and Ready, which share the fixed dot row and button row.
+  const LAST_MIDDLE = offerPush ? NOTIFY : FEATURES - 1;
+  const footerPad = Math.max(space.xl, insets.bottom + space.md);
+  const topInset = insets.top + space.sm + 44;
   const READY = COUNT - 1;
 
   useEffect(() => {
@@ -143,7 +155,6 @@ export default function Intro() {
           body="I’m the penguin who keeps the plan moving. Let me show you what your group can do in Huddle."
           onNext={next}
           onSkip={skip}
-          onHaveAccount={skip}
         />
         <FeaturePage
           {...pager(1)}
@@ -151,9 +162,8 @@ export default function Intro() {
           preview={<VotePreview />}
           pip={{ mood: 'hmm', scarf: tripColors.iris }}
           says="Everyone taps the days they’re free and backs the places they like. I find the days that suit most of you and show what’s leading."
-          onBack={back}
-          onNext={next}
-          onSkip={skip}
+          topInset={topInset}
+          bottomInset={footerHeight}
         />
         <FeaturePage
           {...pager(2)}
@@ -161,9 +171,8 @@ export default function Intro() {
           preview={<PlanPreview />}
           pip={{ mood: 'idle', scarf: tripColors.coral }}
           says="Add plans to each day so nobody asks “so what’s next?”. Just want dinner with friends? Start a hangout and pick a time."
-          onBack={back}
-          onNext={next}
-          onSkip={skip}
+          topInset={topInset}
+          bottomInset={footerHeight}
         />
         <FeaturePage
           {...pager(3)}
@@ -171,9 +180,8 @@ export default function Intro() {
           preview={<SplitPreview />}
           pip={{ mood: 'idle', scarf: tripColors.mint, shades: true }}
           says="Add what you paid and I split it fairly. At the end I show the fewest payments to settle up."
-          onBack={back}
-          onNext={next}
-          onSkip={skip}
+          topInset={topInset}
+          bottomInset={footerHeight}
         />
         <FeaturePage
           {...pager(4)}
@@ -181,23 +189,18 @@ export default function Intro() {
           preview={<PhotosPreview />}
           pip={{ mood: 'idle', scarf: tripColors.blush, wavePose: true }}
           says="No more “send me that photo”. Everyone adds their shots to the trip and I sort them by day."
-          onBack={back}
-          onNext={next}
-          onSkip={skip}
+          topInset={topInset}
+          bottomInset={footerHeight}
         />
         {offerPush ? (
-          <NotifyPage
+          <FeaturePage
             {...pager(NOTIFY)}
             title="Know the moment the plan moves"
             preview={<NotifyPreview />}
+            pip={{ mood: 'hello', scarf: colors.beak }}
             says="Trips come together fast. I’ll ping you when you’re invited, when the dates lock, and when the group is waiting on your vote. Only the things that need you."
-            busy={asking}
-            onBack={() => {
-              skipped.current = false;
-              back();
-            }}
-            onAllow={allow}
-            onLater={afterNotify}
+            topInset={topInset}
+            bottomInset={footerHeight}
           />
         ) : null}
         <ReadyPage
@@ -209,10 +212,62 @@ export default function Intro() {
           onInvite={() => finish(true)}
         />
       </Animated.ScrollView>
+
+      {/* Fixed while the pages slide: the dot row on top and the buttons below only fade in and out. */}
+      <ChromeFade from={1} to={LAST_MIDDLE} scrollX={scrollX} width={width} index={index} style={[styles.top, { top: insets.top + space.sm }]}>
+        <View style={styles.row}>
+          <PageDots count={COUNT} step={index} scrollX={scrollX} width={width} on={colors.iris} off={colors.lineStrong} />
+          <View style={styles.slot}>
+            <ChromeFade from={1} to={FEATURES - 1} scrollX={scrollX} width={width} index={index} style={styles.slotItem}>
+              <SkipLink color={colors.textSecondary} onPress={skip} />
+            </ChromeFade>
+            {offerPush ? (
+              <ChromeFade from={NOTIFY} to={NOTIFY} scrollX={scrollX} width={width} index={index} style={styles.slotItem}>
+                <IconButton
+                  icon="back"
+                  accessibilityLabel="Back"
+                  onPress={() => {
+                    skipped.current = false;
+                    back();
+                  }}
+                />
+              </ChromeFade>
+            ) : null}
+          </View>
+        </View>
+      </ChromeFade>
+
+      <View style={[styles.footer, { paddingBottom: footerPad }]} onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)} pointerEvents="box-none">
+        <ChromeFade from={1} to={FEATURES - 1} scrollX={scrollX} width={width} index={index} style={offerPush ? [styles.stacked, { bottom: footerPad }] : undefined}>
+          <View style={[styles.column, styles.footerRow]}>
+            <IconButton icon="back" accessibilityLabel="Back" onPress={back} style={styles.backBtn} />
+            <Button label="Next" iconRight="arrowRight" onPress={next} style={styles.flex} />
+          </View>
+        </ChromeFade>
+        {offerPush ? (
+          <ChromeFade from={NOTIFY} to={NOTIFY} scrollX={scrollX} width={width} index={index}>
+            <View style={[styles.column, styles.actions]}>
+              <Button label="Turn on notifications" icon="bell" onPress={allow} disabled={asking} />
+              <Button label="Not now" variant="ghost" size="md" onPress={afterNotify} disabled={asking} accessibilityHint="You can turn them on later from the You tab" />
+            </View>
+          </ChromeFade>
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  flex: { flex: 1 },
+  column: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' },
+  top: { position: 'absolute', paddingHorizontal: space.screenX },
+  row: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  slot: { width: 84, height: 44, marginRight: -space.md },
+  slotItem: { position: 'absolute', right: 0, top: 0, left: undefined },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.screenX, paddingTop: space.sm },
+  stacked: { position: 'absolute', left: space.screenX, right: space.screenX },
+  footerRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  actions: { gap: space.sm },
+  backBtn: { width: 56, height: 56, borderRadius: 28 },
 });

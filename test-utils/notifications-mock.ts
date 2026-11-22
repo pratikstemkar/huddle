@@ -8,6 +8,8 @@ type Permission = 'granted' | 'denied' | 'undetermined';
 
 export const notificationState = {
   permission: 'granted' as Permission,
+  /** False once a `denied` is final (iOS after one no, Android after two). */
+  canAskAgain: false,
   /** What the system prompt answers. */
   promptAnswer: 'granted' as Permission,
   token: 'ExponentPushToken[test-token]',
@@ -19,6 +21,7 @@ export const notificationState = {
 export function resetNotificationMocks() {
   notificationState.permission = 'granted';
   notificationState.promptAnswer = 'granted';
+  notificationState.canAskAgain = false;
   notificationState.token = 'ExponentPushToken[test-token]';
   notificationState.tokenError = null;
   notificationState.lastResponse = null;
@@ -38,10 +41,10 @@ export const notifications = {
   AndroidImportance: { MAX: 7, HIGH: 6, DEFAULT: 5 },
   setNotificationHandler: jest.fn(),
   setNotificationChannelAsync: jest.fn(async () => null),
-  getPermissionsAsync: jest.fn(async () => ({ status: notificationState.permission })),
+  getPermissionsAsync: jest.fn(async () => ({ status: notificationState.permission, canAskAgain: notificationState.canAskAgain })),
   requestPermissionsAsync: jest.fn(async () => {
     notificationState.permission = notificationState.promptAnswer;
-    return { status: notificationState.promptAnswer };
+    return { status: notificationState.promptAnswer, canAskAgain: notificationState.canAskAgain };
   }),
   getExpoPushTokenAsync: jest.fn(async () => {
     if (notificationState.tokenError) throw notificationState.tokenError;
