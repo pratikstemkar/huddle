@@ -8,7 +8,7 @@ import { useReducedMotion, useTheme } from '@/theme/use-theme';
 import { Icon, type IconName } from './icon';
 import { Text } from './text';
 
-export type ButtonVariant = 'primary' | 'ink' | 'outline' | 'outlineInk' | 'beak' | 'suggest' | 'ghost' | 'secondary' | 'danger';
+export type ButtonVariant = 'primary' | 'ink' | 'outline' | 'outlineInk' | 'beak' | 'suggest' | 'ghost' | 'ghostInk' | 'secondary' | 'danger';
 export type ButtonSize = 'lg' | 'md' | 'sm';
 
 export type ButtonProps = {
@@ -55,14 +55,17 @@ function look(variant: ButtonVariant, colors: Colors, color?: string): { bg: str
     case 'outline':
     case 'secondary':
       return { bg: colors.card, fg: colors.text, border: { borderWidth: 1, borderColor: colors.lineStrong } };
+    // The ink variants sit on a beak (yellow) ground, which stays yellow in dark mode, so they use onBeak, not text.
     case 'outlineInk':
-      return { bg: 'transparent', fg: colors.text, border: { borderWidth: 2, borderColor: colors.ink } };
+      return { bg: 'transparent', fg: colors.onBeak, border: { borderWidth: 2, borderColor: colors.onBeak } };
     case 'beak':
       return { bg: colors.beak, fg: colors.onBeak };
     case 'suggest':
       return { bg: 'transparent', fg: colors.irisText, border: { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.dashed } };
     case 'ghost':
       return { bg: 'transparent', fg: colors.text };
+    case 'ghostInk':
+      return { bg: 'transparent', fg: colors.onBeak };
     case 'danger':
       return { bg: colors.danger, fg: colors.onIris };
   }
@@ -111,7 +114,8 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ busy: !!loading, ...(disabled ? { disabled: true } : null) }}
+      aria-busy={!!loading}
+      aria-disabled={disabled || undefined}
       disabled={disabled}
       onPressIn={() => !disabled && press(0.96)}
       onPressOut={() => press(1)}
