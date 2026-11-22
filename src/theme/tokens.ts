@@ -17,6 +17,8 @@ export type Colors = {
   lineStrong: string;
   dashed: string;
   track: string;
+  /** The knob of an on/off switch, on or off. */
+  thumb: string;
   text: string;
   textSecondary: string;
   textMuted: string;
@@ -45,6 +47,7 @@ const light: Colors = {
   lineStrong: '#D5D8E8',
   dashed: '#B9BDD6',
   track: '#E4E6F1',
+  thumb: '#FFFFFF',
   text: '#171A2F',
   textSecondary: '#5A5F7A',
   textMuted: '#8A8FA8',
@@ -73,6 +76,7 @@ const dark: Colors = {
   lineStrong: '#454A6E',
   dashed: '#4A4F75',
   track: '#262A45',
+  thumb: '#F1F2FA',
   text: '#F1F2FA',
   textSecondary: '#B9BDD6',
   textMuted: '#8287A6',

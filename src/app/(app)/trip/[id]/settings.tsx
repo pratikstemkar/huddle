@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 import { ColorSwatches } from '@/components/color-swatches';
 import { DateRangePicker } from '@/components/date-range-picker';
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
 import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
+import { Toggle } from '@/components/ui/toggle';
 import { useAuth } from '@/lib/auth';
 import { useTripLive } from '@/lib/realtime';
 import { balanceNote, useSplit } from '@/lib/split';
@@ -361,12 +362,11 @@ export default function TripSettings() {
           <Text variant="body" style={styles.flex}>
             Show who marked each day
           </Text>
-          <Switch
+          <Toggle
             value={shownWho}
             onValueChange={toggleShowWho}
             disabled={showWho !== null}
             accessibilityLabel="Show who marked each day"
-            trackColor={{ true: colors.iris, false: colors.lineStrong }}
           />
         </View>
         <Text variant="caption" tone="secondary">
