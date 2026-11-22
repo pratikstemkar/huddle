@@ -5,7 +5,7 @@ Rows in `notifications` (migration `…_notifications.sql`) are both the in-app 
 - **Home:** the bell left of the avatar, `Activity` or `Activity, <n> unread` → `/activity`.
 - **`/activity`:** rows labelled `[Unread. ]<title>. <body>. <time>`; tapping marks it read and opens its `url`. `Mark all read`. On a phone without push: `Turn on notifications` / `Open Settings` card. Empty: "Nothing yet. Invites, nudges and locked plans show up here."
 - **You tab (`/profile`) → Notifications:** switches `Invites`, `Plans settled`, `Nudges`, `People joining` (`notification_prefs`). Off means push is skipped (`push_status = 'skipped'`); Activity still lists it. On web a line explains push is phone-only.
-- **Trip screen:** the first time a phone opens a trip, a confirm sheet "Get a ping when the plan moves?" asks before the system prompt (native only, once per phone).
+- **Trip, group, or Groups tab with an invite or group in it:** the first time a phone opens one, a confirm sheet "Get a ping when the plan moves?" asks before the system prompt (native only, once per phone).
 
 ## Driving it with the built-in browser
 
@@ -20,7 +20,6 @@ On the isolated stack, add to its `config.toml`:
 
 ```toml
 [edge_runtime.secrets]
-PUSH_SECRET = "local-push-secret"
 EXPO_PUSH_URL = "http://host.docker.internal:<port>/push"
 EXPO_RECEIPTS_URL = "http://host.docker.internal:<port>/receipts"
 ```
