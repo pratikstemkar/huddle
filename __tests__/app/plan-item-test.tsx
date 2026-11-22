@@ -52,7 +52,7 @@ describe('Plan item sheet', () => {
     it('adds a plan to the chosen day', async () => {
       addPlanItem.mockResolvedValue('new-id');
       await render(<PlanItemSheet />);
-      expect(screen.getByRole('button', { name: 'Friday, March 12' }).props.accessibilityState).toEqual({ selected: true });
+      expect(screen.getByRole('button', { name: 'Friday, March 12' })).toBeSelected();
       expect(screen.getByPlaceholderText('Where, or anything to know')).toBeTruthy();
 
       await fireEvent.changeText(screen.getByLabelText('Time'), '930');

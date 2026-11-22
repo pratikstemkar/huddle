@@ -133,7 +133,7 @@ export default function LockedScreen() {
                 Couldn&apos;t add it to your calendar. Try again.
               </Text>
             ) : null}
-            <Button label="Close" variant="ghost" onPress={close} />
+            <Button label="Close" variant="ghostInk" onPress={close} />
           </View>
         </View>
       </ScrollView>

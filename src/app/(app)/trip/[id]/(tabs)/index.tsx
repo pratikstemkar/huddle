@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { useRegisterPipAction } from '@/components/nav/pip-action';
 import { Pip } from '@/components/pip/pip';
-import { countdownHeadline, friendsText } from '@/components/trip/countdown-text';
+import { countdownHeadline, peopleText } from '@/components/trip/countdown-text';
 import { LockedSummary } from '@/components/trip/locked-summary';
 import { forgetLockedSeen, hasSeenLocked, markLockedSeen } from '@/components/trip/locked-seen';
 import { useShareOrCopy } from '@/components/trip/share';
@@ -82,7 +82,7 @@ function Hero({ trip }: { trip: TripDetail }) {
   let sub: string;
   if (dates) {
     title = countdownHeadline(countdown(dates, today())) ?? formatRange(dates.start, dates.end);
-    sub = `${formatRange(dates.start, dates.end)} · ${friendsText(n)}`;
+    sub = `${formatRange(dates.start, dates.end)} · ${peopleText(n)}`;
   } else if (trip.bestDays.length > 0) {
     const best = trip.bestDays[0];
     title = formatRange(best.start, best.end);

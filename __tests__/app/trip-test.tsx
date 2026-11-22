@@ -177,7 +177,7 @@ describe('Trip screen', () => {
       mockState = tripState(trip({ fixed_start: start, fixed_end: end }));
       await render(<TripScreen />);
       expect(screen.getByText(text)).toBeTruthy();
-      expect(screen.getByText(`${formatRange(start, end)} · 2 friends`)).toBeTruthy();
+      expect(screen.getByText(`${formatRange(start, end)} · 2 people`)).toBeTruthy();
     });
   });
 

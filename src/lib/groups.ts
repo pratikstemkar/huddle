@@ -86,9 +86,9 @@ export function peopleCount(n: number) {
   return n === 1 ? '1 person' : `${n} people`;
 }
 
-/** The sub-line under a group's name: size, and how many trips it has had. */
+/** The sub-line under a group's name: size, and how many trips it has had (hangouts aren't counted). */
 export function groupSub(members: number, trips: number) {
-  const tripsText = trips === 0 ? 'nothing planned yet' : trips === 1 ? '1 trip together' : `${trips} trips together`;
+  const tripsText = trips === 0 ? 'no trips yet' : trips === 1 ? '1 trip together' : `${trips} trips together`;
   return `${peopleCount(members)} · ${tripsText}`;
 }
 

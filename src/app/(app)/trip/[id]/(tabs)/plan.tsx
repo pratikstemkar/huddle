@@ -144,7 +144,7 @@ export default function PlanTab() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`${offCount} ${offCount === 1 ? "plan isn't" : "plans aren't"} on the new dates`}
-            accessibilityState={{ expanded: showOff }}
+            aria-expanded={showOff}
             onPress={() => setShowOff((v) => !v)}
             style={({ pressed }) => [styles.offRow, { backgroundColor: colors.tint.plan }, pressed && { opacity: 0.8 }]}>
             <Text variant="calloutStrong" style={{ flex: 1 }}>

@@ -83,7 +83,7 @@ describe('Who’s invited?', () => {
     await render(<InvitePeople />);
     await fireEvent.press(screen.getByRole('button', { name: 'Flatmates' }));
     expect(mockGroups.groups.length).toBe(2);
-    expect(screen.getByRole('button', { name: 'Flatmates' }).props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
+    expect(screen.getByRole('button', { name: 'Flatmates' })).toBeSelected();
   });
 
   it('points at the Groups tab when I am in no group', async () => {

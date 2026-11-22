@@ -194,7 +194,7 @@ export default function GroupDetails() {
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`Options for ${r.display_name}`}
-                      accessibilityState={{ expanded: isOpen }}
+                      aria-expanded={isOpen}
                       onPress={() => setOpen(isOpen ? null : r.key)}
                       style={styles.menuButton}>
                       <Icon name="more" size={20} color={colors.text} />

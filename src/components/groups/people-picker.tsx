@@ -97,7 +97,7 @@ export function PeoplePicker({ people, selected, onToggle, disabled, loading }: 
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`${on ? 'Remove' : 'Add'} ${p.display_name}`}
-                  accessibilityState={{ selected: on }}
+                  aria-selected={on}
                   onPress={() => onToggle(p.user_id)}
                   style={[styles.toggle, on ? { backgroundColor: colors.iris, borderColor: colors.iris } : { backgroundColor: colors.card, borderColor: colors.lineStrong }]}>
                   <Icon name={on ? 'check' : 'plus'} size={18} color={on ? colors.onIris : colors.text} />

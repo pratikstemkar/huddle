@@ -180,6 +180,13 @@ export function answeredIds(slots: Slot[]) {
   return new Set(slots.flatMap((s) => s.answers.map((a) => a.user_id)));
 }
 
+/** How many of the people asked (everyone but the organiser) have answered, and how many were asked. */
+export function answerProgress(h: Pick<HangoutDetail, 'members' | 'slots' | 'created_by'>) {
+  const answered = answeredIds(h.slots);
+  const asked = h.members.filter((m) => m.user_id !== h.created_by);
+  return { answered: asked.filter((m) => answered.has(m.user_id)).length, asked: asked.length };
+}
+
 // ---- Places ---------------------------------------------------------------------------------------------------
 
 const MAPS_HOSTS = /^(www\.|maps\.)?google\.[a-z.]+$|^maps\.app\.goo\.gl$|^goo\.gl$/i;

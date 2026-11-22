@@ -26,7 +26,7 @@ export function MemberGrid({ people, off, onToggle }: Props) {
             key={m.user_id}
             accessibilityRole="button"
             accessibilityLabel={`${on ? 'Don’t invite' : 'Invite'} ${m.display_name}`}
-            accessibilityState={{ selected: on }}
+            aria-selected={on}
             onPress={() => onToggle(m.user_id)}
             style={[styles.cell, !on && { opacity: 0.55 }]}>
             <View style={[styles.ring, { borderColor: on ? colors.iris : 'transparent' }]}>

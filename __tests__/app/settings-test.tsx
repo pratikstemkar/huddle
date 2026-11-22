@@ -135,7 +135,7 @@ describe('Trip settings', () => {
     it('changes the colour', async () => {
       updateTrip.mockResolvedValue(undefined);
       await render(<TripSettings />);
-      expect(screen.getByRole('radio', { name: 'Coral' }).props.accessibilityState).toEqual({ selected: true });
+      expect(screen.getByRole('radio', { name: 'Coral' })).toBeChecked();
       await fireEvent.press(screen.getByRole('radio', { name: 'Mint' }));
       expect(updateTrip).toHaveBeenCalledWith(TRIP_ID, { color: 'mint' });
       expect(mockState.refresh).toHaveBeenCalled();
@@ -146,16 +146,14 @@ describe('Trip settings', () => {
       await render(<TripSettings />);
       await fireEvent.press(screen.getByRole('radio', { name: 'Mint' }));
       expect(await screen.findByText("Couldn't change the colour. Check your connection and try again.")).toBeTruthy();
-      expect(screen.getByRole('radio', { name: 'Coral' }).props.accessibilityState).toEqual({ selected: true });
+      expect(screen.getByRole('radio', { name: 'Coral' })).toBeChecked();
     });
 
     it('sets fixed dates with the range picker', async () => {
       updateTrip.mockResolvedValue(undefined);
       const [start, end] = nextMonthDays();
       await render(<TripSettings />);
-      expect(screen.getByRole('radio', { name: "Let the group vote, Everyone marks the days they're free" }).props.accessibilityState).toEqual({
-        selected: true,
-      });
+      expect(screen.getByRole('radio', { name: "Let the group vote, Everyone marks the days they're free" })).toBeChecked();
       await fireEvent.press(screen.getByRole('radio', { name: 'I already know, Set the dates yourself' }));
       expect(screen.queryByRole('button', { name: 'Save dates' })).toBeNull();
       await fireEvent.press(screen.getByRole('button', { name: 'Next month' }));
@@ -170,7 +168,7 @@ describe('Trip settings', () => {
       updateTrip.mockResolvedValue(undefined);
       mockState = tripState(trip({ fixed_start: '2027-05-01', fixed_end: '2027-05-03' }));
       await render(<TripSettings />);
-      expect(screen.getByRole('radio', { name: 'I already know, Set the dates yourself' }).props.accessibilityState).toEqual({ selected: true });
+      expect(screen.getByRole('radio', { name: 'I already know, Set the dates yourself' })).toBeChecked();
       await fireEvent.press(screen.getByRole('radio', { name: "Let the group vote, Everyone marks the days they're free" }));
       expect(updateTrip).toHaveBeenCalledWith(TRIP_ID, { fixed_start: null, fixed_end: null });
     });

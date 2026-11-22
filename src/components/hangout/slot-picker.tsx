@@ -63,7 +63,8 @@ export function SlotGrid({ days, picks, onToggle, onWeek, canGoBack }: GridProps
                 key={d.toDateString()}
                 accessibilityRole="button"
                 accessibilityLabel={`${label(d)}, ${part.label.toLowerCase()}`}
-                accessibilityState={{ selected, disabled: past }}
+                aria-selected={selected}
+                aria-disabled={past}
                 disabled={past}
                 onPress={() => onToggle(d, part.id)}
                 style={[

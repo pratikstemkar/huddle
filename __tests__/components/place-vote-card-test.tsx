@@ -144,7 +144,8 @@ describe('PlaceVoteCard', () => {
   it('votes with a haptic tick', async () => {
     const { onVote } = await renderCard();
     const btn = screen.getByRole('button', { name: 'Vote for Palolem Beach' });
-    expect(btn.props.accessibilityState).toMatchObject({ selected: false, disabled: false });
+    expect(btn).not.toBeSelected();
+    expect(btn).toBeEnabled();
     expect(bg(btn)).toBe(palette.light.tint.vote);
     await fireEvent.press(btn);
     expect(onVote).toHaveBeenCalled();
@@ -154,7 +155,7 @@ describe('PlaceVoteCard', () => {
   it('shows my vote in iris and offers to remove it', async () => {
     await renderCard({ iVoted: true });
     const btn = screen.getByRole('button', { name: 'Remove your vote for Palolem Beach' });
-    expect(btn.props.accessibilityState).toMatchObject({ selected: true });
+    expect(btn).toBeSelected();
     expect(bg(btn)).toBe(palette.light.iris);
   });
 

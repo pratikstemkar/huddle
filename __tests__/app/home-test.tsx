@@ -124,7 +124,7 @@ describe('Home', () => {
 
     const pondy = formatTripDates(upcoming.locked_start!, upcoming.locked_end!);
     expect(screen.getByRole('button', { name: `Pondy, Planning days, ${pondy}` })).toBeTruthy();
-    expect(screen.getByText(`${formatRange(upcoming.locked_start!, upcoming.locked_end!)} · 5 friends`)).toBeTruthy();
+    expect(screen.getByText(`${formatRange(upcoming.locked_start!, upcoming.locked_end!)} · 5 people`)).toBeTruthy();
 
     const coorg = formatTripDates(past.locked_start!, past.locked_end!);
     expect(screen.getByRole('button', { name: `Coorg, Done · 48 photos, ${coorg}` })).toBeTruthy();
@@ -175,6 +175,7 @@ describe('Home', () => {
       expect(rpcCalls).toContainEqual({ name: 'nudge_trip', args: { t: 't1', what: 'days' } });
       await waitFor(() => expect(mockToastShow).toHaveBeenCalledWith('Nudged 3 people.'));
       expect(share).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'Nudged today' })).toBeDisabled();
     });
 
     it('says when everyone was nudged today already', async () => {

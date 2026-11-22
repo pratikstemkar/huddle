@@ -16,7 +16,7 @@ import { addEventToCalendar } from '@/lib/calendar';
 import { useGroupsLive } from '@/lib/groups';
 import {
   answerHangout,
-  answeredIds,
+  answerProgress,
   bestSlotId,
   cancelHangout,
   closesLabel,
@@ -70,7 +70,7 @@ function AnswerButtons({ slot, me, find, busy, onAnswer }: { slot: Slot; me: str
     { value: 'no', label: 'Can’t', icon: 'close', bg: colors.ink, fg: colors.onInk },
   ];
   return (
-    <View accessibilityRole="radiogroup" style={styles.answers}>
+    <View accessibilityRole="radiogroup" accessibilityLabel={`Your answer for ${slotLabel(slot.starts_at, slot.ends_at)}`} style={styles.answers}>
       {options.map((o) => {
         const on = mine === o.value;
         return (
@@ -78,7 +78,8 @@ function AnswerButtons({ slot, me, find, busy, onAnswer }: { slot: Slot; me: str
             key={o.value}
             accessibilityRole="radio"
             accessibilityLabel={o.label}
-            accessibilityState={{ selected: on, disabled: busy }}
+            aria-checked={on}
+            aria-disabled={busy}
             disabled={busy}
             onPress={() => onAnswer(on ? null : o.value)}
             style={[styles.answer, { backgroundColor: on ? o.bg : colors.bg }]}>
@@ -161,13 +162,13 @@ export default function HangoutScreen() {
   const cancelled = hangout.status === 'cancelled';
   const locked = hangout.status === 'locked';
   const chosen = hangout.slots.find((s) => s.id === hangout.locked_slot_id) ?? null;
-  const answered = answeredIds(hangout.slots);
+  const progress = answerProgress(hangout);
   const best = find && !locked ? bestSlotId(hangout.slots) : null;
   const closes = hangout.answers_close_at && !locked ? closesLabel(hangout.answers_close_at) : null;
   const byId = new Map(hangout.members.map((m) => [m.user_id, m]));
   const meta = [
     hangout.duration_min ? `About ${hangout.duration_min / 60} ${hangout.duration_min === 60 ? 'hr' : 'hrs'}` : null,
-    find && !locked ? `${answered.size} of ${hangout.members.length} answered` : `${hangout.members.length} invited`,
+    find && !locked ? `${progress.answered} of ${progress.asked} answered` : `${hangout.members.length} invited`,
     closes ? `closes ${closes}` : null,
   ]
     .filter(Boolean)

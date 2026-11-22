@@ -64,7 +64,7 @@ export function DateRangePicker({ value, onChange }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Previous month"
-          accessibilityState={{ disabled: !canGoBack }}
+          aria-disabled={!canGoBack}
           disabled={!canGoBack}
           hitSlop={4}
           onPress={() => setMonth((m) => shiftMonth(m, -1))}
@@ -116,7 +116,8 @@ export function DateRangePicker({ value, onChange }: Props) {
                     accessibilityLabel={`${formatDay(day, { weekday: 'long', day: 'numeric', month: 'long' })}${
                       edge ? (day === value!.start ? ', first day' : ', last day') : inRange ? ', in your dates' : ''
                     }`}
-                    accessibilityState={{ selected: inRange, disabled: past }}
+                    aria-selected={inRange}
+                    aria-disabled={past}
                     disabled={past}
                     onPress={() => pick(day)}
                     style={[styles.cell, { opacity: past ? 0.35 : 1 }]}>

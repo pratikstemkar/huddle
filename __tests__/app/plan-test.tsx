@@ -73,8 +73,8 @@ describe('Plan tab', () => {
     expect(screen.getByText('The plan')).toBeTruthy();
 
     const thu = screen.getByRole('button', { name: 'Thursday, March 11, 2 plans' });
-    expect(thu.props.accessibilityState).toEqual({ selected: true });
-    expect(screen.getByRole('button', { name: 'Friday, March 12, 1 plan' }).props.accessibilityState).toEqual({ selected: false });
+    expect(thu).toBeSelected();
+    expect(screen.getByRole('button', { name: 'Friday, March 12, 1 plan' })).not.toBeSelected();
     expect(screen.getByRole('button', { name: 'Saturday, March 13, 0 plans' })).toBeTruthy();
 
     expect(screen.getByText('Anjuna · added by you')).toBeTruthy();
@@ -115,7 +115,7 @@ describe('Plan tab', () => {
   it('starts on today during the trip and registers the Pip action for it', async () => {
     mockToday = '2027-03-14';
     await render(<PlanTab />);
-    expect(screen.getByRole('button', { name: 'Sunday, March 14, 0 plans' }).props.accessibilityState).toEqual({ selected: true });
+    expect(screen.getByRole('button', { name: 'Sunday, March 14, 0 plans' })).toBeSelected();
     expect(useRegisterPipAction).toHaveBeenLastCalledWith('Add to Sunday', expect.any(Function));
     useRegisterPipAction.mock.lastCall[1]();
     expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[id]/plan-item', params: { id: TRIP_ID, day: '2027-03-14' } });

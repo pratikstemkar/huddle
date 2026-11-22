@@ -134,7 +134,7 @@ describe('DayCalendar', () => {
   it('clears a day I already marked', async () => {
     const { onToggle } = await renderCalendar({ myDays: new Set(['2027-03-15']) });
     const cell = screen.getByLabelText(`${long('2027-03-15')}, you are free`);
-    expect(cell.props.accessibilityState).toMatchObject({ selected: true });
+    expect(cell).toBeSelected();
     expect(bg(cell)).toBe(palette.light.iris);
     expect(flat(cell)).toMatchObject({ height: 44, borderRadius: 14 });
     await fireEvent.press(cell);
@@ -188,7 +188,7 @@ describe('DayCalendar', () => {
 
   it('selects a day in Everyone mode, even when read-only', async () => {
     const { onSelect, onToggle } = await renderCalendar({ mode: 'all', readOnly: true, selected: '2027-03-20' });
-    expect(screen.getByLabelText(`${long('2027-03-20')}, 0 of 3 free`).props.accessibilityState).toMatchObject({ selected: true });
+    expect(screen.getByLabelText(`${long('2027-03-20')}, 0 of 3 free`)).toBeSelected();
     await fireEvent.press(screen.getByLabelText(`${long('2027-03-15')}, 0 of 3 free`));
     expect(onSelect).toHaveBeenCalledWith('2027-03-15');
     expect(onToggle).not.toHaveBeenCalled();

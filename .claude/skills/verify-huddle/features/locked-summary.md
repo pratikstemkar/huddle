@@ -1,6 +1,6 @@
 # Locked trip summary
 
-On a locked trip the Trip tab hero turns beak yellow with a countdown (`<n> days to go`, `Tomorrow!`, `Today's the day`, `Day N of M`, `That's a wrap`) and `<range> · <n> friends`. Under it, the summary card (`LockedSummary`): the place's photo (`Photo of <place>`), **Where** (title, note, `Open link, <domain>` shown as `<domain> ↗`), **When** (`<start> – <end>` and `Day trip` / `1 night` / `N nights`), the faces with `<n> going · <countdown>`, and two buttons: `Share plan` and `Add to calendar` ([add-to-calendar](add-to-calendar.md)). If the chosen place row is gone, it says "The chosen place is no longer available."
+On a locked trip the Trip tab hero turns beak yellow with a countdown (`<n> days to go`, `Tomorrow!`, `Today's the day`, `Day N of M`, `That's a wrap`) and `<range> · <n> people`. Under it, the summary card (`LockedSummary`): the place's photo (`Photo of <place>`), **Where** (title, note, `Open link, <domain>` shown as `<domain> ↗`), **When** (`<start> – <end>` and `Day trip` / `1 night` / `N nights`), the faces with `<n> going · <countdown>`, and two buttons: `Share plan` and `Add to calendar` ([add-to-calendar](add-to-calendar.md)). If the chosen place row is gone, it says "The chosen place is no longer available."
 
 The tiles stay; the Vote tile reads `<place> won`. On the trips list a locked card shows its dates and a countdown tile, and its label ends with the dates.
 

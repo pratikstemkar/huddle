@@ -69,7 +69,7 @@ describe('Hangout', () => {
     await render(<Hangout />);
     expect(screen.getByText('Aarav invited College gang')).toBeTruthy();
     expect(screen.getByText('Dinner with the gang')).toBeTruthy();
-    expect(screen.getByText('About 2 hrs · 2 of 3 answered')).toBeTruthy();
+    expect(screen.getByText('About 2 hrs · 1 of 2 answered')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Nori House, open in Maps' })).toBeTruthy();
     expect(screen.getAllByText('Best so far')).toHaveLength(1);
     expect(screen.getByText('2 can make it')).toBeTruthy();
@@ -150,7 +150,7 @@ describe('Lock the time', () => {
 
   it('starts on the time most people can make and locks it', async () => {
     await render(<Lock />);
-    expect(screen.getByText('2 of 3 answered · Nori House')).toBeTruthy();
+    expect(screen.getByText('1 of 2 answered · Nori House')).toBeTruthy();
     expect(screen.getByText('Most people')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Lock in Fri 7 PM' })).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Lock in Fri 7 PM' }));

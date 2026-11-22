@@ -48,9 +48,9 @@ describe('DateRangePicker', () => {
     await fireEvent.press(screen.getByRole('button', { name: label(nextMonth(13)) }));
     expect(onChange).toHaveBeenLastCalledWith({ start: nextMonth(10), end: nextMonth(13) });
     expect(screen.getByRole('button', { name: `${label(nextMonth(10))}, first day` })).toBeTruthy();
-    expect(screen.getByRole('button', { name: `${label(nextMonth(11))}, in your dates` }).props.accessibilityState).toMatchObject({ selected: true });
+    expect(screen.getByRole('button', { name: `${label(nextMonth(11))}, in your dates` })).toBeSelected();
     expect(screen.getByRole('button', { name: `${label(nextMonth(13))}, last day` })).toBeTruthy();
-    expect(screen.getByRole('button', { name: label(nextMonth(14)) }).props.accessibilityState).toMatchObject({ selected: false });
+    expect(screen.getByRole('button', { name: label(nextMonth(14)) })).not.toBeSelected();
   });
 
   it('orders the days when the last tap is earlier', async () => {

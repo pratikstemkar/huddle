@@ -11,7 +11,7 @@ import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { useGroupsLive } from '@/lib/groups';
-import { answeredIds, bestSlotId, lockHangout, slotLabel, slotShort, tally, useHangout } from '@/lib/hangouts';
+import { answeredIds, answerProgress, bestSlotId, lockHangout, slotLabel, slotShort, tally, useHangout } from '@/lib/hangouts';
 import { appLink } from '@/lib/trips';
 import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
@@ -57,6 +57,7 @@ export default function LockHangout() {
   }
 
   const total = hangout.members.length;
+  const progress = answerProgress(hangout);
   const best = bestSlotId(hangout.slots);
   const chosenId = picked ?? best ?? hangout.slots[0]?.id ?? null;
   const chosen = hangout.slots.find((s) => s.id === chosenId) ?? null;
@@ -98,7 +99,7 @@ export default function LockHangout() {
       <View style={styles.body}>
         <SheetHeader title={best ? 'Lock the time' : 'Pick the time'} onClose={() => router.back()} />
         <Text variant="callout" tone="secondary">
-          {answered.size} of {total} answered{hangout.place_name ? ` · ${hangout.place_name}` : ''}
+          {progress.answered} of {progress.asked} answered{hangout.place_name ? ` · ${hangout.place_name}` : ''}
         </Text>
 
         <View accessibilityRole="radiogroup" style={styles.list}>
@@ -110,7 +111,7 @@ export default function LockHangout() {
                 key={slot.id}
                 accessibilityRole="radio"
                 accessibilityLabel={slotLabel(slot.starts_at, slot.ends_at)}
-                accessibilityState={{ selected: on }}
+                aria-checked={on}
                 onPress={() => setPicked(slot.id)}
                 style={[styles.option, { backgroundColor: colors.card, borderColor: on ? colors.iris : colors.line, borderWidth: on ? 2 : 1 }]}>
                 <View style={styles.optionTop}>

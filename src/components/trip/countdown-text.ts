@@ -16,9 +16,9 @@ export function countdownShort(cd: Countdown): string | null {
   return 'done';
 }
 
-/** "5 friends", or "Just you" for a trip of one. */
-export function friendsText(n: number): string {
-  return n === 1 ? 'Just you' : `${n} friends`;
+/** "5 people" (you included), or "Just you" for a trip of one. */
+export function peopleText(n: number): string {
+  return n === 1 ? 'Just you' : `${n} people`;
 }
 
 /** "Day trip", "1 night", "3 nights". */

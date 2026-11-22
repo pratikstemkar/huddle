@@ -15,7 +15,7 @@ The first rule that matches any trip wins:
 ## Trip cards
 
 - Label: `<name>, <chip>` plus `, <start> – <end>` when the trip has dates (locked, else fixed), e.g. `Pondy long weekend, Planning days, <dates>`.
-- Second line: the date range or `Dates open`, then `Just you` or `<n> friends`.
+- Second line: the date range or `Dates open`, then `Just you` or `<n> people`.
 - Chip (`homeChip` in `src/lib/trip-status.ts`): `Done` (dates over; ` · N photos` when it has photos), `Your vote needed` (planning, and I haven't marked days on a vote-dates trip or haven't voted while places exist), `Planning days` (has dates, not over), else `Voting open`.
 - Tile: a countdown (`<n> days` or `Now on trip`) when the dates are ahead or under way, else the top place's photo, else the trip colour with an icon.
 
