@@ -29,7 +29,7 @@ Every file was rewritten for the redesign (commits `2ca5728`…`1b0ae8d`); none 
 | Suggest a destination | `/trip/[id]/vote` → `/trip/[id]/suggest` | [suggest-destination.md](suggest-destination.md) | old UI 2026-11-14 |
 | Vote on destinations | `/trip/[id]/vote?seg=places` | [vote.md](vote.md) | old UI 2026-11-11 |
 | Nudge people | `/`, `/trip/[id]` | [nudge.md](nudge.md) | 2026-11-21 (web) |
-| Notifications (Activity, push settings) | `/` (bell) → `/activity`, `/profile` | [notifications.md](notifications.md) | 2026-11-21 (web) |
+| Notifications (Activity, push settings) | `/` (bell) → `/activity`, `/profile` | [notifications.md](notifications.md) | 2026-11-22 (web, release announcements) |
 | Live updates | every trip tab, invite panel, settings, lock | [live-updates.md](live-updates.md) | old UI 2026-11-11 |
 | Rename, recolour or delete a trip | `/trip/[id]` → `/trip/[id]/settings` | [trip-settings.md](trip-settings.md) | old UI 2026-11-11 |
 | Hide who marked which day | `/trip/[id]/settings`, `/trip/[id]/vote?seg=dates` | [hide-who-marked.md](hide-who-marked.md) | not yet |

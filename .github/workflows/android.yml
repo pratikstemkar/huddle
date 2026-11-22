@@ -11,7 +11,8 @@ name: Android APK
 # key, so assetlinks.json must list this key's SHA-256 fingerprint.
 #
 # Needs repository variables (Settings -> Secrets and variables -> Actions ->
-# Variables): SUPABASE_URL, SUPABASE_ANON_KEY and APP_URL.
+# Variables): SUPABASE_URL, SUPABASE_ANON_KEY and APP_URL. Announcing a tagged
+# release to everyone's phone also needs the RELEASE_ANNOUNCE_SECRET secret.
 
 on:
   workflow_dispatch:
@@ -50,6 +51,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    outputs:
+      runtime: ${{ steps.runtime.outputs.version }}
 
     steps:
       # Every action is pinned to a commit SHA with its release in the trailing
@@ -245,3 +248,63 @@ jobs:
             notes_arg="--notes-file=$notes"
           fi
           gh release create "${GITHUB_REF_NAME}" "${{ steps.stage.outputs.path }}" "$notes_arg" || gh release upload "${GITHUB_REF_NAME}" "${{ steps.stage.outputs.path }}" --clobber
+
+  # Tells everyone with Huddle on a phone that the release is out. The database
+  # decides per phone: one on this runtime version gets the OTA ("close and open
+  # Huddle again"), any other gets a link to the release page to download the
+  # APK. So it waits for both halves: the release above, and the OTA Update run
+  # for this commit. Announcing a version twice does nothing, so a re-run is safe.
+  announce:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      actions: read
+    steps:
+      - name: Wait for the OTA update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Usually long done: the update builds a bundle, this job waited for Gradle.
+          for _ in $(seq 1 80); do
+            run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow update.yml --commit "$GITHUB_SHA" \
+              --event push --limit 1 --json status,conclusion,url --jq '.[0] // empty')
+            if [ -n "$run" ] && [ "$(echo "$run" | jq -r .status)" = "completed" ]; then
+              conclusion=$(echo "$run" | jq -r .conclusion)
+              if [ "$conclusion" != "success" ]; then
+                echo "::error title=OTA update did not publish::$(echo "$run" | jq -r .url) ended '$conclusion'. Telling people to restart would be wrong. Fix it, then re-run this job."
+                exit 1
+              fi
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::error title=OTA update not finished::No finished OTA Update run for $GITHUB_SHA after 40 minutes. Re-run this job once it is done."
+          exit 1
+
+      - name: Announce the release
+        env:
+          SECRET: ${{ secrets.RELEASE_ANNOUNCE_SECRET }}
+          RUNTIME: ${{ needs.build.outputs.runtime }}
+        run: |
+          if [ -z "$SECRET" ]; then
+            echo "::warning title=Release not announced::RELEASE_ANNOUNCE_SECRET is not set, so nobody was notified. See CONTRIBUTING.md -> Release notifications."
+            exit 0
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          link="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$GITHUB_REF_NAME"
+          body=$(jq -n --arg secret "$SECRET" --arg ver "$version" --arg runtime "$RUNTIME" --arg link "$link" \
+            '{secret: $secret, ver: $ver, runtime: $runtime, link: $link}')
+          status=$(curl -sS -o "$RUNNER_TEMP/announce.json" -w '%{http_code}' \
+            -X POST "$EXPO_PUBLIC_SUPABASE_URL/rest/v1/rpc/announce_release" \
+            -H "apikey: $EXPO_PUBLIC_SUPABASE_ANON_KEY" -H "Content-Type: application/json" \
+            --data-binary @- <<< "$body")
+          if [ "$status" != "200" ]; then
+            echo "::error title=Announcement failed::HTTP $status: $(cat "$RUNNER_TEMP/announce.json")"
+            exit 1
+          fi
+          told=$(cat "$RUNNER_TEMP/announce.json")
+          echo "### Release announced" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "$told people notified about $GITHUB_REF_NAME (0 means it was already announced)." >> "$GITHUB_STEP_SUMMARY"

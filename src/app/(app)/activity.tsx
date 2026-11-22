@@ -1,4 +1,4 @@
-import { router, useFocusEffect, type Href } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
@@ -13,7 +13,7 @@ import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
 import { timeAgo, useActivity, type ActivityItem, type NotificationKind } from '@/lib/activity';
 import { useAuth } from '@/lib/auth';
-import { openSystemSettings, pushPermission, registerForPush, safeAppPath, type PushPermission } from '@/lib/notifications';
+import { openNotificationTarget, openSystemSettings, pushPermission, registerForPush, type PushPermission } from '@/lib/notifications';
 import type { TintArea } from '@/theme/tokens';
 import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
@@ -28,6 +28,7 @@ const KIND_ICON: Record<NotificationKind, { icon: IconName; area: TintArea }> = 
   nudge_days: { icon: 'plan', area: 'vote' },
   nudge_vote: { icon: 'vote', area: 'vote' },
   trip_joined: { icon: 'groups', area: 'trip' },
+  app_release: { icon: 'bell', area: 'plan' },
 };
 
 function Row({ item, onPress }: { item: ActivityItem; onPress: () => void }) {
@@ -106,8 +107,7 @@ export default function Activity() {
 
   const open = (item: ActivityItem) => {
     if (!item.read_at) markRead([item.id]).catch(() => {});
-    const path = safeAppPath(item.url);
-    if (path) router.push(path as Href);
+    openNotificationTarget(item.url);
   };
 
   return (

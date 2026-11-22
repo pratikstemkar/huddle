@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 
 import type { ActivityItem } from '@/lib/activity';
 
@@ -46,6 +47,19 @@ describe('Activity', () => {
     await fireEvent.press(await screen.findByRole('button', { name: /Goa is happening/ }));
     expect(router.push).toHaveBeenCalledWith('/trip/t1');
     expect(rpcCalls).toContainEqual({ name: 'mark_notifications_read', args: { ids: ['n1'] } });
+  });
+
+  it('opens a release item in the browser', async () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    const url = 'https://github.com/pratikstemkar/huddle/releases/tag/v1.4.0';
+    queueResult('notifications', {
+      data: [item({ kind: 'app_release', title: 'Huddle 1.4.0 needs a new download', body: 'Tap to download the new app and install it over this one.', url })],
+    });
+    await render(<Activity />);
+    await fireEvent.press(await screen.findByRole('button', { name: /Huddle 1\.4\.0 needs a new download/ }));
+    expect(open).toHaveBeenCalledWith(url);
+    expect(router.push).not.toHaveBeenCalled();
+    open.mockRestore();
   });
 
   it('marks everything read', async () => {

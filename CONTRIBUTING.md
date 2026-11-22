@@ -104,8 +104,28 @@ git tag v1.1.0 && git push && git push --tags
 
 The release runs on a tag, so the commit must be on `main` first. Workflows:
 
-- `android.yml` builds the APK (arm64 by default), verifies the embedded update fingerprint, checks the size against `scripts/perf/apk-baseline.json` and publishes the release. Also runs by hand from the Actions tab.
+- `android.yml` builds the APK (arm64 by default), verifies the embedded update fingerprint, checks the size against `scripts/perf/apk-baseline.json` and publishes the release. Also runs by hand from the Actions tab. On a tag, its `announce` job then notifies everyone (see below).
 - `update.yml` publishes the bundle to EAS Update on the `production` branch.
 - `rollback.yml` retracts a bad update. Run it from the same tag the live APK was built from.
 
-Repository settings: variables `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_URL`, and secret `EXPO_TOKEN`. An update only reaches an APK with the same runtime version (a fingerprint of the native app), so adding a native module or changing a plugin needs a new APK, not an update. After a first good build, record its size with `node scripts/perf/apk-size.mjs <apk> --update` and commit the baseline.
+Repository settings: variables `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_URL`, and secrets `EXPO_TOKEN` and `RELEASE_ANNOUNCE_SECRET`. An update only reaches an APK with the same runtime version (a fingerprint of the native app), so adding a native module or changing a plugin needs a new APK, not an update. After a first good build, record its size with `node scripts/perf/apk-size.mjs <apk> --update` and commit the baseline.
+
+### Release notifications
+
+After the release is published and that commit's OTA Update run has succeeded, the `announce` job calls `announce_release()` in the database. Everyone with Huddle on an Android phone gets a push and an Activity item (unless they turned off **App updates** on the You tab). The message depends on each person's newest phone:
+
+- **Same runtime version as the release:** the OTA reaches it. "Huddle X.Y.Z is ready. Close Huddle and open it again to get the update." Tapping it opens the app.
+- **Different or unknown runtime version:** that phone needs the new APK. "Huddle X.Y.Z needs a new download." Tapping it opens the GitHub release page.
+
+Phones report their runtime version when they register for push. Ones registered by an app from before this feature have none, so they get the APK message until they open an update that has it.
+
+Setup, once. Pick a long random string, then:
+
+1. Add it as the repository secret `RELEASE_ANNOUNCE_SECRET`.
+2. Store the same value in Vault on the hosted project (SQL editor):
+
+   ```sql
+   select vault.create_secret('<the same string>', 'release_announce_secret');
+   ```
+
+Without the secret, the job warns and skips. A version is announced once (`releases` table), so re-running the job is safe. If the OTA run failed, the job fails rather than tell people to restart for an update that isn't there. Fix it, then re-run the job.
