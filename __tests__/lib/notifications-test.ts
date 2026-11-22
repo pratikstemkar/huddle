@@ -10,6 +10,8 @@ import {
   openNotificationTarget,
   pushPermission,
   registerForPush,
+  requestPushPermission,
+  shouldOfferPush,
   safeAppPath,
   unregisterPush,
   useNotifications,
@@ -114,6 +116,38 @@ describe('askForPushOnce', () => {
     await askForPushOnce(explain);
     expect(explain).not.toHaveBeenCalled();
     await expect(pushPermission()).resolves.toBe('denied');
+  });
+});
+
+describe('shouldOfferPush', () => {
+  it('offers only while the phone has never been asked', async () => {
+    notificationState.permission = 'undetermined';
+    await expect(shouldOfferPush()).resolves.toBe(true);
+    await AsyncStorage.setItem('huddle.pushAsked', '1');
+    await expect(shouldOfferPush()).resolves.toBe(false);
+  });
+
+  it.each(['granted', 'denied'] as const)('does not offer once permission is %s', async (permission) => {
+    notificationState.permission = permission;
+    await expect(shouldOfferPush()).resolves.toBe(false);
+  });
+});
+
+describe('requestPushPermission', () => {
+  it('shows the system prompt and marks the phone asked, without saving a token before sign-in', async () => {
+    notificationState.permission = 'undetermined';
+    notificationState.promptAnswer = 'denied';
+    await expect(requestPushPermission()).resolves.toBe('denied');
+    expect(notifications.requestPermissionsAsync).toHaveBeenCalledTimes(1);
+    expect(notifications.getExpoPushTokenAsync).not.toHaveBeenCalled();
+    expect(rpcCalls).toHaveLength(0);
+    expect(await AsyncStorage.getItem('huddle.pushAsked')).toBe('1');
+  });
+
+  it('never prompts twice', async () => {
+    notificationState.permission = 'granted';
+    await expect(requestPushPermission()).resolves.toBe('granted');
+    expect(notifications.requestPermissionsAsync).not.toHaveBeenCalled();
   });
 });
 

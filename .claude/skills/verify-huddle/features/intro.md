@@ -13,6 +13,8 @@ Six pages Pip walks a newcomer through before sign-in: hello, decide together (d
 - Only the page on screen is exposed to screen readers (`aria-hidden` on the others). Note `find` ignores `aria-hidden`, so it returns the Next buttons of every page; check `[data-testid=intro-page-N]` instead.
 - Native only (not covered here): haptic tick on each page change, Android back button stepping back a page.
 
+- Notifications page ("Know the moment the plan moves", between Photos and Ready): only on a real phone whose push permission is undetermined and `huddle.pushAsked` isn't set, so **web never shows it** and the intro stays six pages there. `Turn on notifications` shows the system prompt and sets `huddle.pushAsked`; `Not now` doesn't (a trip can ask again). Skip from an earlier page lands on it, and either button then goes straight to sign in. Covered by `__tests__/app/intro-test.tsx`; check the system prompt on a device.
+
 ## How to get to it (user POV)
 
 Fresh install (or cleared site data), signed out → open the app.

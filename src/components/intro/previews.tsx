@@ -220,6 +220,41 @@ export function PhotosPreview() {
   );
 }
 
+const PINGS = [
+  { icon: 'lock', bg: '#E9EAFF', title: 'Manali is locked: Sat 12 – Mon 14', detail: 'Arjun locked the dates. Pack a jacket.', when: 'now' },
+  { icon: 'vote', bg: '#FFF1CC', title: 'Goa is waiting on you', detail: '5 of 6 have picked their days', when: '2h' },
+  { icon: 'split', bg: '#DDF5EE', title: 'Zoe added Dinner · ₹2,400', detail: 'Your share is ₹400', when: '1d' },
+] as const satisfies readonly { icon: IconName; bg: string; title: string; detail: string; when: string }[];
+
+/** A lock screen with Huddle's pings on it. */
+export function NotifyPreview() {
+  return (
+    <Frame area="trip">
+      {PINGS.map((p, i) => (
+        <Panel key={p.title} style={[styles.row, i > 0 && { opacity: 1 - i * 0.18 }]}>
+          <View style={[styles.rowIcon, { backgroundColor: p.bg }]}>
+            <Icon name={p.icon} size={18} color="#171A2F" />
+          </View>
+          <View style={styles.flex}>
+            <View style={styles.between}>
+              <Text variant="badge" tone="secondary">
+                Huddle
+              </Text>
+              <Text variant="badge" tone="secondary">
+                {p.when}
+              </Text>
+            </View>
+            <Text variant="calloutStrong">{p.title}</Text>
+            <Text variant="caption" tone="secondary">
+              {p.detail}
+            </Text>
+          </View>
+        </Panel>
+      ))}
+    </Frame>
+  );
+}
+
 const styles = StyleSheet.create({
   frame: { borderRadius: radius.xl, padding: space.s18, gap: space.md },
   panel: { borderRadius: radius.lg, paddingVertical: space.s14, paddingHorizontal: space.lg, gap: space.s10 },

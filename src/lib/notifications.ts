@@ -101,6 +101,37 @@ export async function askForPushOnce(explain: () => Promise<boolean>) {
   } catch {}
 }
 
+/**
+ * True when the intro should offer push: a real phone that hasn't been asked yet. Checked before sign-in,
+ * so it only looks at the permission, never the token.
+ */
+export async function shouldOfferPush(): Promise<boolean> {
+  if (!pushSupported) return false;
+  try {
+    if ((await pushPermission()) !== 'undetermined') return false;
+    return !(await AsyncStorage.getItem(ASKED_KEY));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Shows the system prompt now, without registering a token (the intro runs before sign-in; the token is
+ * saved by `useNotifications` once someone signs in). Marks the phone as asked so no other screen asks again.
+ */
+export async function requestPushPermission(): Promise<PushPermission> {
+  if (!pushSupported) return 'unsupported';
+  configureNotifications();
+  try {
+    await AsyncStorage.setItem(ASKED_KEY, '1');
+    if ((await pushPermission()) !== 'undetermined') return pushPermission();
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined';
+  } catch {
+    return 'undetermined';
+  }
+}
+
 export function openSystemSettings() {
   Linking.openSettings().catch(() => {});
 }
