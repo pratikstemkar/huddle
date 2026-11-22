@@ -1,0 +1,62 @@
+<!doctype html>
+<!-- Source for public/get/og.png (1200x675). Re-render with docs/store/og/render.sh -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&display=block" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1200px; height: 675px; overflow: hidden; }
+body {
+  background: #F4F5FB;
+  color: #171A2F;
+  font-family: "Bricolage Grotesque", sans-serif;
+  position: relative;
+}
+.copy { position: absolute; left: 80px; top: 72px; width: 610px; height: 531px; display: flex; flex-direction: column; }
+.brand { display: flex; align-items: center; gap: 14px; font-weight: 800; font-size: 30px; letter-spacing: -.02em; }
+.brand img { width: 52px; height: 52px; border-radius: 14px; }
+h1 { margin-top: auto; font-size: 66px; line-height: .98; letter-spacing: -.035em; font-weight: 800; }
+h1 .hl { color: #3F43C9; display: block; }
+.lede { margin-top: 24px; font-size: 25px; line-height: 1.35; font-weight: 600; color: #5A5F7A; max-width: 560px; }
+.chips { margin-top: auto; display: flex; gap: 10px; }
+.chip { padding: 10px 18px; border-radius: 999px; font-size: 20px; font-weight: 700; }
+.c1 { background: #FFF1CC; } .c2 { background: #E9EAFF; color: #3F43C9; } .c3 { background: #FFE9D6; } .c4 { background: #DDF5EE; color: #146B58; }
+
+.panel { position: absolute; left: 712px; top: 40px; width: 448px; height: 700px; border-radius: 40px; background: #5257E8; overflow: hidden; }
+.panel::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.14) 1.5px, transparent 1.6px); background-size: 22px 22px; }
+.phone { position: absolute; left: 64px; top: 56px; width: 320px; aspect-ratio: 390 / 844; border-radius: 44px; background: #10121F; padding: 10px; box-shadow: 0 30px 60px rgba(16,18,31,.35); }
+.phone img { width: 100%; height: 100%; border-radius: 35px; display: block; object-fit: cover; }
+.pip { position: absolute; left: 640px; top: 470px; width: 132px; transform: rotate(-8deg); filter: drop-shadow(0 10px 18px rgba(23,26,47,.22)); }
+</style>
+</head>
+<body>
+<div class="copy">
+  <div class="brand"><img src="../../../public/get/icon.png" alt="">Huddle</div>
+  <h1>Plan the trip, <span class="hl">not the group chat.</span></h1>
+  <p class="lede">Dates, places, the day-by-day plan and who owes what. One app for the whole group.</p>
+  <div class="chips">
+    <span class="chip c1">Dates</span><span class="chip c2">Votes</span><span class="chip c3">Plans</span><span class="chip c4">Split</span>
+  </div>
+</div>
+<div class="panel"><div class="phone"><img src="../../../public/get/home.jpg" alt=""></div></div>
+<svg class="pip" viewBox="0 0 120 124" aria-hidden="true">
+  <ellipse cx="45" cy="117" rx="12" ry="5" fill="#FFC23D"/>
+  <ellipse cx="75" cy="117" rx="12" ry="5" fill="#FFC23D"/>
+  <ellipse cx="18" cy="74" rx="8" ry="19" fill="#171A2F" transform="rotate(14 18 74)"/>
+  <path d="M90 70C100 62 110 48 116 30C118 24 113 22 109 26C102 34 96 44 90 52Z" fill="#171A2F"/>
+  <path d="M60 6c25 0 42 22 42 54s-17 56-42 56-42-24-42-56S35 6 60 6z" fill="#171A2F"/>
+  <ellipse cx="60" cy="80" rx="27" ry="32" fill="#fff"/>
+  <circle cx="46" cy="47" r="16" fill="#fff"/>
+  <circle cx="74" cy="47" r="16" fill="#fff"/>
+  <circle cx="48" cy="47" r="4.5" fill="#171A2F"/>
+  <circle cx="72" cy="47" r="4.5" fill="#171A2F"/>
+  <circle cx="49.6" cy="45.4" r="1.5" fill="#fff"/>
+  <circle cx="73.6" cy="45.4" r="1.5" fill="#fff"/>
+  <circle cx="37" cy="57" r="4.5" fill="#FF9FB2"/>
+  <circle cx="83" cy="57" r="4.5" fill="#FF9FB2"/>
+  <path d="M51 54q9-6 18 0q-9 14-18 0z" fill="#FFC23D"/>
+  <path d="M27 68q33 12 66 0l2 9q-35 13-70 0z" fill="#5257E8"/>
+</svg>
+</body>
+</html>
