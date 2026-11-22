@@ -71,6 +71,8 @@ function HeroCard({ hero }: { hero: Hero }) {
   const { colors } = useTheme();
   const toast = useToast();
   const [nudging, setNudging] = useState(false);
+  // Trips nudged from this screen: the server allows one nudge a day, so the button says so instead of offering another.
+  const [nudged, setNudged] = useState<ReadonlySet<string>>(new Set());
   const [leading, setLeading] = useState<{ tripId: string; name: string | null } | null>(null);
 
   const voteTripId = hero.kind === 'vote' ? hero.trip.id : null;
@@ -93,6 +95,7 @@ function HeroCard({ hero }: { hero: Hero }) {
     setNudging(true);
     try {
       toast.show(nudgeSentText(await nudgeTrip(trip.id, 'days')));
+      setNudged((prev) => new Set(prev).add(trip.id));
     } catch (e) {
       toast.show((e as Error).message);
     } finally {
@@ -107,9 +110,10 @@ function HeroCard({ hero }: { hero: Hero }) {
       text = hero.text;
       actions = (
         <Button
-          label="Nudge them"
+          label={nudged.has(hero.trip.id) ? 'Nudged today' : 'Nudge them'}
           variant="beak"
           loading={nudging}
+          disabled={nudged.has(hero.trip.id)}
           accessibilityHint="Sends a reminder to the people who haven't marked their days"
           onPress={() => nudge(hero.trip)}
         />
@@ -205,7 +209,7 @@ function TripCard({
   const reduced = useReducedMotion();
   const dates = tripDates(trip);
   const chip = homeChip(trip, summary, photoCount, today);
-  const people = summary ? (summary.members === 1 ? 'Just you' : `${summary.members} friends`) : null;
+  const people = summary ? (summary.members === 1 ? 'Just you' : `${summary.members} people`) : null;
   const sub = [dates ? formatRange(dates.start, dates.end) : 'Dates open', people].filter(Boolean).join(' · ');
   const label = `${trip.name}${chip ? `, ${chip.text}` : ''}${dates ? `, ${formatTripDates(dates.start, dates.end)}` : ''}`;
   return (

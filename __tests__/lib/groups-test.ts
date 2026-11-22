@@ -29,7 +29,7 @@ describe('group wording', () => {
   it('counts people and trips', () => {
     expect(peopleCount(1)).toBe('1 person');
     expect(peopleCount(6)).toBe('6 people');
-    expect(groupSub(3, 0)).toBe('3 people · nothing planned yet');
+    expect(groupSub(3, 0)).toBe('3 people · no trips yet');
     expect(groupSub(3, 1)).toBe('3 people · 1 trip together');
     expect(groupSub(11, 2)).toBe('11 people · 2 trips together');
   });
