@@ -58,7 +58,7 @@ function usePipMood(active: boolean, mood: PipMood) {
   return { mood: active ? mood : ('idle' as PipMood) };
 }
 
-function SkipLink({ color, onPress }: { color: string; onPress: () => void }) {
+export function SkipLink({ color, onPress }: { color: string; onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -83,10 +83,10 @@ function pageA11y(active: boolean) {
   };
 }
 
-type SkyProps = PagerProps & { title: string; body: string; onNext: () => void; onSkip: () => void; onHaveAccount: () => void };
+type SkyProps = PagerProps & { title: string; body: string; onNext: () => void; onSkip: () => void };
 
 /** Page 1: Pip waves hello from the iris sky, as on the sign-in screen. */
-export function SkyPage({ index, count, width, height, scrollX, active, title, body, onNext, onSkip, onHaveAccount }: SkyProps) {
+export function SkyPage({ index, count, width, height, scrollX, active, title, body, onNext, onSkip }: SkyProps) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
@@ -122,7 +122,6 @@ export function SkyPage({ index, count, width, height, scrollX, active, title, b
             </View>
             <View style={styles.actions}>
               <Button label="Show me around" iconRight="arrowRight" onPress={onNext} />
-              <Button label="I already have an account" variant="ghost" size="md" onPress={onHaveAccount} />
             </View>
           </View>
         </View>
@@ -136,24 +135,19 @@ type FeatureProps = PagerProps & {
   preview: ReactNode;
   pip: PipLook;
   says: string;
-  onBack: () => void;
-  onNext: () => void;
-  onSkip: () => void;
+  /** Room the pager's fixed dot row (top) and button row (bottom) take, drawn over the page. */
+  topInset: number;
+  bottomInset: number;
 };
 
-/** Pages 2 to 5: a feature, a small picture of it, and Pip explaining it. */
-export function FeaturePage({ index, count, width, height, scrollX, active, title, preview, pip: look, says, onBack, onNext, onSkip }: FeatureProps) {
+/** Pages 2 to 6: a title, a small picture, and Pip explaining. Only this slides: the dots and buttons are the pager's. */
+export function FeaturePage({ index, width, height, scrollX, active, title, preview, pip: look, says, topInset, bottomInset }: FeatureProps) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const pip = usePipMood(active, look.mood);
   return (
     <View testID={`intro-page-${index}`} {...pageA11y(active)} style={[styles.page, { width, height, backgroundColor: colors.bg }]}>
-      <ScrollView contentContainerStyle={[styles.body, { paddingTop: insets.top + space.sm }]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.body, { paddingTop: topInset, paddingBottom: bottomInset + space.lg }]} showsVerticalScrollIndicator={false}>
         <View style={styles.column}>
-          <View style={styles.top}>
-            <PageDots count={count} step={index} scrollX={scrollX} width={width} on={colors.iris} off={colors.lineStrong} />
-            <SkipLink color={colors.textSecondary} onPress={onSkip} />
-          </View>
           <Text variant="title">{title}</Text>
           <Parallax index={index} width={width} scrollX={scrollX} factor={0.12}>
             {preview}
@@ -170,69 +164,13 @@ export function FeaturePage({ index, count, width, height, scrollX, active, titl
           </Parallax>
         </View>
       </ScrollView>
-      <View style={[styles.footer, { paddingBottom: Math.max(space.xl, insets.bottom + space.md) }]}>
-        <View style={[styles.column, styles.footerRow]}>
-          <IconButton icon="back" accessibilityLabel="Back" onPress={onBack} style={styles.back} />
-          <Button label="Next" iconRight="arrowRight" onPress={onNext} style={styles.flex} />
-        </View>
-      </View>
-    </View>
-  );
-}
-
-type NotifyProps = PagerProps & {
-  title: string;
-  preview: ReactNode;
-  says: string;
-  /** True while the system prompt is open, so the buttons can't be pressed twice. */
-  busy: boolean;
-  onBack: () => void;
-  onAllow: () => void;
-  onLater: () => void;
-};
-
-/** The page before Ready: why pings matter, then the system prompt. The choice is the way forward, so there is no Next. */
-export function NotifyPage({ index, count, width, height, scrollX, active, title, preview, says, busy, onBack, onAllow, onLater }: NotifyProps) {
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const pip = usePipMood(active, 'hello');
-  return (
-    <View testID={`intro-page-${index}`} {...pageA11y(active)} style={[styles.page, { width, height, backgroundColor: colors.bg }]}>
-      <ScrollView contentContainerStyle={[styles.body, { paddingTop: insets.top + space.sm }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.column}>
-          <View style={styles.top}>
-            <PageDots count={count} step={index} scrollX={scrollX} width={width} on={colors.iris} off={colors.lineStrong} />
-            <IconButton icon="back" accessibilityLabel="Back" onPress={onBack} />
-          </View>
-          <Text variant="title">{title}</Text>
-          <Parallax index={index} width={width} scrollX={scrollX} factor={0.12}>
-            {preview}
-          </Parallax>
-          <Parallax index={index} width={width} scrollX={scrollX} factor={0.3}>
-            <View style={styles.pipRow}>
-              <Pip mood={pip.mood} size={88} scarf={colors.beak} tail={colors.beak} />
-              <View style={styles.flex}>
-                <Pop active={active}>
-                  <SpeechCard style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, marginBottom: space.xl }}>{says}</SpeechCard>
-                </Pop>
-              </View>
-            </View>
-          </Parallax>
-        </View>
-      </ScrollView>
-      <View style={[styles.footer, { paddingBottom: Math.max(space.xl, insets.bottom + space.md) }]}>
-        <View style={[styles.column, styles.actions]}>
-          <Button label="Turn on notifications" icon="bell" onPress={onAllow} disabled={busy} />
-          <Button label="Not now" variant="ghost" size="md" onPress={onLater} disabled={busy} accessibilityHint="You can turn them on later from the You tab" />
-        </View>
-      </View>
     </View>
   );
 }
 
 type ReadyProps = PagerProps & { title: string; says: string; onBack: () => void; onStart: () => void; onInvite: () => void };
 
-/** Page 6: Pip cheers, and the person heads to sign in. */
+/** The last page: Pip cheers, and the person heads to sign in. */
 export function ReadyPage({ index, count, width, height, scrollX, active, title, says, onBack, onStart, onInvite }: ReadyProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -282,10 +220,6 @@ const styles = StyleSheet.create({
   copy: { gap: space.md },
   actions: { gap: space.sm },
   body: { paddingHorizontal: space.screenX, paddingBottom: space.lg },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: -space.md },
   pipRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.s10 },
-  footer: { paddingHorizontal: space.screenX, paddingTop: space.sm },
-  footerRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  back: { width: 56, height: 56, borderRadius: 28 },
   readyTop: { position: 'absolute', left: space.screenX, right: space.screenX, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });
