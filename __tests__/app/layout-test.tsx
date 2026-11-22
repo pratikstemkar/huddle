@@ -56,6 +56,7 @@ const routes = {
   '(app)/trip/[id]/settings': () => <Text>Settings screen</Text>,
   '(app)/trip/[id]/lock': () => <Text>Lock screen</Text>,
   'sign-in': () => <Text>Sign in screen</Text>,
+  intro: () => <Text>Intro screen</Text>,
   'invite/[code]': () => <Text>Invite screen</Text>,
   privacy: () => <Text>Privacy screen</Text>,
 };
@@ -89,7 +90,32 @@ describe('Root layout', () => {
     expect(screen).toHavePathname('/');
   });
 
-  it('sends signed-out people to sign in', async () => {
+  it('shows the intro the first time someone opens the app signed out', async () => {
+    await renderRouter(routes, { initialUrl: '/' });
+    expect(screen.getByText('Intro screen')).toBeTruthy();
+    expect(screen).toHavePathname('/intro');
+    expect(SplashScreen.hideAsync).toHaveBeenCalled();
+  });
+
+  it('keeps signed-in people off the intro, and marks it seen for after they sign out', async () => {
+    mockAuth = { session: { user: { id: 'u1' } }, loading: false };
+    await renderRouter(routes, { initialUrl: '/intro' });
+    expect(screen.queryByText('Intro screen')).toBeNull();
+    expect(screen.getByText('Home screen')).toBeTruthy();
+    expect(await AsyncStorage.getItem('huddle.introSeen')).toBe('1');
+  });
+
+  it('opens an empty join screen after sign-in when the intro asked for it', async () => {
+    await AsyncStorage.setItem('huddle.joinAfterSignIn', '1');
+    mockAuth = { session: { user: { id: 'u1' } }, loading: false };
+    await renderRouter(routes, { initialUrl: '/' });
+    expect(await screen.findByText('Join screen')).toBeTruthy();
+    expect(screen).toHavePathname('/join');
+    expect(await AsyncStorage.getItem('huddle.joinAfterSignIn')).toBeNull();
+  });
+
+  it('sends signed-out people to sign in once they have seen the intro', async () => {
+    await AsyncStorage.setItem('huddle.introSeen', '1');
     await renderRouter(routes, { initialUrl: '/' });
     expect(screen.getByText('Sign in screen')).toBeTruthy();
     expect(screen).toHavePathname('/sign-in');
@@ -97,6 +123,7 @@ describe('Root layout', () => {
   });
 
   it('keeps signed-out people out of trips, even from a link', async () => {
+    await AsyncStorage.setItem('huddle.introSeen', '1');
     await renderRouter(routes, { initialUrl: '/trip/abc' });
     expect(screen.queryByText('Trip screen')).toBeNull();
     expect(screen.getByText('Sign in screen')).toBeTruthy();
@@ -130,6 +157,7 @@ describe('Root layout', () => {
     mockFontsLoaded = fonts;
     await renderRouter(routes, { initialUrl: '/' });
     expect(screen.queryByText('Sign in screen')).toBeNull();
+    expect(screen.queryByText('Intro screen')).toBeNull();
     expect(screen.queryByText('Home screen')).toBeNull();
     expect(SplashScreen.hideAsync).not.toHaveBeenCalled();
   });

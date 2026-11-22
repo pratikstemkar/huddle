@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { WelcomeScene } from '@/components/welcome-scene';
 import { useAuth } from '@/lib/auth';
+import { useIntroSeen } from '@/lib/intro-seen';
 import { savePendingInvite, takePendingInvite } from '@/lib/pending-invite';
 import { invitePreview, type InvitePreview } from '@/lib/trips';
 import { space, toTripColor, tripColors } from '@/theme/tokens';
@@ -26,6 +27,9 @@ export default function Invite() {
 
 function SignedOutInvite({ code }: { code: string }) {
   const { colors } = useTheme();
+  const { markSeen } = useIntroSeen();
+  // They came for a trip, so sign-in goes straight on to it, without the first-open intro.
+  useEffect(() => markSeen(), [markSeen]);
   // 'offline': the preview couldn't load; they can still sign in and the join sheet reports any real problem.
   const [state, setState] = useState<InvitePreview | 'loading' | 'unknown' | 'offline'>(code ? 'loading' : 'unknown');
 

@@ -8,6 +8,7 @@ Every file was rewritten for the redesign (commits `2ca5728`…`1b0ae8d`); none 
 
 | Feature | Route(s) | File | Last proven |
 |---|---|---|---|
+| First-open intro with Pip | `/intro` → `/sign-in` | [intro.md](intro.md) | 2026-11-22 (web) |
 | Dev sign-in | `/sign-in` | [sign-in.md](sign-in.md) | old UI 2026-11-11 |
 | Trips list (home) | `/` | [trips-list.md](trips-list.md) | old UI 2026-11-11 |
 | Create trip | `/` (Pip button) → `/new-trip` (2 steps) | [create-trip.md](create-trip.md) | old UI 2026-11-11 |

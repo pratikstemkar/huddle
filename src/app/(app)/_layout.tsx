@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 
 import { useAuth } from '@/lib/auth';
 import { useNotifications } from '@/lib/notifications';
+import { takeJoinAfterSignIn } from '@/lib/intro-seen';
 import { takePendingInvite } from '@/lib/pending-invite';
 import { useTheme } from '@/theme/use-theme';
 
@@ -14,10 +15,11 @@ export default function AppLayout() {
   useNotifications(session?.user.id);
 
   // This layout mounts once signed in. If they arrived through an invite link while signed out,
-  // carry on to the join screen with the code filled in.
+  // carry on to the join screen with the code filled in. "I have an invite code" on the intro opens it empty.
   useEffect(() => {
-    takePendingInvite().then((code) => {
+    Promise.all([takePendingInvite(), takeJoinAfterSignIn()]).then(([code, join]) => {
       if (code) router.push({ pathname: '/join', params: { code } });
+      else if (join) router.push('/join');
     });
   }, []);
 
