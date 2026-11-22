@@ -1,0 +1,54 @@
+<!doctype html>
+<!--
+  Template for the web app's single index.html (web.output "single"). Expo fills in
+  the lang and title placeholders and appends the script tags at export time.
+  The Open Graph tags give every app URL (invites, trips, sign-in) the same link
+  preview; crawlers don't run JavaScript, so they must live here. Image source:
+  docs/store/og/og.html. The /get landing page has its own copy in public/get/index.html.
+-->
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>%WEB_TITLE%</title>
+    <meta name="description" content="Find the days everyone is free, vote on where to go, plan each day and split the costs. Free, no ads." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Huddle" />
+    <meta property="og:title" content="Huddle: plan group trips together" />
+    <meta property="og:description" content="Find the days everyone is free, vote on where to go, plan each day and split the costs. Free, no ads." />
+    <meta property="og:image" content="https://huddletrips.vercel.app/get/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="675" />
+    <meta property="og:image:alt" content="Huddle: plan the trip, not the group chat. The Huddle home screen with upcoming trips." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Huddle: plan group trips together" />
+    <meta name="twitter:description" content="Find the days everyone is free, vote on where to go, plan each day and split the costs. Free, no ads." />
+    <meta name="twitter:image" content="https://huddletrips.vercel.app/get/og.png" />
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Use static rendering with Expo Router to support running without JavaScript. -->
+    <noscript> You need to enable JavaScript to run this app. </noscript>
+    <!-- The root element for your Expo app. -->
+    <div id="root"></div>
+  </body>
+</html>
