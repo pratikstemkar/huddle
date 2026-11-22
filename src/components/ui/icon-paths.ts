@@ -83,6 +83,7 @@ export const iconPaths = {
   pin: { shapes: [{ t: 'path', d: 'M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z' }, { t: 'circle', cx: 12, cy: 9.5, r: 2.5 }] },
   clock: { shapes: [{ t: 'circle', cx: 12, cy: 12, r: 9 }, { t: 'path', d: 'M12 7v5l3 2' }] },
   lock: { shapes: [{ t: 'rect', x: 5, y: 11, width: 14, height: 10, rx: 3 }, { t: 'path', d: 'M8 11V8a4 4 0 0 1 8 0v3' }] },
+  download: { shapes: [{ t: 'path', d: 'M12 4v11M7 10l5 5 5-5M5 20h14' }], strokeWidth: 2.2 },
   send: { shapes: [{ t: 'path', d: 'M4 12l16-8-6 16-3-7z' }] },
   maybe: { shapes: [{ t: 'path', d: 'M4 13c2.5-3 5-3 8 0s5.5 3 8 0' }], strokeWidth: 2.4 },
   apple: {

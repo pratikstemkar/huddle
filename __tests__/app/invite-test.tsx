@@ -85,3 +85,24 @@ describe('Invite link', () => {
     expect(screen.getByRole('button', { name: 'Sign in to join' })).toBeTruthy();
   });
 });
+
+describe('Invite link in a browser', () => {
+  const { Platform } = require('react-native');
+  afterEach(() => Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true }));
+
+  it('offers the app before the web sign-in, and keeps the code', async () => {
+    Object.defineProperty(Platform, 'OS', { value: 'web', configurable: true });
+    globalThis.fetch = jest.fn().mockResolvedValue({ ok: false, json: async () => ({}) }) as unknown as typeof fetch;
+    queueResult('rpc:invite_preview', { data: [{ name: 'Goa in March', color: 'coral', members: 2 }] });
+    setParams({ code: 'goa2027' });
+    await render(<Invite />);
+
+    expect(await screen.findByText('Goa in March')).toBeTruthy();
+    expect(screen.getByText('Huddle works best in the app')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Sign in to join' })).toBeNull();
+    expect(await AsyncStorage.getItem('huddle.pendingInvite')).toBe('goa2027');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue on the web' }));
+    expect(router.replace).toHaveBeenCalledWith('/sign-in');
+  });
+});

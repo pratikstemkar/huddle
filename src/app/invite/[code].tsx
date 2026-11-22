@@ -1,7 +1,8 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
+import { GetTheApp } from '@/components/get-the-app';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { WelcomeScene } from '@/components/welcome-scene';
@@ -52,6 +53,8 @@ function SignedOutInvite({ code }: { code: string }) {
   const unknown = state === 'unknown';
   const preview = typeof state === 'object' ? state : null;
   const signIn = () => router.replace('/sign-in');
+  // In a browser the app isn't installed (or the link didn't open it): offer it before the web sign-in.
+  const web = Platform.OS === 'web';
 
   return (
     <WelcomeScene
@@ -88,10 +91,14 @@ function SignedOutInvite({ code }: { code: string }) {
               </Text>
             ) : null}
             <Text variant="callout" tone="secondary">
-              Sign in and you’ll go straight to joining it. Mark when you’re free and vote on where to go.
+              {web ? 'Mark when you’re free and vote on where to go.' : 'Sign in and you’ll go straight to joining it. Mark when you’re free and vote on where to go.'}
             </Text>
           </View>
-          <Button label="Sign in to join" variant="ink" onPress={signIn} />
+          {web ? (
+            <GetTheApp path={`invite/${encodeURIComponent(code)}`} onContinueOnWeb={signIn} />
+          ) : (
+            <Button label="Sign in to join" variant="ink" onPress={signIn} />
+          )}
         </>
       )}
     </WelcomeScene>
