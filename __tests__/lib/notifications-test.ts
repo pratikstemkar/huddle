@@ -127,6 +127,13 @@ describe('shouldOfferPush', () => {
     await expect(shouldOfferPush()).resolves.toBe(false);
   });
 
+  it('offers on a fresh Android 13 phone, which reports denied before anyone asks', async () => {
+    notificationState.permission = 'denied';
+    notificationState.canAskAgain = true;
+    await expect(pushPermission()).resolves.toBe('undetermined');
+    await expect(shouldOfferPush()).resolves.toBe(true);
+  });
+
   it.each(['granted', 'denied'] as const)('does not offer once permission is %s', async (permission) => {
     notificationState.permission = permission;
     await expect(shouldOfferPush()).resolves.toBe(false);
