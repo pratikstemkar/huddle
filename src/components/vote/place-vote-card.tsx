@@ -54,7 +54,7 @@ export function PlaceVoteCard({ destination: d, names, memberCount, leading, rea
           accessibilityRole="button"
           accessibilityLabel={`${d.title}, ${d.voteCount} ${d.voteCount === 1 ? 'vote' : 'votes'}`}
           accessibilityHint={open ? 'Hides the details' : 'Shows the details'}
-          accessibilityState={{ expanded: open }}
+          aria-expanded={open}
           onPress={() => setOpen((o) => !o)}
           style={({ pressed }) => [styles.body, pressed && { opacity: 0.7 }]}>
           {hasPhoto && !open ? (
@@ -77,7 +77,8 @@ export function PlaceVoteCard({ destination: d, names, memberCount, leading, rea
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${d.iVoted ? 'Remove your vote for' : 'Vote for'} ${d.title}`}
-          accessibilityState={{ selected: d.iVoted, disabled: readOnly }}
+          aria-selected={d.iVoted}
+          aria-disabled={readOnly}
           disabled={readOnly}
           onPress={vote}
           style={({ pressed }) => [

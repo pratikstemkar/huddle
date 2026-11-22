@@ -179,11 +179,11 @@ describe('Tab bars', () => {
 
   it('switches between the main tabs and keeps their URLs', async () => {
     await renderRouter(routes, { initialUrl: '/' });
-    expect(screen.getByRole('tab', { name: 'Trips' }).props.accessibilityState).toEqual({ selected: true });
+    expect(screen.getByRole('tab', { name: 'Trips' })).toBeSelected();
     await fireEvent.press(screen.getByRole('tab', { name: 'Groups' }));
     expect(await screen.findByText('Groups screen')).toBeTruthy();
     expect(screen).toHavePathname('/groups');
-    expect(screen.getByRole('tab', { name: 'Groups' }).props.accessibilityState).toEqual({ selected: true });
+    expect(screen.getByRole('tab', { name: 'Groups' })).toBeSelected();
     await fireEvent.press(screen.getByRole('tab', { name: 'You' }));
     expect(await screen.findByText('Profile screen')).toBeTruthy();
     expect(screen).toHavePathname('/profile');

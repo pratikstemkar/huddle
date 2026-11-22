@@ -116,8 +116,8 @@ describe('New trip', () => {
     expect(screen.getByText('Start a new trip')).toBeTruthy();
     expect(screen.getByLabelText('Trip name').props.placeholder).toBe('Goa getaway');
     expect(screen.getByLabelText('Trip name').props.maxLength).toBe(60);
-    expect(screen.getByRole('radio', { name: 'Iris' }).props.accessibilityState).toEqual({ selected: true });
-    expect(screen.getByRole('radio', { name: 'Let the group vote' }).props.accessibilityState).toEqual({ selected: true });
+    expect(screen.getByRole('radio', { name: 'Iris' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Let the group vote' })).toBeChecked();
     expect(screen.queryByRole('button', { name: 'Next month' })).toBeNull();
   });
 
@@ -141,7 +141,7 @@ describe('New trip', () => {
     await render(<NewTrip />);
     await fireEvent.changeText(screen.getByLabelText('Trip name'), '  Manali  ');
     await fireEvent.press(screen.getByRole('radio', { name: 'Mint' }));
-    expect(screen.getByRole('radio', { name: 'Mint' }).props.accessibilityState).toEqual({ selected: true });
+    expect(screen.getByRole('radio', { name: 'Mint' })).toBeChecked();
     await fireEvent(screen.getByLabelText('Trip name'), 'submitEditing');
     expect(createTrip).toHaveBeenCalledWith('Manali', 'mint', null, null);
 

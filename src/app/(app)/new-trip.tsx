@@ -40,7 +40,7 @@ function OptionCard({
       accessibilityRole="radio"
       accessibilityLabel={title}
       accessibilityHint={sub}
-      accessibilityState={{ selected }}
+      aria-checked={selected}
       onPress={onPress}
       style={[
         styles.option,

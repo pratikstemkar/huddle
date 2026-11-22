@@ -27,7 +27,7 @@ export function OptionCard({ title, sub, icon, area = 'vote', selected, onPress,
     <Pressable
       accessibilityRole="radio"
       accessibilityLabel={accessibilityLabel ?? (sub ? `${title}, ${sub}` : title)}
-      accessibilityState={{ selected }}
+      aria-checked={selected}
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,

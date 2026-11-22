@@ -83,7 +83,7 @@ export default function SignIn() {
                 key={u.email}
                 accessibilityRole="button"
                 accessibilityLabel={`Sign in as ${u.name}`}
-                accessibilityState={{ busy: busy === u.email }}
+                aria-busy={busy === u.email}
                 onPress={() => run(u.email, () => signInAsDevUser(u.email))}
                 style={({ pressed }) => [
                   styles.devChip,

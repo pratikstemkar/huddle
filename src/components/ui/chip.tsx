@@ -23,7 +23,7 @@ export function Chip({ label, icon, selected = false, onPress, accessibilityLabe
     <PressableScale
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ selected }}
+      aria-selected={selected}
       onPress={onPress}
       style={[
         styles.base,

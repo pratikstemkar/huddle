@@ -34,7 +34,7 @@ function DayChip({ day, selected, count, onPress, grid }: { day: Day; selected: 
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={dayChipLabel(day, count)}
-      accessibilityState={{ selected }}
+      aria-selected={selected}
       onPress={onPress}
       style={({ pressed }) => [styles.chip, grid ? styles.gridChip : styles.scrollChip, look, pressed && !selected && { opacity: 0.7 }]}>
       <Text variant="badge" style={{ color: selected ? colors.onIris : colors.textSecondary }}>

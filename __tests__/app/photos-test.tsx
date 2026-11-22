@@ -110,12 +110,12 @@ describe('Photos tab', () => {
   it('filters by day and by mine, with the selected chip marked', async () => {
     await render(<PhotosTab />);
     const chips = ['All', 'Day 1', 'Day 2', 'Mine'].map((name) => screen.getByRole('button', { name }));
-    expect(chips[0].props.accessibilityState).toEqual({ selected: true });
+    expect(chips[0]).toBeSelected();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Day 2' }));
     expect(screen.getByText('Meera · Day 2')).toBeTruthy();
     expect(screen.queryByText('You · Day 1')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Day 2' }).props.accessibilityState).toEqual({ selected: true });
+    expect(screen.getByRole('button', { name: 'Day 2' })).toBeSelected();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Mine' }));
     expect(screen.getByText('You · Day 1')).toBeTruthy();

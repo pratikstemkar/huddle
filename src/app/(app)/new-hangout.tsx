@@ -175,6 +175,7 @@ export default function NewHangout() {
               ) : (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel="Add an exact time"
                   onPress={() => setExactOpen(true)}
                   style={[styles.dashed, { borderColor: colors.dashed }]}>
                   <Icon name="clock" size={20} color={colors.irisText} />
@@ -249,7 +250,7 @@ export default function NewHangout() {
                 key={k.id}
                 accessibilityRole="radio"
                 accessibilityLabel={k.label}
-                accessibilityState={{ selected: on }}
+                aria-checked={on}
                 onPress={() => setKind(k.id)}
                 style={[styles.kind, { backgroundColor: on ? colors.ink : colors.card, borderColor: on ? colors.ink : colors.line }]}>
                 <Icon name={k.icon} size={18} color={on ? colors.onInk : colors.text} />

@@ -253,7 +253,7 @@ describe('Chip', () => {
     const onPress = jest.fn();
     await render(<Chip label="All" selected onPress={onPress} />);
     const chip = screen.getByRole('button', { name: 'All' });
-    expect(chip.props.accessibilityState).toEqual({ selected: true });
+    expect(chip).toBeSelected();
     expect(flat(chip).backgroundColor).toBe(light.ink);
     expect(flat(screen.getByText('All')).color).toBe(light.onInk);
     await fireEvent.press(chip);
@@ -393,8 +393,8 @@ describe('Segmented', () => {
     await render(<Segmented options={[...options]} value="mine" onChange={jest.fn()} />);
     expect(JSON.stringify(screen.toJSON())).toContain(`"backgroundColor":"${light.track}"`);
     expect(flat(screen.getByRole('tab', { name: 'My days' })).backgroundColor).toBe(light.card);
-    expect(screen.getByRole('tab', { name: 'My days' }).props.accessibilityState).toEqual({ selected: true });
-    expect(screen.getByRole('tab', { name: 'Everyone' }).props.accessibilityState).toEqual({ selected: false });
+    expect(screen.getByRole('tab', { name: 'My days' })).toBeSelected();
+    expect(screen.getByRole('tab', { name: 'Everyone' })).not.toBeSelected();
   });
 
   it('calls onChange with the pressed value', async () => {

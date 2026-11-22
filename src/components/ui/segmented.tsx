@@ -53,7 +53,7 @@ export function Segmented<T extends string>({ options, value, onChange, style, s
             pressedScale={0.97}
             accessibilityRole="tab"
             accessibilityLabel={o.label}
-            accessibilityState={{ selected: on }}
+            aria-selected={on}
             onPress={() => onChange(o.value)}
             // Before the first measurement there is no sliding pill, so the selected item paints its own.
             style={[styles.item, small && styles.itemSmall, slot === 0 && on && { backgroundColor: small ? colors.tint.vote : colors.card }]}>

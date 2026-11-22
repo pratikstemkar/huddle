@@ -114,7 +114,8 @@ export default function InvitePeople() {
                     key={m.user_id}
                     accessibilityRole="button"
                     accessibilityLabel={note ? `${m.display_name}, ${note}` : `${on ? 'Don’t invite' : 'Invite'} ${m.display_name}`}
-                    accessibilityState={{ selected: on, disabled: !!note }}
+                    aria-selected={on}
+                    aria-disabled={!!note}
                     disabled={!!note}
                     onPress={() => toggle(m.user_id)}
                     style={[styles.cell, note ? { opacity: 0.55 } : null]}>

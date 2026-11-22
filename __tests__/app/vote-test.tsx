@@ -79,7 +79,7 @@ afterEach(() => jest.useRealTimers());
 describe('Vote tab', () => {
   it('opens on Places by default and switches to Dates', async () => {
     await renderVote();
-    expect(screen.getByRole('tab', { name: 'Places' }).props.accessibilityState).toMatchObject({ selected: true });
+    expect(screen.getByRole('tab', { name: 'Places' })).toBeSelected();
     expect(screen.getByText('Where should we go?')).toBeTruthy();
     await fireEvent.press(screen.getByRole('tab', { name: 'Dates' }));
     expect(screen.getByText('When can we go?')).toBeTruthy();
@@ -87,7 +87,7 @@ describe('Vote tab', () => {
 
   it('opens on Dates from the seg param', async () => {
     await renderVote('dates');
-    expect(screen.getByRole('tab', { name: 'Dates' }).props.accessibilityState).toMatchObject({ selected: true });
+    expect(screen.getByRole('tab', { name: 'Dates' })).toBeSelected();
     expect(screen.getByText('When can we go?')).toBeTruthy();
   });
 
@@ -301,7 +301,7 @@ describe('Dates panel', () => {
 
     expect(pip()?.label).toBe('Mark my days');
     await act(async () => pip()!.onPress());
-    expect(screen.getByRole('tab', { name: 'My days' }).props.accessibilityState).toMatchObject({ selected: true });
+    expect(screen.getByRole('tab', { name: 'My days' })).toBeSelected();
     expect(screen.queryByText(hint)).toBeNull();
   });
 

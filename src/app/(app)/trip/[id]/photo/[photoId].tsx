@@ -33,7 +33,7 @@ function ControlButton({ label, icon, showLabel, onPress, disabled }: ControlPro
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
+      aria-disabled={!!disabled}
       disabled={disabled}
       hitSlop={4}
       onPress={onPress}
@@ -188,7 +188,7 @@ export default function PhotoViewer() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Delete photo"
-                accessibilityState={{ busy: deleting }}
+                aria-busy={deleting}
                 disabled={deleting}
                 onPress={remove}
                 style={({ pressed }) => [styles.control, { opacity: pressed ? 0.7 : 1 }]}>

@@ -33,7 +33,7 @@ function TabItem({ label, icon, badge, index, onFocused, isFocused, onPress, ...
       {...rest}
       accessibilityRole="tab"
       accessibilityLabel={badge ? `${label}, ${badge} waiting` : label}
-      accessibilityState={{ selected: !!isFocused }}
+      aria-selected={!!isFocused}
       onPress={(e) => {
         if (!isFocused && Platform.OS !== 'web') Haptics.selectionAsync();
         onPress?.(e);

@@ -59,8 +59,8 @@ describe('Lock the trip', () => {
     await render(<LockTrip />);
     expect(screen.getByLabelText('Start date').props.value).toBe('2027-03-12');
     expect(screen.getByLabelText('End date').props.value).toBe('2027-03-14');
-    expect(screen.getByRole('radio', { name: `${formatRange('2027-03-12', '2027-03-14')}, 2 of 2 free` }).props.accessibilityState).toEqual({ selected: true });
-    expect(screen.getByRole('radio', { name: 'Palolem, 2 votes' }).props.accessibilityState).toEqual({ selected: true });
+    expect(screen.getByRole('radio', { name: `${formatRange('2027-03-12', '2027-03-14')}, 2 of 2 free` })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Palolem, 2 votes' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Old Goa, 1 vote' })).toBeTruthy();
 
     expect(screen.getByText('Leading')).toBeTruthy();

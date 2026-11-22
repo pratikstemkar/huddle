@@ -11,7 +11,7 @@ function Swatch({ color, selected, onPress }: { color: TripColor; selected: bool
     <Pressable
       accessibilityRole="radio"
       accessibilityLabel={TRIP_COLOR_NAMES[color]}
-      accessibilityState={{ selected }}
+      aria-checked={selected}
       onPress={onPress}
       style={[styles.swatch, { backgroundColor: tripColors[color], borderColor: selected ? colors.ink : colors.card }]}
     />

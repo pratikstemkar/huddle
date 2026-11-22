@@ -94,7 +94,8 @@ const Cell = memo(function Cell({ day, past, mode, mine, count, total, selected,
     <Pressable
       accessibilityRole={editable || selectable ? 'button' : undefined}
       accessibilityLabel={label}
-      accessibilityState={{ selected: mode === 'mine' ? mine : selected, disabled: !editable && !selectable }}
+      aria-selected={mode === 'mine' ? mine : selected}
+      aria-disabled={!editable && !selectable}
       disabled={!editable && !selectable}
       onPress={press}
       style={[
@@ -324,7 +325,7 @@ export function DayCalendar({ from, to, today, mode, myDays, counts, memberCount
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={dir < 0 ? 'Previous month' : 'Next month'}
-        accessibilityState={{ disabled }}
+        aria-disabled={disabled}
         disabled={disabled}
         onPress={() => goTo(index + dir)}
         hitSlop={4}
