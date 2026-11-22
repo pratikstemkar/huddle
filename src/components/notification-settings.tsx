@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Switch, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { Toggle } from '@/components/ui/toggle';
 import { DEFAULT_PREFS, loadPrefs, PREF_LABELS, savePrefs, type NotificationPrefs } from '@/lib/activity';
 import { openSystemSettings, pushPermission, registerForPush, type PushPermission } from '@/lib/notifications';
 import { space } from '@/theme/tokens';
-import { useTheme } from '@/theme/use-theme';
 
 /** The You tab's Notifications card: whether this phone gets pushes, and which kinds. */
 export function NotificationSettings({ userId }: { userId: string | undefined }) {
-  const { colors } = useTheme();
   const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
   const [permission, setPermission] = useState<PushPermission | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -72,12 +71,11 @@ export function NotificationSettings({ userId }: { userId: string | undefined })
               {hint}
             </Text>
           </View>
-          <Switch
+          <Toggle
             accessibilityLabel={label}
             accessibilityHint={hint}
             value={prefs[key]}
             onValueChange={(v) => toggle(key, v)}
-            trackColor={{ true: colors.iris, false: colors.lineStrong }}
           />
         </View>
       ))}
