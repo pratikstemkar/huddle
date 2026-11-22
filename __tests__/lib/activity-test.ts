@@ -100,7 +100,7 @@ describe('nudgeTrip', () => {
 describe('notification prefs', () => {
   it('fills in everything on for someone who never changed them', async () => {
     queueResult('notification_prefs', { data: null });
-    await expect(loadPrefs('u1')).resolves.toEqual({ invites: true, plans: true, nudges: true, joins: true });
+    await expect(loadPrefs('u1')).resolves.toEqual({ invites: true, plans: true, nudges: true, joins: true, updates: true });
   });
 
   it('reads saved choices', async () => {
@@ -109,9 +109,9 @@ describe('notification prefs', () => {
   });
 
   it('saves my row', async () => {
-    await savePrefs('u1', { invites: true, plans: false, nudges: true, joins: true });
+    await savePrefs('u1', { invites: true, plans: false, nudges: true, joins: true, updates: false });
     const [method, args] = queriesFor('notification_prefs')[0].ops[0];
     expect(method).toBe('upsert');
-    expect(args[0]).toMatchObject({ user_id: 'u1', plans: false });
+    expect(args[0]).toMatchObject({ user_id: 'u1', plans: false, updates: false });
   });
 });

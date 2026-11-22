@@ -1,10 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { renderHook, waitFor } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 
 import {
   askForPushOnce,
   configureNotifications,
   lastResponseHook,
+  notificationTarget,
+  openNotificationTarget,
   pushPermission,
   registerForPush,
   safeAppPath,
@@ -34,7 +37,7 @@ describe('configureNotifications', () => {
 describe('registerForPush', () => {
   it('saves the Expo token when permission is granted', async () => {
     await expect(registerForPush()).resolves.toBe('granted');
-    expect(rpcCalls).toContainEqual({ name: 'register_push_token', args: { tok: 'ExponentPushToken[test-token]', plat: 'ios' } });
+    expect(rpcCalls).toContainEqual({ name: 'register_push_token', args: { tok: 'ExponentPushToken[test-token]', plat: 'ios', runtime: 'mock' } });
     expect(await AsyncStorage.getItem('huddle.pushToken')).toBe('ExponentPushToken[test-token]');
   });
 
@@ -127,6 +130,38 @@ describe('safeAppPath', () => {
   });
 });
 
+describe('notificationTarget', () => {
+  it.each([
+    ['/trip/t1', { app: '/trip/t1' }],
+    ['https://github.com/pratikstemkar/huddle/releases/tag/v1.4.0', { web: 'https://github.com/pratikstemkar/huddle/releases/tag/v1.4.0' }],
+    ['https://github.com/someone-else/huddle/releases/tag/v1.4.0', null],
+    ['https://github.com/pratikstemkar/huddle/issues', null],
+    ['https://github.com/pratikstemkar/huddle/releases/tag/v1 javascript:', null],
+    ['https://evil.example/https://github.com/pratikstemkar/huddle/releases/', null],
+    [undefined, null],
+  ])('reads %p as %p', (input, out) => {
+    expect(notificationTarget(input)).toEqual(out);
+  });
+});
+
+describe('openNotificationTarget', () => {
+  it('opens a release page in the browser and leaves the router alone', () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    openNotificationTarget('https://github.com/pratikstemkar/huddle/releases/tag/v1.4.0');
+    expect(open).toHaveBeenCalledWith('https://github.com/pratikstemkar/huddle/releases/tag/v1.4.0');
+    expect(router.push).not.toHaveBeenCalled();
+    open.mockRestore();
+  });
+
+  it('opens nothing for a link it does not trust', () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    openNotificationTarget('https://evil.example');
+    expect(open).not.toHaveBeenCalled();
+    expect(router.push).not.toHaveBeenCalled();
+    open.mockRestore();
+  });
+});
+
 describe('useNotifications', () => {
   it('registers this phone once signed in', async () => {
     await renderHook(() => useNotifications('u1'));
@@ -149,6 +184,16 @@ describe('useNotifications', () => {
     notificationState.lastResponse = tapResponse({ url: 'https://evil.example' });
     await renderHook(() => useNotifications('u1'));
     expect(router.push).not.toHaveBeenCalled();
+  });
+
+  it('opens the release page a tapped release notification points at', async () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    const url = 'https://github.com/pratikstemkar/huddle/releases/tag/v1.4.0';
+    notificationState.lastResponse = tapResponse({ url, notificationId: 'rel' });
+    await renderHook(() => useNotifications('u1'));
+    expect(open).toHaveBeenCalledWith(url);
+    expect(rpcCalls).toContainEqual({ name: 'mark_notifications_read', args: { ids: ['rel'] } });
+    open.mockRestore();
   });
 
   it('waits until signed in', async () => {

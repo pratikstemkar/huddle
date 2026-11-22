@@ -4,6 +4,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { AndroidImportance } from 'expo-notifications';
 import { router, type Href } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { useEffect, useRef } from 'react';
 import { Linking, Platform } from 'react-native';
 
@@ -48,7 +49,8 @@ function projectId(): string | undefined {
 }
 
 async function saveToken(token: string) {
-  const { error } = await supabase.rpc('register_push_token', { tok: token, plat: Platform.OS });
+  // The runtime version tells a release announcement whether this phone takes it over the air.
+  const { error } = await supabase.rpc('register_push_token', { tok: token, plat: Platform.OS, runtime: Updates.runtimeVersion ?? null });
   if (error) throw error;
   await AsyncStorage.setItem(TOKEN_KEY, token);
 }
@@ -114,6 +116,27 @@ export function safeAppPath(url: unknown): string | null {
   return typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') ? url : null;
 }
 
+/** Where Huddle's APKs are published. The only site a notification may open. */
+export const RELEASES_URL = 'https://github.com/pratikstemkar/huddle/releases/';
+
+/** What tapping a notification opens: a screen in the app, or a release page in the browser. */
+export type NotificationTarget = { app: string } | { web: string };
+
+export function notificationTarget(url: unknown): NotificationTarget | null {
+  const path = safeAppPath(url);
+  if (path) return { app: path };
+  if (typeof url === 'string' && url.startsWith(RELEASES_URL) && !/\s/.test(url)) return { web: url };
+  return null;
+}
+
+/** Follows a tapped notification or Activity item. */
+export function openNotificationTarget(url: unknown) {
+  const target = notificationTarget(url);
+  if (!target) return;
+  if ('app' in target) router.push(target.app as Href);
+  else Linking.openURL(target.web).catch(() => {});
+}
+
 /** The native module behind Expo's tap hook doesn't exist on web, where nothing is ever tapped. */
 export function lastResponseHook(os: string): () => Notifications.NotificationResponse | null | undefined {
   return os === 'web' ? () => null : Notifications.useLastNotificationResponse;
@@ -151,8 +174,7 @@ export function useNotifications(userId: string | undefined) {
         () => {},
       );
     }
-    const path = safeAppPath(data?.url);
-    if (path) router.push(path as Href);
+    openNotificationTarget(data?.url);
     Notifications.clearLastNotificationResponseAsync().catch(() => {});
   }, [userId, response]);
 }

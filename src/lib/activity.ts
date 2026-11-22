@@ -13,7 +13,8 @@ export type NotificationKind =
   | 'hangout_cancelled'
   | 'nudge_days'
   | 'nudge_vote'
-  | 'trip_joined';
+  | 'trip_joined'
+  | 'app_release';
 
 export type ActivityItem = {
   id: string;
@@ -97,20 +98,21 @@ export function timeAgo(iso: string, now: Date = new Date()): string {
 }
 
 /** Push settings, one switch per kind of notification. Activity always lists everything. */
-export type NotificationPrefs = { invites: boolean; plans: boolean; nudges: boolean; joins: boolean };
-export const DEFAULT_PREFS: NotificationPrefs = { invites: true, plans: true, nudges: true, joins: true };
+export type NotificationPrefs = { invites: boolean; plans: boolean; nudges: boolean; joins: boolean; updates: boolean };
+export const DEFAULT_PREFS: NotificationPrefs = { invites: true, plans: true, nudges: true, joins: true, updates: true };
 
 export const PREF_LABELS: { key: keyof NotificationPrefs; label: string; hint: string }[] = [
   { key: 'invites', label: 'Invites', hint: 'Someone invites you to a trip, group or hangout' },
   { key: 'plans', label: 'Plans settled', hint: 'A trip is locked, or a hangout gets a time or is called off' },
   { key: 'nudges', label: 'Nudges', hint: 'A trip-mate reminds you to mark your days or vote' },
   { key: 'joins', label: 'People joining', hint: 'Someone joins a trip you organise' },
+  { key: 'updates', label: 'App updates', hint: 'A new version of Huddle is out' },
 ];
 
 export async function loadPrefs(userId: string): Promise<NotificationPrefs> {
   const { data, error } = await supabase
     .from('notification_prefs')
-    .select('invites, plans, nudges, joins')
+    .select('invites, plans, nudges, joins, updates')
     .eq('user_id', userId)
     .maybeSingle();
   if (error) throw error;
