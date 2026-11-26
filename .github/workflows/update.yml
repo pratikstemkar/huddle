@@ -43,6 +43,10 @@ env:
   EXPO_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
   EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
   EXPO_PUBLIC_APP_URL: ${{ vars.APP_URL }}
+  # app.config.ts puts these in the app config, which the runtime fingerprint
+  # hashes: all three release workflows must pass the same values.
+  POSTHOG_PROJECT_TOKEN: ${{ vars.POSTHOG_PROJECT_TOKEN }}
+  POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
   EXPO_NO_TELEMETRY: "1"
 
 jobs:
@@ -86,6 +90,9 @@ jobs:
           # the app on installs that work today.
           [ -n "$EXPO_PUBLIC_SUPABASE_URL" ] || fail "No Supabase URL" "The SUPABASE_URL repository variable is empty."
           [ -n "$EXPO_PUBLIC_SUPABASE_ANON_KEY" ] || fail "No Supabase key" "The SUPABASE_ANON_KEY repository variable is empty."
+          if [ -z "$POSTHOG_PROJECT_TOKEN" ] || [ -z "$POSTHOG_HOST" ]; then
+            echo "::warning title=Analytics off::POSTHOG_PROJECT_TOKEN or POSTHOG_HOST is empty, so this update sends no analytics or error reports."
+          fi
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
 import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
+import { posthog } from '@/config/posthog';
 import { normaliseUrl, suggestDestination } from '@/lib/destinations';
 import { PHOTO_HEIGHT, PHOTO_WIDTH, PhotoPermissionError, pickPhoto, preparePhoto, type PreparedPhoto } from '@/lib/place-photo';
 import { radius, space } from '@/theme/tokens';
@@ -66,6 +67,11 @@ export default function SuggestPlace() {
     setSaving(true);
     try {
       await suggestDestination(id, { title: trimmed, note: note.trim(), url: link ?? undefined, photoUri: photo?.uri });
+      posthog?.capture('destination_suggested', {
+        has_link: Boolean(link),
+        has_note: Boolean(note.trim()),
+        has_photo: Boolean(photo),
+      });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } catch {

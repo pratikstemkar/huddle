@@ -11,6 +11,7 @@ import { Chip } from '@/components/ui/chip';
 import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
+import { posthog } from '@/config/posthog';
 import { useAuth } from '@/lib/auth';
 import { amountInput, currencySymbol, formatMoney, parseAmount } from '@/lib/money';
 import { CATEGORIES, deleteExpense, equalShares, saveExpense, useSplit, type Category } from '@/lib/split';
@@ -141,6 +142,13 @@ export default function ExpenseSheet() {
         paidBy: payer,
         splitWith: chosen,
       });
+      if (!editing) {
+        posthog?.capture('expense_added', {
+          category: categoryValue,
+          split_member_count: chosen.length,
+          paid_by_self: payer === me,
+        });
+      }
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       closeSheet(id);
     } catch (e) {

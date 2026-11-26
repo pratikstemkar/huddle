@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
 import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
+import { posthog } from '@/config/posthog';
+import { posthogLogger } from '@/lib/posthog-logger';
 import { joinGroup } from '@/lib/groups';
 import { joinTrip, parseInviteCode } from '@/lib/trips';
 import { radius, space } from '@/theme/tokens';
@@ -66,6 +68,12 @@ export default function JoinTrip() {
           throw g;
         }
       }
+      posthog?.capture('invite_joined', { invite_type: tripId ? 'trip' : 'group' });
+      posthogLogger.info('invite join completed', {
+        operation: 'invite_join',
+        outcome: 'completed',
+        invite_type: tripId ? 'trip' : 'group',
+      });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setCode('');
       // Replace this screen so Back from the trip or group returns to the tabs, not to a used code.

@@ -2,8 +2,10 @@ import type { Session } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
+
+import { posthog } from '@/config/posthog';
 
 import { DEV_PASSWORD, devAuthEnabled } from './dev-auth';
 import { unregisterPush } from './notifications';
@@ -84,16 +86,46 @@ async function signInAsDevUser(email: string) {
   if (error) throw error;
 }
 
+function identifySession(session: Session) {
+  const metadata = session.user.user_metadata ?? {};
+  const name = typeof metadata.full_name === 'string' ? metadata.full_name : typeof metadata.name === 'string' ? metadata.name : undefined;
+
+  posthog?.identify(session.user.id, {
+    ...(session.user.email ? { email: session.user.email } : {}),
+    ...(name ? { name } : {}),
+  });
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const identifiedUserId = useRef<string | null>(null);
 
   useEffect(() => {
+    const identifyOnce = (next: Session) => {
+      if (identifiedUserId.current === next.user.id) return;
+      identifySession(next);
+      identifiedUserId.current = next.user.id;
+    };
+
     supabase.auth
       .getSession()
-      .then(({ data }) => setSession(data.session))
+      .then(({ data }) => {
+        setSession(data.session);
+        if (data.session) identifyOnce(data.session);
+      })
       .finally(() => setLoading(false));
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
+
+    const { data } = supabase.auth.onAuthStateChange((event, next) => {
+      setSession(next);
+      if (event === 'SIGNED_OUT') {
+        posthog?.reset();
+        identifiedUserId.current = null;
+      } else if (next) {
+        identifyOnce(next);
+      }
+    });
+
     return () => data.subscription.unsubscribe();
   }, []);
 

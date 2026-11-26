@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
+import { posthog } from '@/config/posthog';
+
 import { addDays, type Day } from './dates';
 import { supabase } from './supabase';
 
@@ -138,6 +140,8 @@ export function useAvailability(tripId: string | undefined, me: string | undefin
       if (res.error) {
         setData((prev) => withMyDay(prev, day, !free, me));
         setError("Couldn't save that day. Check your connection and try again.");
+      } else {
+        posthog?.capture('availability_updated', { available: free });
       }
     },
     [tripId, me],

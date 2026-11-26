@@ -72,7 +72,7 @@ The planning loop above works end to end, but real friends can't use it yet. Wor
 | Empty trips list points to "create" and "join" | ✅ | No trips: Pip's hero card offers `Start a trip` and `Join with a code`, above a "Start your first trip" card. The Pip button in the tab bar always starts a trip and the Invites tab always joins one |
 | Network drops / failed requests | 🟡 | Lists show an error and retry on focus (Photos also on pull), the invite page has an offline state. No app-wide offline banner, and writes aren't queued (`src/lib/trips.ts` notes an offline-first store as a later step) |
 | Optional date range on a trip | ✅ | Done as fixed dates (R2): `trips.fixed_start/fixed_end`, set by the organiser with "I already know". The voting calendar still shows a fixed 4-month window (`WINDOW_MONTHS` in `src/lib/dates.ts`). Tested: [fixed-dates](.claude/skills/verify-huddle/features/fixed-dates.md) |
-| Privacy policy | 🟡 | `/privacy` (public), linked from sign-in ("privacy policy" link) and the You tab; text in `src/lib/privacy.ts`. Tested: [privacy](.claude/skills/verify-huddle/features/privacy.md). Left: real controller name and contact email, and the hosted URL in the store listings (needs L1) |
+| Privacy policy | 🟡 | `/privacy` (public), linked from sign-in ("privacy policy" link) and the You tab; text in `src/lib/privacy.ts`. Tested: [privacy](.claude/skills/verify-huddle/features/privacy.md). Left: real controller name, and the hosted URL in the store listings (needs L1) |
 | Delete my account | 🟡 | `/delete-account` from the You tab; `delete_my_account()` hands trips you organise alone to the longest-standing member, deletes trips with nobody else, keeps your places, plans and expenses without your name (your debts are written off pair by pair), and deletes your album photos (the app removes the files first). Tested: [delete-account](.claude/skills/verify-huddle/features/delete-account.md). Left: revoke the Sign in with Apple token on deletion (Apple requires it; needs an Apple key and a development build) |
 
 ## After launch: features that can be added
@@ -108,8 +108,8 @@ Nothing here is started. Ordered roughly by how much each one helps a group get 
 | Idea | Notes |
 |---|---|
 | Offline-first local store | Already planned in `src/lib/trips.ts`; cache trips and queue writes so days and votes work without signal |
-| Crash and error reporting | Nothing reports production errors today; add a crash reporter before the first real group |
-| Product analytics | A handful of events (trip created, invite opened, joined, locked) to see where groups drop off |
+| Crash and error reporting | PostHog receives uncaught JavaScript errors and unhandled rejections when its variables are set. Left: native crashes, source maps, and an alert before the first real group |
+| Product analytics | PostHog receives screen views and product events (trip created, joined, locked and more) when its variables are set. Left: an invite-opened event and the funnel that shows where groups drop off |
 | Map and weather on places | Map preview and typical weather for the trip dates on each destination card |
 | Localisation | Copy is English-only and dates already go through `Intl`; strings would need extracting |
 | Accessibility pass | Screen reader labels exist in places; a full VoiceOver/TalkBack pass and dynamic type check |
