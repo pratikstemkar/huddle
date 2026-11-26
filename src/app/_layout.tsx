@@ -4,7 +4,7 @@ import {
   BricolageGrotesque_800ExtraBold,
   useFonts,
 } from '@expo-google-fonts/bricolage-grotesque';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { ConfirmProvider } from '@/components/ui/confirm-sheet';
 import { ToastProvider } from '@/components/ui/toast';
+import { screenName } from '@/lib/analytics-privacy';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { IntroSeenProvider, useIntroSeen } from '@/lib/intro-seen';
 import { configureNotifications } from '@/lib/notifications';
@@ -26,6 +27,7 @@ configureNotifications();
 
 function RootStack() {
   const pathname = usePathname();
+  const screen = screenName(useSegments());
   const { session, loading } = useAuth();
   const { scheme, colors } = useTheme();
   const { loaded: themeLoaded } = useThemePreference();
@@ -42,9 +44,10 @@ function RootStack() {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
+  // `pathname` re-runs this between two screens that share a route, such as one trip and another.
   useEffect(() => {
-    posthog?.screen(pathname);
-  }, [pathname]);
+    posthog?.screen(screen);
+  }, [pathname, screen]);
 
   if (!ready) return null;
 

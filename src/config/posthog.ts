@@ -1,6 +1,8 @@
 import Constants from 'expo-constants';
 import PostHog from 'posthog-react-native';
 
+import { redactEvent } from '@/lib/analytics-privacy';
+
 const projectToken = Constants.expoConfig?.extra?.posthogProjectToken as string | undefined;
 const host = Constants.expoConfig?.extra?.posthogHost as string | undefined;
 const isConfigured = Boolean(projectToken && host);
@@ -26,6 +28,7 @@ if (!isConfigured && __DEV__) {
 export const posthog = isConfigured
   ? new PostHog(projectToken!, {
       host,
+      before_send: redactEvent,
       logs: {
         serviceName: 'huddle-mobile',
         serviceVersion: Constants.expoConfig?.version,
