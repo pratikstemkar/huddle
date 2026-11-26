@@ -55,6 +55,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  # app.config.ts puts these in the app config, which the runtime fingerprint
+  # hashes: all three release workflows must pass the same values.
+  POSTHOG_PROJECT_TOKEN: ${{ vars.POSTHOG_PROJECT_TOKEN }}
+  POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
   EXPO_NO_TELEMETRY: "1"
 
 jobs:

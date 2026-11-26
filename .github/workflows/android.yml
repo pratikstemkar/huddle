@@ -42,6 +42,10 @@ env:
   EXPO_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
   EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
   EXPO_PUBLIC_APP_URL: ${{ vars.APP_URL }}
+  # app.config.ts puts these in the app config, which the runtime fingerprint
+  # hashes: all three release workflows must pass the same values.
+  POSTHOG_PROJECT_TOKEN: ${{ vars.POSTHOG_PROJECT_TOKEN }}
+  POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
   EXPO_NO_TELEMETRY: "1"
   # arm64-v8a covers every phone sold in the last decade. Building all four
   # ABIs roughly triples both the build time and the APK size.
@@ -101,6 +105,9 @@ jobs:
           [ -n "$EXPO_PUBLIC_SUPABASE_ANON_KEY" ] || fail "No Supabase key" "Set the SUPABASE_ANON_KEY repository variable (the publishable key). Metro bakes it into the bundle."
           if [ -z "$EXPO_PUBLIC_APP_URL" ]; then
             echo "::warning title=No app URL::APP_URL is empty, so invite links and app links use the default hosted app (HOSTED_APP_URL in app.config.ts)."
+          fi
+          if [ -z "$POSTHOG_PROJECT_TOKEN" ] || [ -z "$POSTHOG_HOST" ]; then
+            echo "::warning title=Analytics off::Set both the POSTHOG_PROJECT_TOKEN and POSTHOG_HOST repository variables, or this APK sends no analytics or error reports."
           fi
           if grep -q REPLACE_WITH_EAS_PROJECT_ID app.json; then
             echo "::warning title=EAS project not linked::app.json still has the placeholder project id, so this APK cannot receive over-the-air updates. Run 'bunx eas-cli init' and commit the ids."

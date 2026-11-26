@@ -108,8 +108,8 @@ Nothing here is started. Ordered roughly by how much each one helps a group get 
 | Idea | Notes |
 |---|---|
 | Offline-first local store | Already planned in `src/lib/trips.ts`; cache trips and queue writes so days and votes work without signal |
-| Crash and error reporting | Nothing reports production errors today; add a crash reporter before the first real group |
-| Product analytics | A handful of events (trip created, invite opened, joined, locked) to see where groups drop off |
+| Crash and error reporting | PostHog receives uncaught JavaScript errors and unhandled rejections when its variables are set. Left: native crashes, source maps, and an alert before the first real group |
+| Product analytics | PostHog receives screen views and product events (trip created, joined, locked and more) when its variables are set. Left: an invite-opened event and the funnel that shows where groups drop off |
 | Map and weather on places | Map preview and typical weather for the trip dates on each destination card |
 | Localisation | Copy is English-only and dates already go through `Intl`; strings would need extracting |
 | Accessibility pass | Screen reader labels exist in places; a full VoiceOver/TalkBack pass and dynamic type check |
