@@ -15,6 +15,7 @@ import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { formatRange, fromDay, toDay } from '@/lib/dates';
 import { useTripLive } from '@/lib/realtime';
+import { posthog } from '@/config/posthog';
 import { lockTrip, useTrip } from '@/lib/trips';
 import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
@@ -99,6 +100,11 @@ export default function LockTrip() {
     setSaving(true);
     try {
       await lockTrip(trip.id, startDay, endDay, destId);
+      posthog?.capture('trip_locked', {
+        dates_mode: fixed ? 'fixed' : 'vote',
+        member_count: trip.members.length,
+        destination_vote_count: trip.destinations.find((destination) => destination.id === destId)?.voteCount ?? 0,
+      });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace({ pathname: '/trip/[id]/locked', params: { id: trip.id } });
     } catch {

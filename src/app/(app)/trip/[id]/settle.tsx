@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { Screen } from '@/components/ui/screen';
+import { posthog } from '@/config/posthog';
 import { useAuth } from '@/lib/auth';
 import { amountInput, currencySymbol, formatMoney, parseAmount } from '@/lib/money';
 import { recordSettlement, useSplit, type Transfer } from '@/lib/split';
@@ -112,6 +113,10 @@ export default function SettleSheet() {
     setSaving(line.key);
     try {
       await recordSettlement(trip.id, line.transfer.from, line.transfer.to, minor);
+      posthog?.capture('settlement_recorded', {
+        direction: line.iOwe ? 'paid_out' : 'paid_in',
+        is_partial: minor < owed,
+      });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       closeSheet(id);
     } catch {

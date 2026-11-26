@@ -9,6 +9,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
+import { posthog } from '@/config/posthog';
 import { useAuth } from '@/lib/auth';
 import { formatDay, type Day } from '@/lib/dates';
 import {
@@ -137,7 +138,13 @@ function PlanForm({ tripId, days, item, initialDay, close, header }: FormProps) 
     try {
       const input = { day: chosen, time, title, note };
       if (item) await updatePlanItem(item.id, input);
-      else await addPlanItem(tripId, input);
+      else {
+        await addPlanItem(tripId, input);
+        posthog?.capture('plan_item_added', {
+          has_note: Boolean(note.trim()),
+          has_time: Boolean(parseTime(time)),
+        });
+      }
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       close();
     } catch (e) {

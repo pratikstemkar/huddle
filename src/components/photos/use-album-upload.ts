@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useRef, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
+import { posthog } from '@/config/posthog';
 import { PhotoPermissionError } from '@/lib/place-photo';
 import { addAlbumPhoto, pickAlbumPhotos } from '@/lib/trip-photos';
 
@@ -55,7 +56,15 @@ export function useAlbumUpload(tripId: string | undefined, onDone: () => unknown
         busy.current = false;
         setProgress(null);
       }
+      const uploadedCount = picked.length - failed;
       setMessage(uploadResultMessage(failed, picked.length));
+      if (uploadedCount > 0) {
+        posthog?.capture('trip_photos_uploaded', {
+          source: from,
+          uploaded_count: uploadedCount,
+          attempted_count: picked.length,
+        });
+      }
       if (Platform.OS !== 'web' && failed < picked.length) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await onDone();
     },

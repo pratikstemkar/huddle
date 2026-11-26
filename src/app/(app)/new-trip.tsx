@@ -13,6 +13,8 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
+import { posthog } from '@/config/posthog';
+import { posthogLogger } from '@/lib/posthog-logger';
 import { createTrip, updateTrip } from '@/lib/trips';
 import { radius, space, tripColors, type TintArea, type TripColor } from '@/theme/tokens';
 import { useTheme } from '@/theme/use-theme';
@@ -108,6 +110,16 @@ export default function NewTrip() {
         await updateTrip(createdId, { name: trimmed, color, fixed_start: fixed?.start ?? null, fixed_end: fixed?.end ?? null });
       } else {
         const trip = await createTrip(trimmed, color, fixed, groupId);
+        posthog?.capture('trip_created', {
+          dates_mode: dates,
+          linked_to_group: Boolean(groupId),
+        });
+        posthogLogger.info('trip creation completed', {
+          operation: 'trip_creation',
+          outcome: 'completed',
+          dates_mode: dates,
+          linked_to_group: Boolean(groupId),
+        });
         setCreatedId(trip.id);
       }
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

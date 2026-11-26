@@ -10,6 +10,8 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
+import { posthog } from '@/config/posthog';
+import { posthogLogger } from '@/lib/posthog-logger';
 import { createGroup, MAX_GROUP_NAME, useKnownPeople } from '@/lib/groups';
 import { space, type TripColor } from '@/theme/tokens';
 
@@ -43,6 +45,12 @@ export default function NewGroup() {
     setSaving(true);
     try {
       const id = await createGroup(trimmed, color, [...selected]);
+      posthog?.capture('group_created', { invited_member_count: selected.size });
+      posthogLogger.info('group creation completed', {
+        operation: 'group_creation',
+        outcome: 'completed',
+        invited_member_count: selected.size,
+      });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace({ pathname: '/group/[id]', params: { id } });
     } catch (e) {

@@ -1,6 +1,8 @@
 import { randomUUID } from 'expo-crypto';
 import { useCallback, useState } from 'react';
 
+import { posthog } from '@/config/posthog';
+
 import { deleteLocalCopy, keepLocalCopy, removePhotos, signPhotos, uploadPhoto } from './place-photo';
 import { supabase } from './supabase';
 
@@ -153,6 +155,8 @@ export function useDestinations(tripId: string | undefined, me: string | undefin
       if (res.error) {
         apply(!vote);
         setError("Couldn't save your vote. Check your connection and try again.");
+      } else {
+        posthog?.capture('destination_vote_changed', { vote_action: vote ? 'added' : 'removed' });
       }
     },
     [tripId, me, list],
