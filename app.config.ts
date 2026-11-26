@@ -13,6 +13,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   return {
     ...(config as ExpoConfig),
+    extra: {
+      ...config.extra,
+      posthogProjectToken: process.env.POSTHOG_PROJECT_TOKEN,
+      posthogHost: process.env.POSTHOG_HOST,
+    },
     ios: { ...config.ios, associatedDomains: [`applinks:${host}`] },
     android: {
       ...config.android,

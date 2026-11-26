@@ -4,10 +4,11 @@ import {
   BricolageGrotesque_800ExtraBold,
   useFonts,
 } from '@expo-google-fonts/bricolage-grotesque';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { PostHogProvider } from 'posthog-react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { ConfirmProvider } from '@/components/ui/confirm-sheet';
@@ -15,6 +16,7 @@ import { ToastProvider } from '@/components/ui/toast';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { IntroSeenProvider, useIntroSeen } from '@/lib/intro-seen';
 import { configureNotifications } from '@/lib/notifications';
+import { posthog } from '@/config/posthog';
 import { useUpdateCheck } from '@/lib/use-update-check';
 import { ThemePreferenceProvider, useThemePreference } from '@/theme/theme-preference';
 import { useTheme } from '@/theme/use-theme';
@@ -23,6 +25,7 @@ SplashScreen.preventAutoHideAsync();
 configureNotifications();
 
 function RootStack() {
+  const pathname = usePathname();
   const { session, loading } = useAuth();
   const { scheme, colors } = useTheme();
   const { loaded: themeLoaded } = useThemePreference();
@@ -38,6 +41,10 @@ function RootStack() {
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
+
+  useEffect(() => {
+    posthog?.screen(pathname);
+  }, [pathname]);
 
   if (!ready) return null;
 
@@ -73,19 +80,19 @@ function RootStack() {
 
 export default function RootLayout() {
   useUpdateCheck();
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemePreferenceProvider>
-        <IntroSeenProvider>
-          <AuthProvider>
-            <ToastProvider>
-              <ConfirmProvider>
-                <RootStack />
-              </ConfirmProvider>
-            </ToastProvider>
-          </AuthProvider>
-        </IntroSeenProvider>
-      </ThemePreferenceProvider>
-    </GestureHandlerRootView>
+  const content = (
+    <ThemePreferenceProvider>
+      <IntroSeenProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <ConfirmProvider>
+              <RootStack />
+            </ConfirmProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </IntroSeenProvider>
+    </ThemePreferenceProvider>
   );
+
+  return <GestureHandlerRootView style={{ flex: 1 }}>{posthog ? <PostHogProvider client={posthog}>{content}</PostHogProvider> : content}</GestureHandlerRootView>;
 }

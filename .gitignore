@@ -51,3 +51,4 @@ coverage/
 
 # Firebase service-account keys (FCM v1). Upload with `bunx eas-cli credentials`; never commit.
 *-firebase-adminsdk-*.json
+.env.local
