@@ -6,9 +6,9 @@
  * push tokens), it must be added here in the same change.
  */
 
-/** Who runs Huddle and how to reach them. Fill these in before launch. */
+/** Who runs Huddle and how to reach them. Fill in the controller name before launch. */
 export const PRIVACY_CONTROLLER = 'the Huddle team';
-export const PRIVACY_CONTACT = 'privacy@example.com';
+export const PRIVACY_CONTACT = 'pratik.temkar@proton.me';
 
 export const PRIVACY_UPDATED = '2026-11-26';
 
