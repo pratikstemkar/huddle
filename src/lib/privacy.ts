@@ -10,7 +10,7 @@
 export const PRIVACY_CONTROLLER = 'the Huddle team';
 export const PRIVACY_CONTACT = 'privacy@example.com';
 
-export const PRIVACY_UPDATED = '2026-11-14';
+export const PRIVACY_UPDATED = '2026-11-26';
 
 export type PrivacySection = { title: string; body: string[] };
 
@@ -24,9 +24,16 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
     ],
   },
   {
+    title: 'Analytics and error reports',
+    body: [
+      'To see what works and what breaks, Huddle sends usage and error data to PostHog, an analytics service: when the app is installed, updated, opened or closed, which screens you visit, actions such as creating a trip, voting or adding an expense (with details such as a category or a count, not what you typed, amounts or photos), and reports of crashes and errors.',
+      'Each report can include your device model, operating system, app version, language and time zone, and an ID stored on your device. Once you sign in it is linked to your account ID, email address and name. PostHog receives your IP address when the app connects to it, and may use it to estimate your approximate location, such as your country and city. Invite codes are removed before anything is sent.',
+    ],
+  },
+  {
     title: 'What Huddle does not do',
     body: [
-      'No ads, no advertising trackers and no analytics. We do not sell or rent your data, and we do not use it for anything other than running the app.',
+      'No ads and no advertising trackers. We do not sell or rent your data, and we use it only to run Huddle, fix it and improve it.',
     ],
   },
   {
@@ -40,7 +47,7 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
   {
     title: 'Where it is stored',
     body: [
-      'Your data is stored with Supabase, our database and sign-in provider. Google or Apple handle the sign-in itself. The mobile app checks Expo’s update service for new versions, which sees your app version and device platform.',
+      'Your data is stored with Supabase, our database and sign-in provider. Analytics and error reports are stored by PostHog in the United States. Google or Apple handle the sign-in itself. The mobile app checks Expo’s update service for new versions, which sees your app version and device platform.',
     ],
   },
   {
@@ -48,6 +55,7 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
     body: [
       'For as long as you have an account. Leaving a trip removes your days and votes from it straight away.',
       'Delete your account from Your profile → Delete account. Your profile, days, votes and memberships are deleted at once. A trip you organise alone passes to its longest-standing member, and a trip with nobody else in it is deleted. Places you suggested stay in their trips without your name.',
+      `Deleting your account does not delete the analytics and error reports already sent to PostHog. To have those removed, email ${PRIVACY_CONTACT}.`,
     ],
   },
   {

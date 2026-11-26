@@ -14,7 +14,7 @@ describe('Privacy policy', () => {
     expect(screen.getByText(/^Last updated /)).toBeTruthy();
     for (const s of PRIVACY_SECTIONS) expect(screen.getByRole('header', { name: s.title })).toBeTruthy();
     expect(screen.getByText(/Your profile → Delete account/)).toBeTruthy();
-    expect(screen.getByText(new RegExp(PRIVACY_CONTACT.replace('.', '\\.')))).toBeTruthy();
+    expect(screen.getAllByText(new RegExp(PRIVACY_CONTACT.replace('.', '\\.'))).length).toBeGreaterThan(0);
   });
 
   it('goes back, or home when opened directly', async () => {
