@@ -1,6 +1,7 @@
 import { router, Stack } from 'expo-router';
 import { useEffect } from 'react';
 
+import { TourProvider } from '@/components/tour/tour';
 import { useAuth } from '@/lib/auth';
 import { useNotifications } from '@/lib/notifications';
 import { takeJoinAfterSignIn } from '@/lib/intro-seen';
@@ -24,17 +25,19 @@ export default function AppLayout() {
   }, []);
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-      <Stack.Screen name="(home)" />
-      <Stack.Screen name="trip/[id]" />
-      <Stack.Screen name="new-trip" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
-      <Stack.Screen name="new-group" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
-      <Stack.Screen name="new-hangout" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
-      <Stack.Screen name="group/[id]" />
-      <Stack.Screen name="hangout/[id]" />
-      <Stack.Screen name="join" />
-      <Stack.Screen name="activity" />
-      <Stack.Screen name="delete-account" />
-    </Stack>
+    <TourProvider>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+        <Stack.Screen name="(home)" />
+        <Stack.Screen name="trip/[id]" />
+        <Stack.Screen name="new-trip" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
+        <Stack.Screen name="new-group" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
+        <Stack.Screen name="new-hangout" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.bg } }} />
+        <Stack.Screen name="group/[id]" />
+        <Stack.Screen name="hangout/[id]" />
+        <Stack.Screen name="join" />
+        <Stack.Screen name="activity" />
+        <Stack.Screen name="delete-account" />
+      </Stack>
+    </TourProvider>
   );
 }

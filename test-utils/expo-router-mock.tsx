@@ -14,6 +14,7 @@ export function setParams(next: Record<string, string | undefined>) {
 
 export const router = {
   push: jest.fn(),
+  navigate: jest.fn(),
   replace: jest.fn(),
   back: jest.fn(),
   dismiss: jest.fn(),

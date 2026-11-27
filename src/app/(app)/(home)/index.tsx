@@ -5,6 +5,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 
 import { Pip } from '@/components/pip/pip';
+import { HOME_STEPS } from '@/components/tour/steps';
+import { useAutoTour, useTourTarget } from '@/components/tour/tour';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -254,6 +256,8 @@ export default function Home() {
   const hero = useMemo(() => homeHero(trips, summaries, today), [trips, summaries, today]);
   const sorted = useMemo(() => sortTrips(trips, today), [trips, today]);
   const firstLoad = loading && trips.length === 0;
+  const bell = useTourTarget('home.bell');
+  useAutoTour('home', HOME_STEPS, !firstLoad);
 
   useFocusEffect(
     useCallback(() => {
@@ -273,6 +277,7 @@ export default function Home() {
             <Text variant="title">Where to next?</Text>
           </View>
           <Pressable
+            {...bell}
             accessibilityRole="button"
             accessibilityLabel={unread > 0 ? `Activity, ${unread} unread` : 'Activity'}
             accessibilityHint="Invites, nudges and locked plans"

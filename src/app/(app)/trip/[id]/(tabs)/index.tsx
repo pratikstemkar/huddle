@@ -1,9 +1,11 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { useRegisterPipAction } from '@/components/nav/pip-action';
+import { tripSteps } from '@/components/tour/steps';
+import { useAutoTour, useTourTarget } from '@/components/tour/tour';
 import { Pip } from '@/components/pip/pip';
 import { countdownHeadline, peopleText } from '@/components/trip/countdown-text';
 import { LockedSummary } from '@/components/trip/locked-summary';
@@ -49,10 +51,11 @@ function openSheet(id: string, sheet: 'invite' | 'lock' | 'suggest' | 'settings'
 function Header({ trip }: { trip: TripDetail }) {
   const { colors } = useTheme();
   const n = trip.members.length;
+  const invite = useTourTarget('trip.invite');
   return (
     <View style={styles.header}>
       <IconButton icon="back" accessibilityLabel="Back to your trips" onPress={goBack} />
-      <View style={styles.headerRight}>
+      <View {...invite} style={styles.headerRight}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${n} ${n === 1 ? 'person' : 'people'} in the huddle`}
@@ -241,6 +244,10 @@ export default function TripScreen() {
     go[action]();
   }, [trip, action, share, toast]);
   useRegisterPipAction(next?.label ?? null, next ? runPip : null);
+  const organiser = !!trip?.members.some((m) => m.user_id === me && m.role === 'organiser');
+  const tourSteps = useMemo(() => tripSteps(organiser), [organiser]);
+  const nextTarget = useTourTarget('trip.next');
+  useAutoTour('trip', tourSteps, !!trip);
 
   if (loading && !trip) {
     return (
@@ -271,7 +278,7 @@ export default function TripScreen() {
   }
 
   const isLocked = trip.status === 'locked';
-  const isOrganiser = trip.members.some((m) => m.user_id === me && m.role === 'organiser');
+  const isOrganiser = organiser;
   const splitText = splitCardText(stats, trip.currency);
 
   return (
@@ -307,17 +314,19 @@ export default function TripScreen() {
       </View>
 
       {next ? (
-        <SpeechCard
-          action={
-            <Button
-              size="sm"
-              label={next.label}
-              accessibilityLabel={next.action === 'lock' ? 'Lock in the plan' : undefined}
-              onPress={runPip}
-            />
-          }>
-          {next.text}
-        </SpeechCard>
+        <View {...nextTarget}>
+          <SpeechCard
+            action={
+              <Button
+                size="sm"
+                label={next.label}
+                accessibilityLabel={next.action === 'lock' ? 'Lock in the plan' : undefined}
+                onPress={runPip}
+              />
+            }>
+            {next.text}
+          </SpeechCard>
+        </View>
       ) : null}
 
       <Card

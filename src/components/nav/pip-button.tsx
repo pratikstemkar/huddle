@@ -4,6 +4,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, w
 
 import { PipHint } from '@/components/nav/pip-hint';
 import { Pip } from '@/components/pip/pip';
+import { useTourTarget } from '@/components/tour/tour';
 import { Icon } from '@/components/ui/icon';
 import { NAV_HEIGHT, shadow, springs } from '@/theme/tokens';
 import { useReducedMotion, useTheme } from '@/theme/use-theme';
@@ -17,11 +18,14 @@ type Props = {
   hints?: readonly string[];
   /** Change it to show the bubble again, e.g. the current path. */
   hintKey?: string;
+  /** Lets a guided tour point at the button. */
+  tourId?: string;
 };
 
 /** The round beak-yellow Pip button at the end of the tab bar. */
-export function PipButton({ accessibilityLabel, accessibilityHint, onPress, hints, hintKey }: Props) {
+export function PipButton({ accessibilityLabel, accessibilityHint, onPress, hints, hintKey, tourId }: Props) {
   const { colors, scheme } = useTheme();
+  const tour = useTourTarget(tourId);
   const reduced = useReducedMotion();
   const bob = useSharedValue(0);
   const bobStyle = useAnimatedStyle(() => ({ transform: [{ translateY: bob.value }] }));
@@ -33,7 +37,7 @@ export function PipButton({ accessibilityLabel, accessibilityHint, onPress, hint
   };
 
   return (
-    <View style={[styles.shadow, { boxShadow: shadow[scheme].pipButton }]}>
+    <View {...tour} style={[styles.shadow, { boxShadow: shadow[scheme].pipButton }]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}

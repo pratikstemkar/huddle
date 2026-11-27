@@ -36,12 +36,14 @@ export default function HomeTabsLayout() {
       <PillTabBar
         accessibilityLabel="Main"
         tabs={tabs}
+        tourPrefix="home"
         trailing={
           <PipButton
             accessibilityLabel="New trip"
             accessibilityHint="Pip: start a new trip"
             hints={PIP_LINES}
             hintKey={pathname}
+            tourId="home.pip"
             onPress={() => router.push('/new-trip')}
           />
         }

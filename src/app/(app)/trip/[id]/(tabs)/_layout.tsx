@@ -22,7 +22,7 @@ export default function TripTabsLayout() {
     <PipActionProvider>
       <Tabs style={[styles.root, { backgroundColor: colors.bg }]}>
         <SlidingTabSlot />
-        <PillTabBar accessibilityLabel="Trip" tabs={TABS} />
+        <PillTabBar accessibilityLabel="Trip" tabs={TABS} tourPrefix="trip" />
         <TabList style={styles.hidden}>
           <TabTrigger name="index" href={{ pathname: '/trip/[id]', params: { id } }} />
           <TabTrigger name="vote" href={{ pathname: '/trip/[id]/vote', params: { id } }} />

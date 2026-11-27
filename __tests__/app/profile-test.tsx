@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+import { TourProvider } from '@/components/tour/tour';
 import { ThemePreferenceProvider } from '@/theme/theme-preference';
 
 import { router } from '../../test-utils/expo-router-mock';
@@ -119,5 +120,19 @@ describe('Profile', () => {
     expect(router.push).toHaveBeenCalledWith('/privacy');
     await fireEvent.press(screen.getByRole('button', { name: 'Delete account' }));
     expect(router.push).toHaveBeenCalledWith('/delete-account');
+  });
+
+  it('replays the tour from the Trips tab', async () => {
+    await AsyncStorage.setItem('huddle.tour.home', '1');
+    await AsyncStorage.setItem('huddle.tour.trip', '1');
+    await render(
+      <TourProvider>
+        <ProfileScreen />
+      </TourProvider>,
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Show me around again' }));
+    expect(router.navigate).toHaveBeenCalledWith('/');
+    await waitFor(async () => expect(await AsyncStorage.getItem('huddle.tour.home')).toBeNull());
+    expect(await AsyncStorage.getItem('huddle.tour.trip')).toBeNull();
   });
 });

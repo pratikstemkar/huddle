@@ -6,6 +6,7 @@ import Animated, {
   Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useTourTarget } from '@/components/tour/tour';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { MAX_CONTENT_WIDTH, NAV_BOTTOM, NAV_HEIGHT, NAV_INSET, radius, shadow, space, tripColors } from '@/theme/tokens';
@@ -18,12 +19,15 @@ type TabItemProps = Omit<TabTriggerSlotProps, 'ref'> & {
   icon: IconName;
   badge?: number;
   index: number;
+  /** Lets a guided tour point at this tab. */
+  tourId?: string;
   /** Tells the bar which tab is focused so the highlight can slide to it. */
   onFocused: (index: number) => void;
 };
 
-function TabItem({ label, icon, badge, index, onFocused, isFocused, onPress, ...rest }: TabItemProps) {
+function TabItem({ label, icon, badge, index, tourId, onFocused, isFocused, onPress, ...rest }: TabItemProps) {
   const { colors } = useTheme();
+  const tour = useTourTarget(tourId);
   useEffect(() => {
     if (isFocused) onFocused(index);
   }, [isFocused, index, onFocused]);
@@ -31,6 +35,7 @@ function TabItem({ label, icon, badge, index, onFocused, isFocused, onPress, ...
   return (
     <Pressable
       {...rest}
+      {...tour}
       accessibilityRole="tab"
       accessibilityLabel={badge ? `${label}, ${badge} waiting` : label}
       aria-selected={!!isFocused}
@@ -75,10 +80,12 @@ type Props = {
   /** The round button after the pill, usually `<PipButton />`. */
   trailing?: ReactNode;
   accessibilityLabel: string;
+  /** Tabs become tour targets named `<tourPrefix>.tab.<name>`. */
+  tourPrefix?: string;
 };
 
 /** The floating glass tab bar. Render it inside expo-router/ui `<Tabs>`; triggers match tabs by name. */
-export function PillTabBar({ tabs, trailing, accessibilityLabel }: Props) {
+export function PillTabBar({ tabs, trailing, accessibilityLabel, tourPrefix }: Props) {
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const keyboardOpen = useKeyboardOpen();
@@ -119,7 +126,14 @@ export function PillTabBar({ tabs, trailing, accessibilityLabel }: Props) {
           )}
           {tabs.map((t, i) => (
             <TabTrigger key={t.name} name={t.name} asChild>
-              <TabItem label={t.label} icon={t.icon} badge={t.badge} index={i} onFocused={setFocusedIndex} />
+              <TabItem
+                label={t.label}
+                icon={t.icon}
+                badge={t.badge}
+                index={i}
+                tourId={tourPrefix ? `${tourPrefix}.tab.${t.name}` : undefined}
+                onFocused={setFocusedIndex}
+              />
             </TabTrigger>
           ))}
         </View>
