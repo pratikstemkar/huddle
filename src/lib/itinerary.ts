@@ -79,6 +79,9 @@ export function groupByDay(items: PlanItem[]): Map<Day, PlanItem[]> {
   return out;
 }
 
+/** Why the plan is closed before the trip has dates: it's built one day at a time. */
+export const PLAN_NEEDS_DATES = "The plan is built day by day, so it opens once the trip's dates are locked in.";
+
 /** How many of the trip's days have something planned, and which are still empty. */
 export function planProgress(days: Day[], plannedDays: Day[]): { planned: number; total: number; empty: Day[] } {
   const planned = new Set(plannedDays);

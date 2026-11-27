@@ -18,6 +18,7 @@ import {
   formatTime,
   MAX_PLAN_NOTE,
   MAX_PLAN_TITLE,
+  PLAN_NEEDS_DATES,
   parseTime,
   planErrorMessage,
   tripDays,
@@ -90,7 +91,7 @@ export default function PlanItemSheet() {
       : editing && !canEdit
         ? 'Only the person who added this, or an organiser, can change it.'
         : !editing && days.length === 0
-          ? 'The plan opens once the trip has dates. Pick them in Vote.'
+          ? PLAN_NEEDS_DATES
           : null;
   if (blocked || !trip) {
     return (

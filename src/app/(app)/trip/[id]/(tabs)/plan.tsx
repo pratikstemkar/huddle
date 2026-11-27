@@ -15,7 +15,7 @@ import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/lib/auth';
 import { formatDay, today, type Day } from '@/lib/dates';
-import { dayStyleFor, emptyDaysLine, groupByDay, itemsOffDates, planProgress, tripDays, usePlan, weekday, type PlanItem } from '@/lib/itinerary';
+import { PLAN_NEEDS_DATES, dayStyleFor, emptyDaysLine, groupByDay, itemsOffDates, planProgress, tripDays, usePlan, weekday, type PlanItem } from '@/lib/itinerary';
 import { useTripLive } from '@/lib/realtime';
 import { tripDates } from '@/lib/trip-status';
 import { useTrip } from '@/lib/trips';
@@ -76,9 +76,14 @@ export default function PlanTab() {
   const openVote = useCallback(() => {
     if (id) router.push({ pathname: '/trip/[id]/vote', params: { id, seg: 'dates' } });
   }, [id]);
+  const openLock = useCallback(() => {
+    if (id) router.push({ pathname: '/trip/[id]/lock', params: { id } });
+  }, [id]);
+  const isOrganiser = !!trip && trip.members.some((m) => m.user_id === myId && m.role === 'organiser');
+  const noDatesAction = isOrganiser ? openLock : openVote;
   useRegisterPipAction(
-    trip ? (selected ? `Add to ${weekday(selected)}` : 'Pick the dates in Vote') : null,
-    trip ? (selected ? addSelected : openVote) : null,
+    trip ? (selected ? `Add to ${weekday(selected)}` : isOrganiser ? 'Lock in the dates' : 'Mark your days') : null,
+    trip ? (selected ? addSelected : noDatesAction) : null,
   );
 
   if ((loading || plan.loading) && !trip) {
@@ -107,16 +112,27 @@ export default function PlanTab() {
         <Header line={trip.name} />
         <Card style={styles.hmm}>
           <Pip mood="hmm" size={110} />
-          <Text variant="body" tone="secondary" style={styles.centerText}>
-            The plan opens once the trip has dates. Pick them in Vote.
+          <Text variant="bodyStrong" style={styles.centerText}>
+            {PLAN_NEEDS_DATES}
           </Text>
-          <Button label="Vote" size="md" onPress={openVote} accessibilityHint="Opens the dates vote" />
+          <Text variant="body" tone="secondary" style={styles.centerText}>
+            {isOrganiser
+              ? "When the group's ready, lock in the dates and place."
+              : "Mark the days you're free in Vote. The organiser locks in the dates once everyone's had a say."}
+          </Text>
+          {isOrganiser ? (
+            <View style={styles.hmmActions}>
+              <Button label="Lock it in" size="md" onPress={openLock} accessibilityHint="Opens the lock-in screen" />
+              <Button label="See the votes" size="md" variant="ghost" onPress={openVote} accessibilityHint="Opens the dates vote" />
+            </View>
+          ) : (
+            <Button label="Vote" size="md" onPress={openVote} accessibilityHint="Opens the dates vote" />
+          )}
         </Card>
       </Screen>
     );
   }
 
-  const isOrganiser = trip.members.some((m) => m.user_id === myId && m.role === 'organiser');
   const names = new Map(trip.members.map((m) => [m.user_id, m.display_name]));
   const addedBy = (i: PlanItem) => (i.created_by && i.created_by === myId ? 'you' : ((i.created_by && names.get(i.created_by)) || 'Someone'));
   const canEdit = (i: PlanItem) => isOrganiser || (!!myId && i.created_by === myId);
@@ -199,6 +215,7 @@ const styles = StyleSheet.create({
   content: { gap: space.lg },
   header: { gap: space.xs },
   hmm: { alignItems: 'center', gap: space.lg, paddingVertical: space.xl },
+  hmmActions: { alignSelf: 'stretch', gap: space.sm },
   centerText: { textAlign: 'center' },
   empty: { borderWidth: 2, borderStyle: 'dashed', borderRadius: radius.card, paddingVertical: space.xl, paddingHorizontal: space.lg },
   offRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: MIN_TOUCH, borderRadius: radius.lg, paddingHorizontal: space.lg },
