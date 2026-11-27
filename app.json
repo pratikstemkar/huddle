@@ -41,6 +41,7 @@
         }
       ],
       "expo-apple-authentication",
+      "expo-image",
       [
         "expo-image-picker",
         {
