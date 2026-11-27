@@ -82,7 +82,13 @@
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/.expo/"
+      "/.expo/",
+      "<rootDir>/.claude/worktrees/",
+      "<rootDir>/.supabase-isolated/"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/.claude/worktrees/",
+      "<rootDir>/.supabase-isolated/"
     ],
     "collectCoverageFrom": [
       "src/**/*.{ts,tsx}"
