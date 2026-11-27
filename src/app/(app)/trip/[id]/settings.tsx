@@ -16,6 +16,8 @@ import { SpeechCard } from '@/components/ui/speech-card';
 import { Text } from '@/components/ui/text';
 import { Toggle } from '@/components/ui/toggle';
 import { useAuth } from '@/lib/auth';
+import { shiftPlan } from '@/lib/catalog';
+import { nightsBetween } from '@/lib/dates';
 import { useTripLive } from '@/lib/realtime';
 import { balanceNote, useSplit } from '@/lib/split';
 import { deleteTrip, leaveTrip, removeMember, renameTrip, setShowWhoMarked, unlockTrip, updateTrip, useTrip } from '@/lib/trips';
@@ -66,6 +68,8 @@ export default function TripSettings() {
   const [datesMode, setDatesMode] = useState<'vote' | 'fixed' | null>(null);
   const [range, setRange] = useState<Range | null>(null);
   const [savingDates, setSavingDates] = useState(false);
+  // Whether a new start day takes the day-by-day plan along (on by default).
+  const [movePlan, setMovePlan] = useState(true);
 
   const reload = useCallback(() => {
     refresh();
@@ -165,6 +169,8 @@ export default function TripSettings() {
   const savedFixed = trip.fixed_start && trip.fixed_end ? { start: trip.fixed_start, end: trip.fixed_end } : null;
   const mode = datesMode ?? (savedFixed ? 'fixed' : 'vote');
   const shownRange = range ?? savedFixed;
+  // How many days a new start moves the plan: only when fixed dates already exist and the start changes.
+  const planShift = range && savedFixed && range.start !== savedFixed.start ? nightsBetween(savedFixed.start, range.start) : 0;
 
   const save = async () => {
     if (!trimmed) {
@@ -201,6 +207,7 @@ export default function TripSettings() {
     setError(null);
     try {
       await updateTrip(trip.id, { fixed_start: next?.start ?? null, fixed_end: next?.end ?? null });
+      if (next && planShift !== 0 && movePlan) await shiftPlan(trip.id, planShift);
       setRange(null);
       setDatesMode(null);
       await refresh();
@@ -319,6 +326,21 @@ export default function TripSettings() {
           {mode === 'fixed' ? (
             <>
               <DateRangePicker value={shownRange} onChange={setRange} />
+              {planShift !== 0 ? (
+                <View style={styles.row}>
+                  <Text variant="body" style={styles.flex}>
+                    Move the plan too
+                  </Text>
+                  <Toggle value={movePlan} onValueChange={setMovePlan} accessibilityLabel="Move the plan too" />
+                </View>
+              ) : null}
+              {planShift !== 0 ? (
+                <Text variant="caption" tone="secondary">
+                  {movePlan
+                    ? `Every plan moves ${Math.abs(planShift)} ${Math.abs(planShift) === 1 ? 'day' : 'days'} ${planShift > 0 ? 'later' : 'earlier'}, so each stays on the same day of the trip.`
+                    : 'Plans stay on their dates. Any that fall off the new dates are listed apart on the Plan tab.'}
+                </Text>
+              ) : null}
               {range ? <Button label="Save dates" size="md" loading={savingDates} onPress={() => saveDates(range)} /> : null}
             </>
           ) : null}

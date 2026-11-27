@@ -4,7 +4,7 @@ import { formatDay, today } from '@/lib/dates';
 
 import { router, setParams } from '../../test-utils/expo-router-mock';
 import { MEMBER, ORGANISER, TRIP_ID, sessionFor, trip, tripState } from '../../test-utils/fixtures';
-import { queueResult } from '../../test-utils/supabase-mock';
+import { queueResult, rpcCalls } from '../../test-utils/supabase-mock';
 
 jest.mock('expo-router', () => require('../../test-utils/expo-router-mock'));
 
@@ -394,6 +394,43 @@ describe('Trip settings', () => {
       await render(<TripSettings />);
       await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
       expect(router.back).toHaveBeenCalled();
+    });
+  });
+
+  describe('moving the plan with new dates (organiser)', () => {
+    beforeEach(() => {
+      updateTrip.mockResolvedValue(undefined);
+      mockState = tripState(trip({ fixed_start: '2027-05-01', fixed_end: '2027-05-03' }));
+    });
+
+    it('moves the plan by default when the start day changes', async () => {
+      await render(<TripSettings />);
+      expect(screen.queryByLabelText('Move the plan too')).toBeNull();
+      await fireEvent.press(screen.getByRole('button', { name: dayLabel('2027-05-10') }));
+      await fireEvent.press(screen.getByRole('button', { name: dayLabel('2027-05-12') }));
+      expect(screen.getByLabelText('Move the plan too').props.value).toBe(true);
+      expect(screen.getByText('Every plan moves 9 days later, so each stays on the same day of the trip.')).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: 'Save dates' }));
+      expect(updateTrip).toHaveBeenCalledWith(TRIP_ID, { fixed_start: '2027-05-10', fixed_end: '2027-05-12' });
+      expect(rpcCalls).toContainEqual({ name: 'shift_plan', args: { t: TRIP_ID, days: 9 } });
+    });
+
+    it('leaves the plan where it is when switched off', async () => {
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('button', { name: dayLabel('2027-05-10') }));
+      await fireEvent.press(screen.getByRole('button', { name: dayLabel('2027-05-12') }));
+      await fireEvent(screen.getByLabelText('Move the plan too'), 'valueChange', false);
+      expect(screen.getByText('Plans stay on their dates. Any that fall off the new dates are listed apart on the Plan tab.')).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: 'Save dates' }));
+      expect(updateTrip).toHaveBeenCalled();
+      expect(rpcCalls.find((c) => c.name === 'shift_plan')).toBeUndefined();
+    });
+
+    it("doesn't offer it when only the last day changes", async () => {
+      await render(<TripSettings />);
+      await fireEvent.press(screen.getByRole('button', { name: `${dayLabel('2027-05-01')}, first day` }));
+      await fireEvent.press(screen.getByRole('button', { name: dayLabel('2027-05-05') }));
+      expect(screen.queryByLabelText('Move the plan too')).toBeNull();
     });
   });
 });
