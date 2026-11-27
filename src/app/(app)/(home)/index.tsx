@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 
+import { IdeasRow } from '@/components/explore/ideas-row';
 import { Pip } from '@/components/pip/pip';
 import { HOME_STEPS } from '@/components/tour/steps';
 import { useAutoTour, useTourTarget } from '@/components/tour/tour';
@@ -319,7 +320,7 @@ export default function Home() {
               <Card style={styles.empty}>
                 <Text variant="cardTitle">Start your first trip</Text>
                 <Text variant="callout" tone="secondary">
-                  Give it a name, invite the group, and let everyone mark when they’re free.
+                  Give it a name, invite the group, and let everyone mark when they’re free. Or pick a ready-made trip below.
                 </Text>
               </Card>
             ) : null}
@@ -336,6 +337,8 @@ export default function Home() {
             ))}
           </View>
         ) : null}
+
+        {!firstLoad ? <IdeasRow /> : null}
       </View>
     </Screen>
   );

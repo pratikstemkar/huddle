@@ -11,10 +11,11 @@ function nextMonth(d: number) {
   return toDay(new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, d)));
 }
 
-function Harness({ initial = null, onChange }: { initial?: DayRange | null; onChange: jest.Mock }) {
+function Harness({ initial = null, onChange, nights }: { initial?: DayRange | null; onChange: jest.Mock; nights?: number }) {
   const [value, setValue] = useState<DayRange | null>(initial);
   return (
     <DateRangePicker
+      nights={nights}
       value={value}
       onChange={(v) => {
         setValue(v);
@@ -68,5 +69,18 @@ describe('DateRangePicker', () => {
     expect(screen.getByRole('button', { name: `${label(nextMonth(3))}, first day` })).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: `${label(nextMonth(5))}, in your dates` }));
     expect(onChange).toHaveBeenLastCalledWith({ start: nextMonth(5), end: nextMonth(5) });
+  });
+
+  it('picks the whole range in one tap when the length is fixed', async () => {
+    const onChange = jest.fn();
+    await render(<Harness nights={3} onChange={onChange} />);
+    expect(screen.getByText('Tap the first day of the trip')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Next month' }));
+    await fireEvent.press(screen.getByRole('button', { name: label(nextMonth(10)) }));
+    expect(onChange).toHaveBeenLastCalledWith({ start: nextMonth(10), end: nextMonth(13) });
+    // A second tap moves the whole range instead of ending it.
+    await fireEvent.press(screen.getByRole('button', { name: label(nextMonth(5)) }));
+    expect(onChange).toHaveBeenLastCalledWith({ start: nextMonth(5), end: nextMonth(8) });
+    expect(screen.getByRole('button', { name: `${label(nextMonth(8))}, last day` })).toBeTruthy();
   });
 });

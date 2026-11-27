@@ -13,6 +13,8 @@ export type DayRange = { start: string; end: string };
 type Props = {
   value: DayRange | null;
   onChange: (v: DayRange | null) => void;
+  /** A fixed length: one tap picks the first day and the range runs this many nights from it. */
+  nights?: number;
 };
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -29,8 +31,9 @@ function shiftMonth(key: string, by: number) {
 /**
  * A month calendar for picking a trip's dates: tap the first day, then the last.
  * The first tap already makes a one-day range, so the value is always usable.
+ * With `nights`, one tap picks the whole range.
  */
-export function DateRangePicker({ value, onChange }: Props) {
+export function DateRangePicker({ value, onChange, nights }: Props) {
   const { colors } = useTheme();
   const now = todayDay();
   const [month, setMonth] = useState(() => monthKey(value?.start ?? now));
@@ -42,7 +45,9 @@ export function DateRangePicker({ value, onChange }: Props) {
 
   const pick = (day: Day) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
-    if (anchor) {
+    if (nights !== undefined) {
+      onChange({ start: day, end: addDays(day, nights) });
+    } else if (anchor) {
       const [start, end] = day < anchor ? [day, anchor] : [anchor, day];
       setAnchor(null);
       onChange({ start, end });
@@ -56,7 +61,9 @@ export function DateRangePicker({ value, onChange }: Props) {
     ? anchor
       ? `${formatDay(value.start, { day: 'numeric', month: 'short' })}, now tap the last day`
       : formatRange(value.start, value.end)
-    : 'Tap the first day, then the last';
+    : nights !== undefined
+      ? 'Tap the first day of the trip'
+      : 'Tap the first day, then the last';
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.line }]}>
