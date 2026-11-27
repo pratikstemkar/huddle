@@ -59,11 +59,27 @@ describe('Plan tab', () => {
     ];
   });
 
-  it('shows the Hmm state with a Vote button when the trip has no dates', async () => {
+  it('tells a member why the plan is closed and sends them to Vote when the trip has no dates', async () => {
     mockState = tripState(trip());
     await render(<PlanTab />);
-    expect(screen.getByText('The plan opens once the trip has dates. Pick them in Vote.')).toBeTruthy();
+    expect(screen.getByText("The plan is built day by day, so it opens once the trip's dates are locked in.")).toBeTruthy();
+    expect(screen.getByText("Mark the days you're free in Vote. The organiser locks in the dates once everyone's had a say.")).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Lock it in' })).toBeNull();
+    expect(useRegisterPipAction).toHaveBeenLastCalledWith('Mark your days', expect.any(Function));
     await fireEvent.press(screen.getByRole('button', { name: 'Vote' }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[id]/vote', params: { id: TRIP_ID, seg: 'dates' } });
+  });
+
+  it('gives the organiser a way to lock the dates when the trip has none', async () => {
+    mockSession = sessionFor(ORGANISER);
+    mockState = tripState(trip());
+    await render(<PlanTab />);
+    expect(screen.getByText("The plan is built day by day, so it opens once the trip's dates are locked in.")).toBeTruthy();
+    expect(screen.getByText("When the group's ready, lock in the dates and place.")).toBeTruthy();
+    expect(useRegisterPipAction).toHaveBeenLastCalledWith('Lock in the dates', expect.any(Function));
+    await fireEvent.press(screen.getByRole('button', { name: 'Lock it in' }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[id]/lock', params: { id: TRIP_ID } });
+    await fireEvent.press(screen.getByRole('button', { name: 'See the votes' }));
     expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[id]/vote', params: { id: TRIP_ID, seg: 'dates' } });
   });
 
