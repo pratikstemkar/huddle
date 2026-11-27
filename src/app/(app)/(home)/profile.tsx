@@ -6,6 +6,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-
 
 import { ColorSwatches } from '@/components/color-swatches';
 import { NotificationSettings } from '@/components/notification-settings';
+import { useTour } from '@/components/tour/tour';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
@@ -48,6 +49,7 @@ export default function ProfileScreen() {
   const { preference, setPreference } = useThemePreference();
   const userId = session?.user.id;
   const { profile, loading, refresh } = useMyProfile(userId);
+  const tour = useTour();
 
   // Drafts stay null until edited, so a reload never overwrites what you typed.
   const [nameDraft, setNameDraft] = useState<string | null>(null);
@@ -181,6 +183,14 @@ export default function ProfileScreen() {
         </View>
 
         <View style={[styles.list, { backgroundColor: colors.card, borderColor: colors.line }]}>
+          <Row
+            label="Show me around again"
+            hint="Replays the tour of the tabs, and of a trip the next time you open one"
+            onPress={() => {
+              tour.replay();
+              router.navigate('/');
+            }}
+          />
           <Row label="Privacy policy" onPress={() => router.push('/privacy')} />
           <Row label="Delete account" danger hint="Explains what happens to your trips first" onPress={() => router.push('/delete-account')} />
           <Row label="Sign out" onPress={signOut} last />

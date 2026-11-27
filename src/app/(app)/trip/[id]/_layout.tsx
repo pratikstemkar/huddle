@@ -1,6 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 
 import { TripIdProvider } from '@/components/nav/trip-id';
+import { useTour } from '@/components/tour/tour';
 import { useAskForPush } from '@/components/use-ask-for-push';
 import { useTheme } from '@/theme/use-theme';
 
@@ -26,7 +27,9 @@ export default function TripLayout() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   // Opening a trip (usually right after starting or joining one) is when a ping starts to be useful.
-  useAskForPush();
+  // The first time, the trip tour goes first so the ask doesn't land on top of it.
+  const tour = useTour();
+  useAskForPush(tour.seen?.trip === true && !tour.active);
 
   return (
     <TripIdProvider id={id}>
