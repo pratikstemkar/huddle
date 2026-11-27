@@ -14,6 +14,7 @@ Every file was rewritten for the redesign (commits `2ca5728`…`1b0ae8d`); none 
 | Trips list (home) | `/` | [trips-list.md](trips-list.md) | old UI 2026-11-11 |
 | Create trip | `/` (Pip button) → `/new-trip` (2 steps) | [create-trip.md](create-trip.md) | old UI 2026-11-11 |
 | Fixed dates | `/new-trip`, `/trip/[id]/settings`, `/trip/[id]/vote?seg=dates` | [fixed-dates.md](fixed-dates.md) | not yet |
+| Ready-made trips (Explore) | `/` (ideas row) or `/new-trip` → `/explore` → `/explore/[destination]` → `/explore/plan/[id]` → `/new-trip?template=`; `/trip/[id]/settings` (Move the plan too) | [ready-made-trips.md](ready-made-trips.md) | 2026-11-27 (web) |
 | Sign out | `/profile` (You) | [sign-out.md](sign-out.md) | old UI 2026-11-12 |
 | Edit my profile | `/profile` (You) | [edit-profile.md](edit-profile.md) | old UI 2026-11-12 |
 | Trip detail (Trip tab) | `/` → `/trip/[id]` | [trip-detail.md](trip-detail.md) | old UI 2026-11-11 |
